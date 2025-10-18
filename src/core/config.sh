@@ -106,23 +106,23 @@ customize_variables_ini() {
 # Returns: 0 on success, 1 on failure
 load_variables_ini() {
   local variables_file="$1"
-  
+
   if [[ ! -f "$variables_file" ]]; then
     log_error "Variables file not found: $variables_file"
     return 1
   fi
-  
+
   log_info "Loading variables from INI configuration: $variables_file"
-  
+
   # Parse the INI file
   parse_ini_file "$variables_file" || return 1
-  
+
   # Load system variables
   user=$(get_ini_value "system" "user")
   [[ -z "$user" ]] && user=$(whoami)
   current_device=$(get_ini_value "system" "current_device")
   [[ -z "$current_device" ]] && current_device="desktop"
-  
+
   # Load desktop variables
   hostname_desktop=$(get_ini_value "desktop" "hostname")
   [[ -z "$hostname_desktop" ]] && hostname_desktop="fedora"
@@ -132,7 +132,7 @@ load_variables_ini() {
   [[ -z "$desktop_session" ]] && desktop_session="qtile"
   desktop_display_manager=$(get_ini_value "desktop" "display_manager")
   [[ -z "$desktop_display_manager" ]] && desktop_display_manager="sddm"
-  
+
   # Load laptop variables
   hostname_laptop=$(get_ini_value "laptop" "hostname")
   [[ -z "$hostname_laptop" ]] && hostname_laptop="fedora-laptop"
@@ -142,13 +142,13 @@ load_variables_ini() {
   [[ -z "$laptop_session" ]] && laptop_session="qtile"
   laptop_display_manager=$(get_ini_value "laptop" "display_manager")
   [[ -z "$laptop_display_manager" ]] && laptop_display_manager="sddm"
-  
+
   # Load browser variables
   firefox_profile=$(get_ini_value "browser" "firefox_profile")
   firefox_profile_path=$(get_ini_value "browser" "firefox_profile_path")
   librewolf_dir=$(get_ini_value "browser" "librewolf_dir")
   librewolf_profile=$(get_ini_value "browser" "librewolf_profile")
-  
+
   # Load SSH configuration
   ssh_port=$(get_ini_value "ssh" "port")
   [[ -z "$ssh_port" ]] && ssh_port="22"
@@ -160,14 +160,14 @@ load_variables_ini() {
   [[ -z "$ssh_permit_root_login" ]] && ssh_permit_root_login="no"
   ssh_key_auth=$(get_ini_value "ssh" "key_auth")
   [[ -z "$ssh_key_auth" ]] && ssh_key_auth="yes"
-  
+
   # Export all variables
   export user current_device
   export hostname_desktop desktop_ip desktop_session desktop_display_manager
   export hostname_laptop laptop_ip laptop_session laptop_display_manager
   export firefox_profile firefox_profile_path librewolf_dir librewolf_profile
   export ssh_port ssh_enable_service ssh_password_auth ssh_permit_root_login ssh_key_auth
-  
+
   log_info "Variables loaded successfully from INI"
   return 0
 }
@@ -178,17 +178,17 @@ load_variables_ini() {
 # Returns: 0 on success, 1 on failure
 load_packages_ini() {
   local packages_file="$1"
-  
+
   if [[ ! -f "$packages_file" ]]; then
     log_error "Packages file not found: $packages_file"
     return 1
   fi
-  
+
   log_info "Loading packages from INI configuration: $packages_file"
-  
+
   # Parse the INI file
   parse_ini_file "$packages_file" || return 1
-  
+
   # Load each package array from sections
   mapfile -t CORE_PACKAGES < <(get_ini_section "core")
   mapfile -t APPS_PACKAGES < <(get_ini_section "apps")
@@ -196,13 +196,14 @@ load_packages_ini() {
   mapfile -t GAMES_PACKAGES < <(get_ini_section "games")
   mapfile -t DESKTOP_PACKAGES < <(get_ini_section "desktop")
   mapfile -t LAPTOP_PACKAGES < <(get_ini_section "laptop")
+  mapfile -t HOMESERVER_PACKAGES < <(get_ini_section "homeserver")
   mapfile -t QTILE_PACKAGES < <(get_ini_section "qtile")
   mapfile -t FLATPAK_PACKAGES < <(get_ini_section "flatpak")
-  
+
   # Export all arrays
   export CORE_PACKAGES APPS_PACKAGES DEV_PACKAGES GAMES_PACKAGES
-  export DESKTOP_PACKAGES LAPTOP_PACKAGES QTILE_PACKAGES FLATPAK_PACKAGES
-  
+  export DESKTOP_PACKAGES LAPTOP_PACKAGES HOMESERVER_PACKAGES QTILE_PACKAGES FLATPAK_PACKAGES
+
   log_info "Package arrays loaded successfully from INI"
   return 0
 }
@@ -212,15 +213,15 @@ load_packages_ini() {
 # Returns: 0 on success, 1 on failure
 load_variables() {
   log_info "Loading variables from configuration..."
-  
+
   local variables_file
   variables_file=$(load_ini_config "variables.ini")
-  
+
   if [[ -z "$variables_file" || ! -f "$variables_file" ]]; then
     log_error "Failed to load variables configuration"
     return 1
   fi
-  
+
   load_variables_ini "$variables_file"
   return $?
 }
@@ -240,14 +241,14 @@ load_package_arrays() {
 
   local packages_file
   packages_file=$(load_ini_config "packages.ini")
-  
+
   if [[ -z "$packages_file" || ! -f "$packages_file" ]]; then
     log_error "Failed to load packages configuration"
     return 1
   fi
-  
+
   load_packages_ini "$packages_file" || return 1
-  
+
   # Load package mappings from pkgmap.ini (optional)
   local pkgmap_file="$CONFIG_DIR/pkgmap.ini"
   if [[ -f "$pkgmap_file" ]]; then
@@ -258,7 +259,7 @@ load_package_arrays() {
   else
     log_debug "No pkgmap.ini found at $pkgmap_file, packages will use their original names"
   fi
-  
+
   return 0
 }
 
@@ -267,7 +268,7 @@ load_package_arrays() {
 # Returns: 0 on success, 1 on failure
 check_and_create_config() {
   log_info "Checking configuration..."
-  
+
   # Check if config directory exists
   if [[ ! -d "$CONFIG_DIR" ]]; then
     log_info "Creating configuration directory: $CONFIG_DIR"
@@ -276,25 +277,25 @@ check_and_create_config() {
       return 1
     }
   fi
-  
+
   # Check for required configuration files
   local required_configs=("variables.ini" "packages.ini")
   local missing_configs=()
-  
+
   for config in "${required_configs[@]}"; do
     if [[ ! -f "$CONFIG_DIR/$config" ]]; then
       missing_configs+=("$config")
     fi
   done
-  
+
   if [[ ${#missing_configs[@]} -gt 0 ]]; then
     log_warn "Missing configuration files: ${missing_configs[*]}"
-    
+
     # For testing environments, just return failure
     if [[ -n "${BATS_TEST_TMPDIR:-}" ]]; then
       return 1
     fi
-    
+
     # Try to copy from examples or create defaults
     echo -e "\n===== Configuration Setup ====="
     echo "The following configuration files are missing:"
@@ -305,24 +306,24 @@ check_and_create_config() {
     echo "Would you like to create them from examples?"
     read -r -p "[y/N] " answer
     echo
-    
+
     if [[ "$answer" =~ ^[Yy]$ ]]; then
       for file in "${missing_configs[@]}"; do
         local target_file="$CONFIG_DIR/$file"
         local example_file="$EXAMPLES_DIR/$file"
-        
+
         if [[ -f "$example_file" ]]; then
           log_info "Copying $file from examples..."
           cp "$example_file" "$target_file" || {
             log_error "Failed to copy $file"
             return 1
           }
-          
+
           # Customize variables.ini with current user
           if [[ "$file" == "variables.ini" ]]; then
             customize_variables_ini "$target_file"
           fi
-          
+
           echo "✓ Created $file"
         else
           # Example file not found - this should never happen as examples are in repo
@@ -331,7 +332,7 @@ check_and_create_config() {
           return 1
         fi
       done
-      
+
       # Also copy pkgmap.ini if it doesn't exist
       if [[ ! -f "$CONFIG_DIR/pkgmap.ini" ]]; then
         local pkgmap_example="$EXAMPLES_DIR/pkgmap.ini"
@@ -345,7 +346,7 @@ check_and_create_config() {
           return 1
         fi
       fi
-      
+
       echo -e "\n✓ Configuration files created successfully!"
       echo "Location: $CONFIG_DIR"
       echo
@@ -354,7 +355,7 @@ check_and_create_config() {
       return 1
     fi
   fi
-  
+
   log_info "Configuration files found"
   return 0
 }
@@ -396,6 +397,7 @@ init_config() {
   log_info "Flatpak Packages: ${#FLATPAK_PACKAGES[@]} packages"
   log_info "Desktop Packages: ${#DESKTOP_PACKAGES[@]} packages"
   log_info "Laptop Packages: ${#LAPTOP_PACKAGES[@]} packages"
+  log_info "Home Server Packages: ${#HOMESERVER_PACKAGES[@]} packages"
   log_info "Package Mappings: ${#PACKAGE_MAPPINGS[@]} mappings"
   log_info "===== End of Summary ====="
 

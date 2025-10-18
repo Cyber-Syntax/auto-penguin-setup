@@ -32,6 +32,85 @@ init_package_manager || {
   exit 1
 }
 
+# Validate install component names
+validate_install_component() {
+  local component=$1
+  local valid_components=("core" "apps" "dev" "games" "flatpak" "laptop" "desktop" "homeserver")
+
+  for valid in "${valid_components[@]}"; do
+    if [[ "$component" == "$valid" ]]; then
+      return 0
+    fi
+  done
+
+  log_error "Invalid install component: '$component'"
+  log_error "Valid components: ${valid_components[*]}"
+  return 1
+}
+
+# Validate setup tool names
+validate_setup_tool() {
+  local tool=$1
+  local valid_tools=(
+    "brave" "vscode" "qtile" "lazygit" "ollama" "protonvpn" "ohmyzsh"
+    "tlp" "thinkfan" "auto-cpufreq" "trash-cli" "borgbackup" "syncthing"
+    "ufw" "hyprland" "sddm" "sddm-autologin" "virt-manager"
+    "nvidia-cuda" "nvidia-open" "vaapi" "intel-xorg" "nfancurve" "zenpower"
+    "qtile-udev" "touchpad" "pm-speedup" "ffmpeg-swap" "remove-gnome"
+    "update-system" "ssh"
+  )
+
+  for valid in "${valid_tools[@]}"; do
+    if [[ "$tool" == "$valid" ]]; then
+      return 0
+    fi
+  done
+
+  log_error "Invalid setup tool: '$tool'"
+  log_error "Valid tools: ${valid_tools[*]}"
+  return 1
+}
+
+# Validate config types
+validate_config_type() {
+  local config=$1
+  local valid_configs=("system" "default-apps")
+
+  for valid in "${valid_configs[@]}"; do
+    if [[ "$config" == "$valid" ]]; then
+      return 0
+    fi
+  done
+
+  log_error "Invalid config type: '$config'"
+  log_error "Valid types: ${valid_configs[*]}"
+  return 1
+}
+
+# Validate repository names
+validate_repo() {
+  local repo=$1
+  local valid_repos=("rpm-fusion" "flathub")
+
+  for valid in "${valid_repos[@]}"; do
+    if [[ "$repo" == "$valid" ]]; then
+      return 0
+    fi
+  done
+
+  log_error "Invalid repository: '$repo'"
+  log_error "Valid repositories: ${valid_repos[*]}"
+  return 1
+}
+
+# Parse comma-separated values into array
+parse_csv() {
+  local input=$1
+  local -n result_array=$2
+
+  IFS=',' read -ra result_array <<<"$input"
+}
+
 # Auto-source all feature modules (order doesn't matter)
 for module in src/apps/*.sh src/system/*.sh src/hardware/*.sh src/display/*.sh src/wm/*.sh; do
   [[ -f "$module" ]] && source "$module"
@@ -51,114 +130,52 @@ NOTE:
 
 This script automates installation and configuration for Fedora, Arch, and Debian/Ubuntu systems.
 
-Options (A-Z):
+CLI OPTIONS:
+  --install GROUPS          Install package groups (comma-separated)
+                            Available: core, apps, dev, games, flatpak
+                            System-specific: laptop, desktop, homeserver
+  
+  --setup TOOLS             Setup specific tools (comma-separated)
+                            Available: brave, vscode, qtile, lazygit, ollama, protonvpn,
+                            ohmyzsh, tlp, thinkfan, auto-cpufreq, trash-cli, borgbackup,
+                            syncthing, ufw, hyprland, sddm, sddm-autologin, virt-manager,
+                            nvidia-cuda, nvidia-open, vaapi, intel-xorg, nfancurve,
+                            zenpower, qtile-udev, touchpad, pm-speedup, ffmpeg-swap,
+                            remove-gnome, update-system, ssh
 
-  -h    Display this help message.
+  --config TYPES            Apply system configurations (comma-separated)
+                            Available: system, default-apps
 
-# Applications
-  -A    Install application packages (apps/)
-  -b    Install Brave Browser
-  -B    Setup BorgBackup service
-  -F    Install Flatpak packages
-  -L    Install Lazygit
-  -o    Install Ollama (AI runtime)
-  -p    Install ProtonVPN and enable OpenVPN for SELinux
-  -q    Install Qtile packages (window manager)
-  -C    Install Visual Studio Code
+  --enable-repo REPOS       Enable repositories (comma-separated)
+                            Available: rpm-fusion, flathub
 
-# System
-  -i    Install core packages
-  -I    *WORK-IN-PROGRESS* Install system-specific packages (desktop/laptop)
-  -D    Install development packages
-  -G    Install games packages
-  -f    Setup useful Linux configurations (boot timeout, TCP BBR, password timeout)
-  -M    Set up default applications (mimeapps.list)
-  -t    Setup trash-cli service
-  -U    Switch UFW from firewalld and enable it
-  -u    Run system updates (autoremove, fwupdmgr)
-  -r    Enable RPM Fusion repositories
-  -d    Speed up package manager (Parallel downloads etc.)
-  -x    Swap ffmpeg-free with ffmpeg
+SYSTEM OPTIONS:
+  --system-type TYPE        Override detection: laptop|desktop|server
+  --dry-run                 Preview actions without executing
+  --verbose                 Enable verbose logging (LOG_LEVEL_DEBUG)
+  
+UTILITY:
+  -h, --help                Show this help message
 
-# Hardware
-  -E    Install auto-cpufreq (CPU frequency management)
-  -T    Setup TLP for laptop power management
-  -P    Setup thinkfan for laptop fan control
-  -e    Setup Intel Xorg configuration (20-intel.conf)
-  -z    Setup zenpower for Ryzen 5000 series
-  -c    Setup touchpad (copy Xorg touchpad config)
-  -n    Install NVIDIA CUDA
-  -N    Switch to NVIDIA open drivers
-  -j    Setup nfancurve for NVIDIA GPUs
-  -v    Setup VA-API for NVIDIA RTX series
+EXAMPLES:
+  # Combined installation and setup
+  $0 --install core,apps,dev,laptop --setup tlp,thinkfan,touchpad
 
-# Display & Window Manager
-  -H    Install Hyprland Wayland compositor and dependencies
-  -S    Switch to SDDM display manager (recommended for Hyprland)
-  -X    Configure SDDM autologin (auto-login after boot)
-  -Q    Install Qtile udev rule for xbacklight
+  # Preview before executing
+  $0 --install core,apps,homeserver --dry-run
 
-# SSH Configuration
-  -k    Setup SSH (automated from variables.ini)
-  -K    Show SSH status
-
-# Other / Experimental
-  -a    Execute all functions (full setup)
-  -g    Remove GNOME desktop environment (keep NetworkManager)
-  -V    Setup virtualization (virt-manager, libvirt)
-  -s    Enable Syncthing service
-  -c    Enable tap-to-click for touchpad
-
-Examples:
-  Setup all:                 sudo $0 -a
-  System-specific packages:   sudo $0 -I
-  TLP for laptop:            sudo $0 -T
-  Install Brave:             sudo $0 -b
-  Install Qtile:             sudo $0 -q
-  Setup SSH:                 sudo $0 -k
-  Check SSH status:          sudo $0 -K
+  # Developer setup with Oh My Zsh
+  $0 --install core,apps,dev,desktop --setup ohmyzsh,lazygit,vscode
 
 For more details, see docs/ and config_examples/.
 EOF
-  exit 1
+  exit 0
 }
 
-# Check if any options that use DNF installation are enabled
+# Check if any options that use package manager installation are enabled
 #TODO: maybe we would simplify this, we can call speedup_pm.sh
 # before anything else. So, we would handle it much more simple way
-# because simple is better than complex.
-needs_dnf_speedup() {
-  # Return true if any of these options are enabled
-  if $all_option ||
-    $install_core_packages_option ||
-    $install_system_specific_packages_option ||
-    $install_app_packages_option ||
-    $install_dev_packages_option ||
-    $install_games_packages_option ||
-    $qtile_option ||
-    $brave_option ||
-    $rpm_option ||
-    $tlp_option ||
-    $nvidia_cuda_option ||
-    $switch_nvidia_open_option ||
-    $virt_option ||
-    $ufw_option ||
-    $trash_cli_option ||
-    $borgbackup_option ||
-    $zenpower_option ||
-    $vaapi_option ||
-    $swap_ffmpeg_option ||
-    $protonvpn_option ||
-    $hyprland_option ||
-    $sddm_option ||
-    $sddm_autologin_option ||
-    $ollama_option; then
-    return 0 # true in bash
-  fi
-  return 1 # false in bash
-}
-
-#TODO: need cross-distro support
+# because simple is better than complex.#TODO: need cross-distro support
 system_updates() {
   echo "Running system updates..."
   for attempt in {1..3}; do
@@ -180,297 +197,309 @@ setup_files() {
   # lightdm_autologin
   tcp_bbr_setup
   sudoers_setup
-} 
+}
 
 #TODO: research and find a simple way to handle this options which it isn't look clean.
 # Main function to parse arguments and execute tasks
 main() {
   # Show help message if no arguments are provided or if -h is passed.
-  if [[ "$#" -eq 1 && "$1" == "-h" ]]; then
+  if [[ "$#" -eq 0 ]]; then
     usage
   fi
 
-  log_debug "Initializing script with args: $*"
-
-  # Initialize option flags.
-  all_option=false
-  install_core_packages_option=false
-  install_system_specific_packages_option=false
-  install_app_packages_option=false
-  install_dev_packages_option=false
-  install_games_packages_option=false
-  flatpak_option=false
-  qtile_option=false
-  brave_option=false
-  rpm_option=false
-  pm_speed_option=false
-  swap_ffmpeg_option=false
-  config_option=false
-  lazygit_option=false
-  ollama_option=false
-  trash_cli_option=false
-  borgbackup_option=false
-  syncthing_option=false
-  auto_cpufreq_option=false
-  hyprland_option=false
-  sddm_option=false
-  ssh_setup_option=false
-  ssh_status_option=false
-
-  # New experimental option flags.
-  ufw_option=false
-  qtile_udev_option=false
-  touchpad_option=false
-  intel_option=false
-  thinkfan_option=false
-  tlp_option=false
-  remove_gnome_option=false
-  zenpower_option=false
-  switch_nvidia_open_option=false
-  nvidia_cuda_option=false
-  vaapi_option=false
-  protonvpn_option=false
-  update_system_option=false
-  virt_option=false
-  install_vscode_option=false
-  setup_default_applications_option=false
-  sddm_autologin_option=false
-  nfancurve_option=false
-
-  # Process command-line options.
-  while getopts "abBcdDEeFfGghHIiAalLjkKnNopPrstTuUvVzqQxCMSX" opt; do
-    case $opt in
-      a) all_option=true ;;
-      A) install_app_packages_option=true ;;
-      D) install_dev_packages_option=true ;;
-      G) install_games_packages_option=true ;;
-      b) brave_option=true ;;
-      B) borgbackup_option=true ;;
-      c) touchpad_option=true ;;
-      e) intel_option=true ;;
-      H) hyprland_option=true ;;
-      i) install_core_packages_option=true ;;
-      I) install_system_specific_packages_option=true ;;
-      s) syncthing_option=true ;;
-      S) sddm_option=true ;;
-      X) sddm_autologin_option=true ;;
-      d) pm_speed_option=true ;;
-      V) virt_option=true ;;
-      F) flatpak_option=true ;;
-      f) config_option=true ;;
-      L) lazygit_option=true ;;
-      q) qtile_option=true ;;
-      Q) qtile_udev_option=true ;;
-      r) rpm_option=true ;;
-      x) swap_ffmpeg_option=true ;;
-      o) ollama_option=true ;;
-      g) remove_gnome_option=true ;;
-      n) nvidia_cuda_option=true ;;
-      N) switch_nvidia_open_option=true ;;
-      v) vaapi_option=true ;;
-      p) protonvpn_option=true ;;
-      P) thinkfan_option=true ;;
-      t) trash_cli_option=true ;;
-      T) tlp_option=true ;;
-      u) update_system_option=true ;;
-      U) ufw_option=true ;;
-      z) zenpower_option=true ;;
-      C) install_vscode_option=true ;;
-      M) setup_default_applications_option=true ;;
-      E) auto_cpufreq_option=true ;;
-      j) nfancurve_option=true ;;
-      k) ssh_setup_option=true ;;
-      K) ssh_status_option=true ;;
-      h) usage ;;
-      *) usage ;;
+  # Handle help flags first
+  for arg in "$@"; do
+    case "$arg" in
+      -h | --help)
+        usage
+        ;;
     esac
   done
 
-  # If no optional flags were provided, show usage and exit.
-  if [[ "$all_option" == "false" ]] &&
-    [[ "$install_core_packages_option" == "false" ]] &&
-    [[ "$install_system_specific_packages_option" == "false" ]] &&
-    [[ "$install_app_packages_option" == "false" ]] &&
-    [[ "$install_dev_packages_option" == "false" ]] &&
-    [[ "$install_games_packages_option" == "false" ]] &&
-    [[ "$flatpak_option" == "false" ]] &&
-    [[ "$borgbackup_option" == "false" ]] &&
-    [[ "$touchpad_option" == "false" ]] &&
-    [[ "$trash_cli_option" == "false" ]] &&
-    [[ "$tlp_option" == "false" ]] &&
-    [[ "$thinkfan_option" == "false" ]] &&
-    [[ "$syncthing_option" == "false" ]] &&
-    [[ "$qtile_option" == "false" ]] &&
-    [[ "$intel_option" == "false" ]] &&
-    [[ "$qtile_udev_option" == "false" ]] &&
-    [[ "$brave_option" == "false" ]] &&
-    [[ "$rpm_option" == "false" ]] &&
-    [[ "$pm_speed_option" == "false" ]] &&
-    [[ "$swap_ffmpeg_option" == "false" ]] &&
-    [[ "$config_option" == "false" ]] &&
-    [[ "$lazygit_option" == "false" ]] &&
-    [[ "$ollama_option" == "false" ]] &&
-    [[ "$remove_gnome_option" == "false" ]] &&
-    [[ "$zenpower_option" == "false" ]] &&
-    [[ "$nvidia_cuda_option" == "false" ]] &&
-    [[ "$switch_nvidia_open_option" == "false" ]] &&
-    [[ "$vaapi_option" == "false" ]] &&
-    [[ "$protonvpn_option" == "false" ]] &&
-    [[ "$ufw_option" == "false" ]] &&
-    [[ "$update_system_option" == "false" ]] &&
-    [[ "$virt_option" == "false" ]] &&
-    [[ "$install_vscode_option" == "false" ]] &&
-    [[ "$hyprland_option" == "false" ]] &&
-    [[ "$sddm_option" == "false" ]] &&
-    [[ "$sddm_autologin_option" == "false" ]] &&
-    [[ "$auto_cpufreq_option" == "false" ]] &&
-    [[ "$setup_default_applications_option" == "false" ]] &&
-    [[ "$nfancurve_option" == "false" ]] &&
-    [[ "$ssh_setup_option" == "false" ]] &&
-    [[ "$ssh_status_option" == "false" ]]; then
-    log_warn "No options specified"
-    usage
-  fi
+  log_debug "Initializing script with args: $*"
 
-  # Display detected distribution and system information
+  # CLI arrays
+  local -a install_components=()
+  local -a setup_tools=()
+  local -a config_types=()
+  local -a enable_repos=()
+  local dry_run=false
+  local system_type_override=""
+
+  # Process CLI arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --install)
+        if [[ -z "$2" || "$2" == --* ]]; then
+          log_error "--install requires a comma-separated list of components"
+          exit 1
+        fi
+        local -a components
+        parse_csv "$2" components
+        for component in "${components[@]}"; do
+          if validate_install_component "$component"; then
+            install_components+=("$component")
+          else
+            exit 1
+          fi
+        done
+        shift 2
+        ;;
+
+      --setup)
+        if [[ -z "$2" || "$2" == --* ]]; then
+          log_error "--setup requires a comma-separated list of tools"
+          exit 1
+        fi
+        local -a tools
+        parse_csv "$2" tools
+        for tool in "${tools[@]}"; do
+          if validate_setup_tool "$tool"; then
+            setup_tools+=("$tool")
+          else
+            exit 1
+          fi
+        done
+        shift 2
+        ;;
+
+      --config)
+        if [[ -z "$2" || "$2" == --* ]]; then
+          log_error "--config requires a comma-separated list of configuration types"
+          exit 1
+        fi
+        local -a configs
+        parse_csv "$2" configs
+        for config in "${configs[@]}"; do
+          if validate_config_type "$config"; then
+            config_types+=("$config")
+          else
+            exit 1
+          fi
+        done
+        shift 2
+        ;;
+
+      --enable-repo)
+        if [[ -z "$2" || "$2" == --* ]]; then
+          log_error "--enable-repo requires a comma-separated list of repositories"
+          exit 1
+        fi
+        local -a repos
+        parse_csv "$2" repos
+        for repo in "${repos[@]}"; do
+          if validate_repo "$repo"; then
+            enable_repos+=("$repo")
+          else
+            exit 1
+          fi
+        done
+        shift 2
+        ;;
+
+      --system-type)
+        if [[ -z "$2" || "$2" == --* ]]; then
+          log_error "--system-type requires a value (laptop|desktop|server)"
+          exit 1
+        fi
+        if [[ ! "$2" =~ ^(laptop|desktop|server)$ ]]; then
+          log_error "Invalid system type: '$2'. Must be: laptop, desktop, or server"
+          exit 1
+        fi
+        system_type_override="$2"
+        shift 2
+        ;;
+
+      --dry-run)
+        dry_run=true
+        shift
+        ;;
+
+      --verbose)
+        LOG_LEVEL="DEBUG"
+        shift
+        ;;
+
+      *)
+        log_error "Unknown option: $1"
+        log_error "Run '$0 --help' for usage information"
+        exit 1
+        ;;
+    esac
+  done
+
+  # Validate that at least one action is specified
+  if [[ ${#install_components[@]} -eq 0 ]] \
+    && [[ ${#setup_tools[@]} -eq 0 ]] \
+    && [[ ${#config_types[@]} -eq 0 ]] \
+    && [[ ${#enable_repos[@]} -eq 0 ]]; then
+    log_error "No actions specified. Use --install, --setup, --config, or --enable-repo"
+    exit 1
+  fi # Display detected distribution and system information
   local distro_name
   distro_name=$(get_distro_pretty_name)
   log_info "==========================================="
   log_info "Distribution: $distro_name"
   log_info "Distro Family: $CURRENT_DISTRO"
-  
-  #TODO: device detection desktop, laptop need better logic than hostname.
-  # system_type=$(detect_system_type)
-  # log_info "Device Type: $system_type"
-  # log_info "==========================================="
 
-  local need_core_packages=false
-  #TESTING: new options lazygit,ufw and add more if needed
-  if $all_option || $qtile_option || $trash_cli_option || $borgbackup_option || $syncthing_option || $ufw_option || $lazygit_option || $virt_option; then
-    need_core_packages=true
-    log_debug "Core packages are needed due to selected options"
+  # Set system type (override or detect)
+  local system_type
+  if [[ -n "$system_type_override" ]]; then
+    system_type="$system_type_override"
+    log_info "System Type: $system_type (overridden)"
+  else
+    # TODO: device detection desktop, laptop need better logic than hostname.
+    system_type="desktop" # Default for now
+    log_debug "System Type: $system_type (detected)"
   fi
+  log_info "==========================================="
 
-  # Apply package manager speedup if any options requiring package installation are enabled
-  #TODO: we don't need to speedup, for simplicity we let user to call it with command line argument.
-  # if needs_dnf_speedup; then
-  #   log_info "Optimizing package manager configuration for faster package operations..."
-  #   speed_up_package_manager || log_warn "Failed to optimize package manager configuration"
-  # fi
+  # Dry-run preview
+  if $dry_run; then
+    log_info "🔍 DRY RUN MODE - Preview of actions (nothing will be executed)"
+    echo ""
 
-  # Install core packages.
-  if $need_core_packages; then
-    install_core_packages
-  fi
-
-  #TODO: currently we don't use this logic anymore
-  # We need a better logic for this, we might be use functions to handle this or
-  # completely new feature the handle device specific options.
-  # # If laptop or desktop option is selected, install system-specific packages.
-  # if $tlp_option || $thinkfan_option || $install_system_specific_packages_option; then
-  #   install_system_specific_packages "$system_type"
-  # fi
-
-  # if $nvidia_cuda_option || $switch_nvidia_open_option || $vaapi_option || $borgbackup_option; then
-  #   install_system_specific_packages "$system_type"
-  # fi
-
-  # Handle all_option logic
-  if $all_option; then
-    log_info "Executing all additional functions..."
-
-    # Install all package types
-    install_core_packages
-    install_app_packages
-    install_dev_packages
-    install_games_packages
-    install_system_specific_packages "$system_type"
-
-    # System-specific additional functions.
-    #NOTE: This starts first to make sure hostname is changed first
-    if [[ "$system_type" == "laptop" ]]; then
-      log_info "Executing laptop-specific functions..."
-      #TODO: are we sure we want to call this every time?
-      # laptop_hostname_change
-      tlp_setup
-      thinkfan_setup
-      touchpad_setup
-      xorg_setup_intel
-    elif [[ "$system_type" == "desktop" ]]; then
-      log_info "Executing desktop-specific functions..."
-      # Desktop-specific functions could be added here.
-      switch_nvidia_open
-      nvidia_cuda_setup
-      vaapi_setup
-      borgbackup_setup
-      nfancurve_setup
-      # zenpower_setup #WARN: is it safe?
+    if [[ ${#install_components[@]} -gt 0 ]]; then
+      echo "📦 INSTALL COMPONENTS:"
+      for component in "${install_components[@]}"; do
+        echo "  - $component"
+      done
+      echo ""
     fi
 
-    enable_rpm_fusion
-    install_qtile_packages
-    setup_qtile_backlight_rules
-    ffmpeg_swap
-    setup_files
-    switch_ufw_setup
+    if [[ ${#setup_tools[@]} -gt 0 ]]; then
+      echo "🔧 SETUP TOOLS:"
+      for tool in "${setup_tools[@]}"; do
+        echo "  - $tool"
+      done
+      echo ""
+    fi
 
-    # nopasswdlogin_group
-    # services
-    syncthing_setup
-    trash_cli_setup
+    if [[ ${#config_types[@]} -gt 0 ]]; then
+      echo "⚙️  APPLY CONFIGURATIONS:"
+      for config in "${config_types[@]}"; do
+        echo "  - $config"
+      done
+      echo ""
+    fi
 
-    # app installations
-    install_brave
-    install_lazygit
-    install_protonvpn
-    install_flatpak_packages
-    setup_default_applications
+    if [[ ${#enable_repos[@]} -gt 0 ]]; then
+      echo "📚 ENABLE REPOSITORIES:"
+      for repo in "${enable_repos[@]}"; do
+        echo "  - $repo"
+      done
+      echo ""
+    fi
 
-  else
-    log_info "Executing selected additional functions..."
-    if $ufw_option; then switch_ufw_setup; fi
-    if $lazygit_option; then install_lazygit; fi
-    if $install_core_packages_option; then install_core_packages; fi
-    if $install_app_packages_option; then install_app_packages; fi
-    if $install_dev_packages_option; then install_dev_packages; fi
-    if $install_games_packages_option; then install_games_packages; fi
-    if $install_system_specific_packages_option; then install_system_specific_packages "$system_type"; fi
-    if $touchpad_option; then touchpad_setup; fi
-    if $intel_option; then xorg_setup_intel; fi
-    if $flatpak_option; then install_flatpak_packages; fi
-    if $qtile_option; then install_qtile_packages; fi
-    if $qtile_udev_option; then setup_qtile_backlight_rules; fi
-    if $brave_option; then install_brave; fi
-    if $rpm_option; then enable_rpm_fusion; fi
-    if $trash_cli_option; then trash_cli_setup; fi
-    if $tlp_option; then tlp_setup; fi
-    if $thinkfan_option; then thinkfan_setup; fi
-    if $syncthing_option; then syncthing_setup; fi
-    if $borgbackup_option; then borgbackup_setup; fi
-    if $pm_speed_option; then speed_up_package_manager; fi
-    if $swap_ffmpeg_option; then ffmpeg_swap; fi
-    if $ollama_option; then install_ollama; fi
-    if $config_option; then setup_files; fi
-    if $remove_gnome_option; then remove_gnome; fi
-    if $zenpower_option; then zenpower_setup; fi
-    if $nvidia_cuda_option; then nvidia_cuda_setup; fi
-    if $switch_nvidia_open_option; then switch_nvidia_open; fi
-    if $vaapi_option; then vaapi_setup; fi
-    if $protonvpn_option; then install_protonvpn; fi
-    if $update_system_option; then system_updates; fi
-    if $virt_option; then virt_manager_setup; fi
-    if $install_vscode_option; then install_vscode; fi
-    if $setup_default_applications_option; then setup_default_applications; fi
-    if $auto_cpufreq_option; then install_auto_cpufreq; fi
-    if $hyprland_option; then install_hyprland; fi
-    if $sddm_option; then switch_to_sddm; fi
-    if $sddm_autologin_option; then sddm_autologin; fi
-    if $nfancurve_option; then nfancurve_setup; fi
-    if $ssh_setup_option; then ssh_setup; fi
-    if $ssh_status_option; then ssh_status; fi
+    log_info "To execute these actions, run the same command without --dry-run"
+    exit 0
   fi
 
-  log_info "Script execution completed."
+  # Execute install components
+  if [[ ${#install_components[@]} -gt 0 ]]; then
+    log_info "Installing components: ${install_components[*]}"
+    for component in "${install_components[@]}"; do
+      case "$component" in
+        core)
+          install_core_packages
+          ;;
+        apps)
+          install_app_packages
+          ;;
+        dev)
+          install_dev_packages
+          ;;
+        games)
+          install_games_packages
+          ;;
+        laptop)
+          install_system_specific_packages "laptop"
+          ;;
+        desktop)
+          install_system_specific_packages "desktop"
+          ;;
+        homeserver)
+          install_system_specific_packages "homeserver"
+          ;;
+        flatpak)
+          install_flatpak_packages
+          ;;
+      esac
+    done
+  fi
+
+  # Execute setup tools
+  if [[ ${#setup_tools[@]} -gt 0 ]]; then
+    log_info "Setting up tools: ${setup_tools[*]}"
+    for tool in "${setup_tools[@]}"; do
+      case "$tool" in
+        brave) install_brave ;;
+        vscode) install_vscode ;;
+        qtile) install_qtile_packages ;;
+        lazygit) install_lazygit ;;
+        ollama) install_ollama ;;
+        protonvpn) install_protonvpn ;;
+        ohmyzsh) install_ohmyzsh ;;
+        tlp) tlp_setup ;;
+        thinkfan) thinkfan_setup ;;
+        auto-cpufreq) install_auto_cpufreq ;;
+        trash-cli) trash_cli_setup ;;
+        borgbackup) borgbackup_setup ;;
+        syncthing) syncthing_setup ;;
+        ufw) switch_ufw_setup ;;
+        hyprland) install_hyprland ;;
+        sddm) switch_to_sddm ;;
+        sddm-autologin) sddm_autologin ;;
+        virt-manager) virt_manager_setup ;;
+        nvidia-cuda) nvidia_cuda_setup ;;
+        nvidia-open) switch_nvidia_open ;;
+        vaapi) vaapi_setup ;;
+        intel-xorg) xorg_setup_intel ;;
+        nfancurve) nfancurve_setup ;;
+        zenpower) zenpower_setup ;;
+        qtile-udev) setup_qtile_backlight_rules ;;
+        touchpad) touchpad_setup ;;
+        pm-speedup) speed_up_package_manager ;;
+        ffmpeg-swap) ffmpeg_swap ;;
+        remove-gnome) remove_gnome ;;
+        update-system) system_updates ;;
+        ssh) ssh_setup ;;
+      esac
+    done
+  fi
+
+  # Execute configurations
+  if [[ ${#config_types[@]} -gt 0 ]]; then
+    log_info "Applying configurations: ${config_types[*]}"
+    for config in "${config_types[@]}"; do
+      case "$config" in
+        system)
+          setup_files
+          ;;
+        default-apps)
+          setup_default_applications
+          ;;
+      esac
+    done
+  fi
+
+  # Enable repositories
+  if [[ ${#enable_repos[@]} -gt 0 ]]; then
+    log_info "Enabling repositories: ${enable_repos[*]}"
+    for repo in "${enable_repos[@]}"; do
+      case "$repo" in
+        rpm-fusion)
+          enable_rpm_fusion
+          ;;
+        flathub)
+          log_info "Flathub is enabled by default with Flatpak installation"
+          ;;
+      esac
+    done
+  fi
+
+  log_info "✅ All tasks completed successfully!"
+  exit 0
 }
 
 # Execute main with provided command-line arguments.

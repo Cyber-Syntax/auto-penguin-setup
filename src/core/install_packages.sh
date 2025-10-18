@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
 # Install system-specific packages
+# Usage: install_system_specific_packages <system_type>
+#   system_type: laptop, desktop, or homeserver
 install_system_specific_packages() {
-  local system_type
-  system_type=$(detect_system_type)
+  local system_type="$1"
+
+  # Validate input
+  if [[ -z "$system_type" ]]; then
+    log_error "System type is required. Usage: install_system_specific_packages <laptop|desktop|homeserver>"
+    return 1
+  fi
+
   local pkg_list=()
 
   case "$system_type" in
@@ -15,9 +23,13 @@ install_system_specific_packages() {
       log_info "Installing laptop-specific packages..."
       pkg_list=("${LAPTOP_PACKAGES[@]}")
       ;;
+    homeserver)
+      log_info "Installing home server-specific packages..."
+      pkg_list=("${HOMESERVER_PACKAGES[@]}")
+      ;;
     *)
-      log_warn "Unknown system type '$system_type'. Skipping system-specific packages."
-      return 0
+      log_error "Unknown system type '$system_type'. Valid types: laptop, desktop, homeserver"
+      return 1
       ;;
   esac
 
@@ -27,7 +39,7 @@ install_system_specific_packages() {
     return 0
   fi
 
-  log_debug "Package list: ${pkg_list[*]}"
+  log_debug "Package list for $system_type: ${pkg_list[*]}"
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
@@ -38,28 +50,28 @@ install_system_specific_packages() {
 
   # Install packages using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
-    log_error "Error: Failed to install some $system_type packages."
+    log_error "Failed to install some $system_type packages"
     return 1
   fi
 
-  log_info "${system_type^} packages installation completed."
+  log_info "${system_type^} packages installation completed"
 }
 
 install_core_packages() {
   log_info "Installing core packages..."
-  
+
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
   mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${CORE_PACKAGES[@]}") || {
     log_error "Failed to map core packages"
     return 1
   }
-  
+
   log_debug "Mapped ${#mapped_array[@]} packages:"
   for i in "${!mapped_array[@]}"; do
     log_debug "  [$i]: '${mapped_array[$i]}'"
   done
-  
+
   # Install using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
     log_error "Error: Failed to install core packages." >&2
@@ -71,14 +83,14 @@ install_core_packages() {
 
 install_app_packages() {
   log_info "Installing application packages..."
-  
+
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
   mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${APPS_PACKAGES[@]}") || {
     log_error "Failed to map application packages"
     return 1
   }
-  
+
   # Install using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
     log_error "Error: Failed to install application packages." >&2
@@ -90,14 +102,14 @@ install_app_packages() {
 
 install_dev_packages() {
   log_info "Installing development packages..."
-  
+
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
   mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${DEV_PACKAGES[@]}") || {
     log_error "Failed to map development packages"
     return 1
   }
-  
+
   # Install using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
     log_error "Error: Failed to install development packages." >&2
@@ -109,14 +121,14 @@ install_dev_packages() {
 
 install_games_packages() {
   log_info "Installing games..."
-  
+
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
   mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${GAMES_PACKAGES[@]}") || {
     log_error "Failed to map games packages"
     return 1
   }
-  
+
   # Install using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
     log_error "Error: Failed to install games." >&2
