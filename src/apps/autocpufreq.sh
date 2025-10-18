@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#TODO: write enable it function
+
 # Purpose: Installs auto-cpufreq from GitHub repository for automatic CPU speed and power optimization
 #NOTE: available in AUR, snap, auto-cpufreq-installer from github.
 # it is better to use github installer on most distros which seems like others cause issues.

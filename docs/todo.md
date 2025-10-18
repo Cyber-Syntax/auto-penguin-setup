@@ -9,7 +9,7 @@
 
 - [ ] install_system_specific_packages
 - [ ] tlp_setup
-- [ ] thinkfan_setup
+- [x] thinkfan_setup
 - [ ] ffmpeg_swap
 - [ ] install_ollama
 - [ ] nvidia_cuda_setup

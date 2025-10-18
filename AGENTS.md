@@ -23,6 +23,7 @@ auto-penguin-setup is a cross-distribution Linux system setup automation tool wr
 ## Setup Commands
 
 ### Running the Setup
+> Never run setup.sh as root directly, script handles sudo internally.
 
 ```bash
 # Show help and available options

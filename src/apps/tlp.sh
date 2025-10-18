@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+#TODO: refactor function enable for better clearity
+# one fuction is for installs and other is for enabling/configuring
+# we might have subcommands in future for each app so better to keep them separate
+
 #TODO: fallback for power-profile-daemon and tuned if tlp fails
 tlp_setup() {
   log_info "Setting up TLP for power management..."
