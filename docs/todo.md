@@ -8,8 +8,6 @@
 ## todo
 
 - [ ] install_system_specific_packages
-- [ ] install_flatpak_packages
-- [ ] enable_rpm_fusion
 - [ ] tlp_setup
 - [ ] thinkfan_setup
 - [ ] ffmpeg_swap
@@ -19,14 +17,11 @@
 - [ ] vaapi_setup
 - [ ] install_protonvpn
 - [ ] system_updates
-- [ ] virt_manager_setup
-- [ ] setup_default_applications
-- [ ] install_auto_cpufreq
+- [x] virt_manager_setup
 - [ ] install_hyprland
 - [ ] switch_to_sddm
 - [ ] sddm_autologin
 - [ ] nfancurve_setup
-- [ ] install_lazygit
 - [ ] borgbackup_setup
 
 
@@ -44,6 +39,10 @@
 
 ## done
 
+- [x] setup_default_applications
+- [x] enable_rpm_fusion
+- [x] install_flatpak_packages
+- [x] install_lazygit
 - [x] zenpower_setup
 - [x] touchpad_setup
 - [x] intel_xorg_config
