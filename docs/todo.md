@@ -17,7 +17,6 @@
 - [ ] vaapi_setup
 - [ ] install_protonvpn
 - [ ] system_updates
-- [x] virt_manager_setup
 - [ ] install_hyprland
 - [ ] switch_to_sddm
 - [ ] sddm_autologin
@@ -39,6 +38,7 @@
 
 ## done
 
+- [x] virt_manager_setup
 - [x] setup_default_applications
 - [x] enable_rpm_fusion
 - [x] install_flatpak_packages

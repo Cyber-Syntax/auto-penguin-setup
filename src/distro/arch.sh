@@ -36,6 +36,14 @@ install_paru_helper() {
     return 0
   fi
 
+  #TODO: Research and make this more robust specificall for user GPG setup
+  #HACK: Make sure pubring.kbx exists for GPG, 
+  # .local/share/gnupg and ~/.gnupg/ are locations
+  if [[ ! -f "${HOME}/.local/share/gnupg/pubring.kbx" && ! -f "${HOME}/.gnupg/pubring.kbx" ]]; then
+    log_info "Creating GPG keyring..."
+    gpg --list-keys &>/dev/null
+  fi
+
   # Install build dependencies
   log_info "Installing build dependencies..."
   if ! sudo pacman -S --needed --noconfirm base-devel git; then

@@ -5,11 +5,44 @@ thinkfan_setup() {
   local dir_thinkfan="/etc/thinkfan.conf"
   local thinkfan_file="./configs/thinkfan.conf"
 
+  # Ensure package manager is initialized and try to install thinkfan when missing.
+  # Uses the project's package manager abstraction which supports AUR and COPR via
+  # pm_install, init_package_manager, pm_is_installed, and distro detection helpers.
+  if source src/core/package_manager.sh >/dev/null 2>&1 && init_package_manager; then
+    # pm_is_installed returns 0 when installed
+    if ! pm_is_installed thinkfan; then
+      log_info "thinkfan not installed — attempting to install for distro: ${CURRENT_DISTRO:-unknown}"
+      if is_arch; then
+        # On Arch, prefer installing from AUR (package manager abstraction understands AUR: prefix)
+        if ! pm_install "AUR:thinkfan"; then
+          log_error "Failed to install thinkfan from AUR"
+          return 1
+        fi
+      else
+        # Debian/Fedora should have thinkfan in official repos
+        if ! pm_install thinkfan; then
+          log_error "Failed to install thinkfan package from distro repositories"
+          return 1
+        fi
+      fi
+    else
+      log_debug "thinkfan package already installed"
+    fi
+  else
+    log_warn "Package manager initialization failed; skipping automatic installation. Ensure thinkfan is installed manually."
+  fi
+
   # backup if there is no backup
   if [[ ! -f "/etc/thinkfan.conf.bak" ]]; then
     if ! sudo cp /etc/thinkfan.conf /etc/thinkfan.conf.bak; then
       log_warn "Failed to create backup of thinkfan configuration"
     fi
+  fi
+
+  # check thinkfan binary exists
+  if ! command -v thinkfan >/dev/null 2>&1; then
+    log_error "thinkfan binary not found after attempted installation. Please install thinkfan and try again."
+    return 1
   fi
 
   if ! sudo cp "$thinkfan_file" "$dir_thinkfan"; then
@@ -24,11 +57,11 @@ thinkfan_setup() {
     return 1
   fi
 
-  if ! modprobe -rv thinkpad_acpi; then
+  if ! sudo modprobe -rv thinkpad_acpi; then
     log_warn "Failed to remove thinkpad_acpi module"
   fi
 
-  if ! modprobe -v thinkpad_acpi; then
+  if ! sudo modprobe -v thinkpad_acpi; then
     log_warn "Failed to load thinkpad_acpi module"
   fi
 
