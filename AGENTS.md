@@ -8,6 +8,9 @@ This file provides guidance to agents when working with code in this repository.
 2. KISS (Keep It Simple, Stupid): Aim for simplicity and clarity. Avoid unnecessary abstractions or metaprogramming.
 3. DRY (Don't Repeat Yourself): Reuse code appropriately but avoid over-engineering. Each command handler has single responsibility.
 4. Confirm understanding before making changes: If you're unsure about the purpose of a piece of code, ask for clarification rather than making assumptions.
+5. **ALWAYS** use `shellcheck` on each file you modify to ensure proper formatting and linting. This runs both syntax and lint checks on individual files. Unless you want to lint and format multiple files, then use `shellcheck -f` and `shellcheck -l` instead.
+6. When creating bash scripts, prefer plain bash constructs and avoid unnecessary complexity. Keep functions small and focused. Use built-in bash features where appropriate, but avoid overusing them.
+
 
 ## Project Overview
 
@@ -23,6 +26,7 @@ auto-penguin-setup is a cross-distribution Linux system setup automation tool wr
 ## Setup Commands
 
 ### Running the Setup
+>
 > Never run setup.sh as root directly, script handles sudo internally.
 
 ```bash
@@ -38,8 +42,8 @@ auto-penguin-setup is a cross-distribution Linux system setup automation tool wr
 
 1. `src/core/logging.sh` - **ALWAYS FIRST** (provides logging functions)
 2. `src/core/distro_detection.sh` - Detects distribution
-3. `src/core/package_manager.sh` - Initializes package manager abstraction
-4. `src/core/package_mapping.sh` - Sets up package name mappings
+3. `src/core/package_mapping.sh` - Sets up package name mappings (required by package_manager)
+4. `src/core/package_manager.sh` - Initializes package manager abstraction
 5. `src/core/repository_manager.sh` - Repository management
 6. `src/core/config.sh` - Loads user configurations
 7. `src/core/install_packages.sh` - Package installation wrapper
