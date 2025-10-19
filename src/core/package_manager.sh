@@ -84,10 +84,173 @@ init_package_manager() {
   return 0
 }
 
-# Purpose: Install packages using the detected package manager
-# Handles regular packages, AUR packages (Arch), and COPR packages (Fedora)
+# Purpose: Enable COPR repositories (Fedora only)
 # Parameters:
-#   $@ - Package names to install (may include AUR: or COPR: prefixes)
+#   $@ - COPR repository names (format: user/repo)
+# Returns: 0 on success, 1 on failure
+_enable_copr_repos() {
+  local repos=("$@")
+
+  if [[ ${#repos[@]} -eq 0 ]]; then
+    log_debug "No COPR repositories to enable"
+    return 0
+  fi
+
+  log_info "Enabling ${#repos[@]} COPR repositories..."
+
+  # Ensure dnf-plugins-core is installed
+  log_debug "Ensuring dnf-plugins-core is installed"
+  sudo dnf install -y dnf-plugins-core &>/dev/null || true
+
+  for repo in "${repos[@]}"; do
+    log_info "Enabling COPR repository: $repo"
+    if ! sudo dnf copr enable -y "$repo"; then
+      log_warn "Failed to enable COPR repository: $repo (may already be enabled)"
+      # Continue anyway, repo might already be enabled
+    fi
+  done
+
+  return 0
+}
+
+# Purpose: Install packages on Fedora (handles COPR repositories)
+# Parameters:
+#   $@ - Package names (may include COPR: prefix)
+# Returns: 0 on success, 1 on failure
+_pm_install_fedora() {
+  local regular_pkgs=()
+  local copr_pkgs=()
+  local -A copr_repos_to_enable
+
+  # Categorize packages (ONLY check for COPR, not AUR)
+  for pkg in "$@"; do
+    if is_copr_package "$pkg"; then
+      # Extract COPR repository and package name
+      local copr_repo
+      copr_repo=$(extract_copr_repo "$pkg")
+
+      local pkg_name
+      pkg_name=$(extract_copr_package "$pkg" "")
+
+      if [[ -z "$pkg_name" ]]; then
+        log_error "Failed to extract package name from COPR mapping: $pkg"
+        continue
+      fi
+
+      # Add package to COPR list and track repo
+      copr_pkgs+=("$pkg_name")
+      copr_repos_to_enable["$copr_repo"]=1
+      log_debug "Categorized as COPR: $pkg -> repo: $copr_repo, pkg: $pkg_name"
+    else
+      # Regular package
+      regular_pkgs+=("$pkg")
+      log_debug "Categorized as regular: $pkg"
+    fi
+  done
+
+  # Enable COPR repositories
+  if [[ ${#copr_repos_to_enable[@]} -gt 0 ]]; then
+    _enable_copr_repos "${!copr_repos_to_enable[@]}" || return 1
+  fi
+
+  # Install all packages together
+  local all_pkgs=("${regular_pkgs[@]}" "${copr_pkgs[@]}")
+  if [[ ${#all_pkgs[@]} -gt 0 ]]; then
+    log_info "Installing ${#all_pkgs[@]} packages: ${all_pkgs[*]}"
+    if ! "${PM_INSTALL_CMD[@]}" "${all_pkgs[@]}"; then
+      log_error "Failed to install packages"
+      return 1
+    fi
+    log_success "Packages installed successfully"
+  fi
+
+  return 0
+}
+
+# Purpose: Install packages on Arch (handles AUR packages)
+# Parameters:
+#   $@ - Package names (may include AUR: prefix)
+# Returns: 0 on success, 1 on failure
+_pm_install_arch() {
+  local regular_pkgs=()
+  local aur_pkgs=()
+  local install_failed=0
+
+  # Categorize packages (ONLY check for AUR, not COPR)
+  for pkg in "$@"; do
+    if is_aur_package "$pkg"; then
+      local aur_name
+      aur_name=$(extract_aur_package "$pkg")
+      aur_pkgs+=("$aur_name")
+      log_debug "Categorized as AUR: $pkg -> $aur_name"
+    else
+      # Regular package
+      regular_pkgs+=("$pkg")
+      log_debug "Categorized as regular: $pkg"
+    fi
+  done
+
+  # Install regular packages
+  if [[ ${#regular_pkgs[@]} -gt 0 ]]; then
+    log_info "Installing ${#regular_pkgs[@]} regular packages: ${regular_pkgs[*]}"
+    if ! "${PM_INSTALL_CMD[@]}" "${regular_pkgs[@]}"; then
+      log_error "Failed to install regular packages"
+      install_failed=1
+    else
+      log_success "Regular packages installed successfully"
+    fi
+  fi
+
+  # Install AUR packages
+  if [[ ${#aur_pkgs[@]} -gt 0 ]]; then
+    log_info "Installing ${#aur_pkgs[@]} AUR packages: ${aur_pkgs[*]}"
+    if ! _install_aur_packages "${aur_pkgs[@]}"; then
+      log_error "Failed to install AUR packages"
+      install_failed=1
+    else
+      log_success "AUR packages installed successfully"
+    fi
+  fi
+
+  if [[ $install_failed -eq 1 ]]; then
+    log_error "Some packages failed to install"
+    return 1
+  fi
+
+  return 0
+}
+
+# Purpose: Install packages on Debian (no special repository handling)
+# Parameters:
+#   $@ - Package names
+# Returns: 0 on success, 1 on failure
+_pm_install_debian() {
+  # No categorization needed - all packages are regular
+  if [[ $# -eq 0 ]]; then
+    log_warn "No packages specified for installation"
+    return 0
+  fi
+
+  log_info "Installing ${#@} packages: $*"
+  if ! "${PM_INSTALL_CMD[@]}" "$@"; then
+    log_error "Failed to install packages"
+    return 1
+  fi
+
+  log_success "Packages installed successfully"
+  return 0
+}
+
+# COPR and AUR package handling:
+# - COPR repositories are automatically enabled when packages are mapped with COPR: prefix
+# - AUR packages are handled automatically when mapped with AUR: prefix
+# See docs/COPR_AUR_HANDLING.md for details
+#
+# Purpose: Install packages using distribution-specific logic
+# Automatically routes to appropriate handler based on CURRENT_DISTRO
+# Parameters:
+#   $@ - Package names (may include AUR: or COPR: prefixes for Arch/Fedora)
+# Returns: 0 on success, 1 on failure
 pm_install() {
   # Check if array is set and has elements (safe with set -u)
   if [[ ! -v PM_INSTALL_CMD[@] ]] || [[ ${#PM_INSTALL_CMD[@]} -eq 0 ]]; then
@@ -102,97 +265,22 @@ pm_install() {
 
   log_info "Processing ${#@} packages for installation"
 
-  # Categorize packages into: regular, AUR, and COPR
-  local regular_pkgs=()
-  local aur_pkgs=()
-  local -A copr_map # Maps COPR repo -> package name
-
-  for pkg in "$@"; do
-    if is_aur_package "$pkg"; then
-      # Extract AUR package name (remove AUR: prefix)
-      local aur_name
-      aur_name=$(extract_aur_package "$pkg")
-      aur_pkgs+=("$aur_name")
-      log_debug "Categorized as AUR: $pkg -> $aur_name"
-    elif is_copr_package "$pkg"; then
-      # Extract COPR repository (remove COPR: prefix)
-      local copr_repo
-      copr_repo=$(extract_copr_repo "$pkg")
-
-      # For COPR, we need to extract the package name from the repo
-      # Format: COPR:user/repo where 'repo' is often the package name
-      # But sometimes it's COPR:user/pkgname where pkgname != repo
-      local pkg_name="${copr_repo##*/}" # Get last part after /
-
-      copr_map["$copr_repo"]="$pkg_name"
-      log_debug "Categorized as COPR: $pkg -> repo: $copr_repo, pkg: $pkg_name"
-    else
-      # Regular package
-      regular_pkgs+=("$pkg")
-      log_debug "Categorized as regular: $pkg"
-    fi
-  done
-
-  # Track overall success
-  local install_failed=0
-
-  # Install regular packages
-  if [[ ${#regular_pkgs[@]} -gt 0 ]]; then
-    log_info "Installing ${#regular_pkgs[@]} regular packages: ${regular_pkgs[*]}"
-    if ! "${PM_INSTALL_CMD[@]}" "${regular_pkgs[@]}"; then
-      log_error "Failed to install regular packages"
-      install_failed=1
-    else
-      log_success "Regular packages installed successfully"
-    fi
-  fi
-
-  # Install AUR packages (Arch only)
-  if [[ ${#aur_pkgs[@]} -gt 0 ]]; then
-    if [[ "$CURRENT_DISTRO" != "arch" ]]; then
-      log_warn "AUR packages are only supported on Arch Linux. Skipping: ${aur_pkgs[*]}"
-    else
-      log_info "Installing ${#aur_pkgs[@]} AUR packages: ${aur_pkgs[*]}"
-      if ! _install_aur_packages "${aur_pkgs[@]}"; then
-        log_error "Failed to install AUR packages"
-        install_failed=1
-      else
-        log_success "AUR packages installed successfully"
-      fi
-    fi
-  fi
-
-  # Install COPR packages (Fedora only)
-  if [[ -v copr_map[@] ]] && [[ ${#copr_map[@]} -gt 0 ]]; then
-    if [[ "$CURRENT_DISTRO" != "fedora" ]]; then
-      log_warn "COPR packages are only supported on Fedora. Skipping: ${!copr_map[*]}"
-    else
-      log_info "Installing ${#copr_map[@]} COPR packages from ${#copr_map[@]} repos"
-
-      # Convert associative array to parallel arrays for passing to function
-      local copr_repos=()
-      local copr_pkgs=()
-      for repo in "${!copr_map[@]}"; do
-        copr_repos+=("$repo")
-        copr_pkgs+=("${copr_map[$repo]}")
-      done
-
-      if ! _install_copr_packages "${copr_repos[@]}" -- "${copr_pkgs[@]}"; then
-        log_error "Failed to install COPR packages"
-        install_failed=1
-      else
-        log_success "COPR packages installed successfully"
-      fi
-    fi
-  fi
-
-  if [[ $install_failed -eq 1 ]]; then
-    log_error "Some packages failed to install"
-    return 1
-  fi
-
-  log_success "All packages installed successfully"
-  return 0
+  # Route to distribution-specific function
+  case "$CURRENT_DISTRO" in
+    fedora)
+      _pm_install_fedora "$@"
+      ;;
+    arch)
+      _pm_install_arch "$@"
+      ;;
+    debian)
+      _pm_install_debian "$@"
+      ;;
+    *)
+      log_error "Unsupported distribution: $CURRENT_DISTRO"
+      return 1
+      ;;
+  esac
 }
 
 # Purpose: Install AUR packages using paru or yay
@@ -218,66 +306,6 @@ _install_aur_packages() {
   # Install using AUR helper
   if ! $aur_helper -S --needed --noconfirm "$@"; then
     log_error "Failed to install AUR packages: $*"
-    return 1
-  fi
-
-  return 0
-}
-
-# Purpose: Enable COPR repositories and install packages
-# Parameters:
-#   repos... -- pkgs...
-#   Everything before -- are COPR repos (user/repo format)
-#   Everything after -- are package names to install
-# Returns: 0 on success, 1 on failure
-_install_copr_packages() {
-  local repos=()
-  local pkgs=()
-  local parsing_repos=1
-
-  # Parse arguments: repos before --, packages after --
-  for arg in "$@"; do
-    if [[ "$arg" == "--" ]]; then
-      parsing_repos=0
-      continue
-    fi
-
-    if [[ $parsing_repos -eq 1 ]]; then
-      repos+=("$arg")
-    else
-      pkgs+=("$arg")
-    fi
-  done
-
-  if [[ ${#repos[@]} -eq 0 ]] || [[ ${#pkgs[@]} -eq 0 ]]; then
-    log_error "Invalid arguments to _install_copr_packages"
-    return 1
-  fi
-
-  # Ensure dnf-plugins-core is installed
-  log_debug "Ensuring dnf-plugins-core is installed"
-  sudo dnf install -y dnf-plugins-core &>/dev/null || true
-
-  # Enable each COPR repository and install corresponding package
-  local install_failed=0
-  for i in "${!repos[@]}"; do
-    local repo="${repos[$i]}"
-    local pkg_name="${pkgs[$i]}"
-
-    log_info "Enabling COPR repository: $repo"
-    if ! sudo dnf copr enable -y "$repo"; then
-      log_warn "Failed to enable COPR repository: $repo (may already be enabled)"
-      # Continue anyway, repo might already be enabled
-    fi
-
-    log_info "Installing package '$pkg_name' from COPR repo '$repo'"
-    if ! sudo dnf install -y "$pkg_name"; then
-      log_error "Failed to install package: $pkg_name"
-      install_failed=1
-    fi
-  done
-
-  if [[ $install_failed -eq 1 ]]; then
     return 1
   fi
 

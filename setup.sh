@@ -17,8 +17,8 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 source src/core/logging.sh
 source src/utils/string_utils.sh
 source src/core/distro_detection.sh
-source src/core/package_manager.sh
 source src/core/package_mapping.sh
+source src/core/package_manager.sh
 source src/core/repository_manager.sh
 source src/core/config.sh
 source src/core/install_packages.sh
