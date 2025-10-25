@@ -29,50 +29,50 @@ init_package_manager() {
   log_debug "Before initialization: PM_INSTALL_CMD has ${#PM_INSTALL_CMD[@]} elements"
 
   case "$CURRENT_DISTRO" in
-    fedora)
-      PM_INSTALL_CMD=(sudo dnf install -y)
-      PM_REMOVE_CMD=(sudo dnf remove -y)
-      PM_UPDATE="sudo dnf update -y"
-      PM_SEARCH="dnf search"
-      PM_IS_INSTALLED="rpm -q"
-      ;;
-    arch)
-      # Prefer pacman than paru or yay.
-      is_aur_helper_installed || return 1
+  fedora)
+    PM_INSTALL_CMD=(sudo dnf install -y)
+    PM_REMOVE_CMD=(sudo dnf remove -y)
+    PM_UPDATE="sudo dnf update -y"
+    PM_SEARCH="dnf search"
+    PM_IS_INSTALLED="rpm -q"
+    ;;
+  arch)
+    # Prefer pacman than paru or yay.
+    is_aur_helper_installed || return 1
 
-      #TODO: Research about the commands and make sure they are optimal and doesn't cause issues
-      if command -v pacman &>/dev/null; then
-        PM_INSTALL_CMD=(sudo pacman -S --needed --noconfirm)
-        PM_REMOVE_CMD=(sudo pacman -Rns --noconfirm)
-        PM_UPDATE="sudo pacman -Syu --noconfirm"
-        PM_SEARCH="pacman -Ss"
-      elif command -v paru &>/dev/null; then
-        PM_INSTALL_CMD=(paru -S --noconfirm)
-        PM_REMOVE_CMD=(paru -Rns --noconfirm)
-        PM_UPDATE="paru -Syu --noconfirm"
-        PM_SEARCH="paru -Ss"
-      elif command -v yay &>/dev/null; then
-        PM_INSTALL_CMD=(yay -S --noconfirm)
-        PM_REMOVE_CMD=(yay -Rns --noconfirm)
-        PM_UPDATE="yay -Syu --noconfirm"
-        PM_SEARCH="yay -Ss"
-      else
-        log_error "No supported package manager found (pacman, paru, or yay)"
-        return 1
-      fi
-      PM_IS_INSTALLED="pacman -Q"
-      ;;
-    debian)
-      PM_INSTALL_CMD=(sudo apt-get install -y)
-      PM_REMOVE_CMD=(sudo apt-get remove -y)
-      PM_UPDATE="sudo apt-get update && sudo apt-get upgrade -y"
-      PM_SEARCH="apt-cache search"
-      PM_IS_INSTALLED="dpkg -l"
-      ;;
-    *)
-      log_error "Unsupported distribution: $CURRENT_DISTRO"
+    #TODO: Research about the commands and make sure they are optimal and doesn't cause issues
+    if command -v pacman &>/dev/null; then
+      PM_INSTALL_CMD=(sudo pacman -S --needed --noconfirm)
+      PM_REMOVE_CMD=(sudo pacman -Rns --noconfirm)
+      PM_UPDATE="sudo pacman -Syu --noconfirm"
+      PM_SEARCH="pacman -Ss"
+    elif command -v paru &>/dev/null; then
+      PM_INSTALL_CMD=(paru -S --noconfirm)
+      PM_REMOVE_CMD=(paru -Rns --noconfirm)
+      PM_UPDATE="paru -Syu --noconfirm"
+      PM_SEARCH="paru -Ss"
+    elif command -v yay &>/dev/null; then
+      PM_INSTALL_CMD=(yay -S --noconfirm)
+      PM_REMOVE_CMD=(yay -Rns --noconfirm)
+      PM_UPDATE="yay -Syu --noconfirm"
+      PM_SEARCH="yay -Ss"
+    else
+      log_error "No supported package manager found (pacman, paru, or yay)"
       return 1
-      ;;
+    fi
+    PM_IS_INSTALLED="pacman -Q"
+    ;;
+  debian)
+    PM_INSTALL_CMD=(sudo apt-get install -y)
+    PM_REMOVE_CMD=(sudo apt-get remove -y)
+    PM_UPDATE="sudo apt-get update && sudo apt-get upgrade -y"
+    PM_SEARCH="apt-cache search"
+    PM_IS_INSTALLED="dpkg -l"
+    ;;
+  *)
+    log_error "Unsupported distribution: $CURRENT_DISTRO"
+    return 1
+    ;;
   esac
 
   log_debug "After initialization: PM_INSTALL_CMD has ${#PM_INSTALL_CMD[@]} elements"
@@ -149,7 +149,7 @@ _pm_install_fedora() {
   done
 
   # Enable COPR repositories
-  if [[ ${#copr_repos_to_enable[@]} -gt 0 ]]; then
+  if [[ -v copr_repos_to_enable[@] ]] && [[ ${#copr_repos_to_enable[@]} -gt 0 ]]; then
     _enable_copr_repos "${!copr_repos_to_enable[@]}" || return 1
   fi
 
@@ -267,19 +267,19 @@ pm_install() {
 
   # Route to distribution-specific function
   case "$CURRENT_DISTRO" in
-    fedora)
-      _pm_install_fedora "$@"
-      ;;
-    arch)
-      _pm_install_arch "$@"
-      ;;
-    debian)
-      _pm_install_debian "$@"
-      ;;
-    *)
-      log_error "Unsupported distribution: $CURRENT_DISTRO"
-      return 1
-      ;;
+  fedora)
+    _pm_install_fedora "$@"
+    ;;
+  arch)
+    _pm_install_arch "$@"
+    ;;
+  debian)
+    _pm_install_debian "$@"
+    ;;
+  *)
+    log_error "Unsupported distribution: $CURRENT_DISTRO"
+    return 1
+    ;;
   esac
 }
 

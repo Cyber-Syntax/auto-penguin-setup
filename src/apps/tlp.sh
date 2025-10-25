@@ -35,7 +35,7 @@ tlp_setup() {
       return 1
     fi
   fi
-  
+
   # Backup if there is no backup
   if [[ ! -f "/etc/tlp.d/01-mytlp.conf.bak" ]]; then
     if ! sudo cp /etc/tlp.d/01-mytlp.conf /etc/tlp.d/01-mytlp.conf.bak; then
@@ -79,26 +79,26 @@ tlp_setup() {
 
   # 4. power-profile-daemon handling (distro-specific)
   case "$distro" in
-    fedora)
-      if [[ -n "$distro_version" ]] && ((distro_version < 41)); then
-        log_info "Handling power-profile-daemon for Fedora $distro_version..."
-        handle_services 'disable --now' power-profile-daemon
+  fedora)
+    if [[ -n "$distro_version" ]] && ((distro_version < 41)); then
+      log_info "Handling power-profile-daemon for Fedora $distro_version..."
+      handle_services 'disable --now' power-profile-daemon
 
-        if pm_is_installed power-profile-daemon; then
-          if ! pm_remove power-profile-daemon; then
-            log_error "Failed to remove power-profile-daemon"
-            return 1
-          fi
+      if pm_is_installed power-profile-daemon; then
+        if ! pm_remove power-profile-daemon; then
+          log_error "Failed to remove power-profile-daemon"
+          return 1
         fi
       fi
-      ;;
-    arch|debian)
-      # For Arch and Debian, disable power-profile-daemon if installed
-      if pm_is_installed power-profiles-daemon 2>/dev/null; then
-        log_info "Disabling power-profiles-daemon for $distro..."
-        handle_services 'disable --now' power-profiles-daemon
-      fi
-      ;;
+    fi
+    ;;
+  arch | debian)
+    # For Arch and Debian, disable power-profile-daemon if installed
+    if pm_is_installed power-profiles-daemon 2>/dev/null; then
+      log_info "Disabling power-profiles-daemon for $distro..."
+      handle_services 'disable --now' power-profiles-daemon
+    fi
+    ;;
   esac
 
   # 5. Enable TLP services with verification
@@ -123,11 +123,26 @@ tlp_setup() {
     log_warn "Failed to mask systemd-rfkill.socket"
   fi
 
-  # enable tlp radio device handling
-  if ! sudo tlp-rdw enable; then
-    log_warn "Failed to enable TLP radio device handling"
+  # Check if tlp-rdw command exists and install if needed
+  if ! command -v tlp-rdw &>/dev/null; then
+    log_info "tlp-rdw command not found. Attempting to install..."
+    if ! pm_install tlp-rdw; then
+      log_warn "Failed to install tlp-rdw package. Skipping radio device handling."
+    else
+      log_info "tlp-rdw installed successfully"
+    fi
+  fi
+
+  # Enable tlp radio device handling if command is available
+  if command -v tlp-rdw &>/dev/null; then
+    if ! sudo tlp-rdw enable; then
+      log_warn "Failed to enable TLP radio device handling"
+    fi
+  else
+    log_warn "tlp-rdw command not available. Skipping radio device handling."
   fi
 
   log_info "TLP setup completed successfully."
   return 0
 }
+
