@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 thinkfan_setup() {
   log_info "Setting up thinkfan for fan control..."
 
@@ -88,7 +89,7 @@ ExecStart=/usr/bin/bash -c '/usr/bin/echo "level auto" > /proc/acpi/ibm/fan'
 [Install]
 WantedBy=sleep.target
 EOF
-  
+
   local service_create_status=$?
   if [[ $service_create_status -ne 0 ]]; then
     log_error "Failed to create thinkfan-sleep-hack service file"
@@ -102,3 +103,4 @@ EOF
 
   log_info "Thinkfan setup completed successfully."
 }
+
