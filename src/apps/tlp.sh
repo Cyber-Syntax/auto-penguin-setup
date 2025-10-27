@@ -4,17 +4,72 @@
 # one fuction is for installs and other is for enabling/configuring
 # we might have subcommands in future for each app so better to keep them separate
 
-#TODO: fallback for power-profile-daemon and tuned if tlp fails
+# Disable services that conflict with TLP
+# This includes tuned, tuned-ppd, and power-profiles-daemon
+# Services are disabled but not removed to allow fallback if TLP setup fails
+disable_conflicting_power_services() {
+  log_info "Disabling services that conflict with TLP..."
+
+  # List of services to check and disable
+  local services_to_check=("tuned" "tuned-ppd" "power-profiles-daemon" "power-profile-daemon")
+  local services_to_disable=()
+
+  # Check which services exist
+  for service in "${services_to_check[@]}"; do
+    if systemctl list-unit-files | grep -q "^${service}"; then
+      services_to_disable+=("$service")
+    fi
+  done
+
+  # Disable found services
+  if [[ ${#services_to_disable[@]} -gt 0 ]]; then
+    log_info "Disabling conflicting services: ${services_to_disable[*]}"
+    for service in "${services_to_disable[@]}"; do
+      if ! sudo systemctl disable --now "$service" 2>/dev/null; then
+        log_warn "Failed to disable $service"
+      fi
+    done
+  else
+    log_debug "No conflicting services found to disable"
+  fi
+
+  return 0
+}
+
+# Remove packages that conflict with TLP
+# This should only be called after TLP is successfully set up
+# to avoid leaving the system without any power management
+remove_conflicting_power_packages() {
+  log_info "Removing packages that conflict with TLP..."
+
+  # List of packages to check and remove
+  local packages_to_check=("tuned" "tuned-ppd" "power-profiles-daemon" "power-profile-daemon")
+  local packages_to_remove=()
+
+  # Check which packages are installed
+  for pkg in "${packages_to_check[@]}"; do
+    if pm_is_installed "$pkg"; then
+      packages_to_remove+=("$pkg")
+    fi
+  done
+
+  # Remove found packages
+  if [[ ${#packages_to_remove[@]} -gt 0 ]]; then
+    log_info "Removing conflicting packages: ${packages_to_remove[*]}"
+    if ! pm_remove "${packages_to_remove[@]}"; then
+      log_error "Failed to remove conflicting packages"
+      return 1
+    fi
+    log_info "Successfully removed conflicting packages"
+  else
+    log_debug "No conflicting packages found to remove"
+  fi
+
+  return 0
+}
+
 tlp_setup() {
   log_info "Setting up TLP for power management..."
-
-  local distro
-  distro=$(detect_distro) || return 1
-
-  # Get distribution version
-  local distro_version
-  distro_version=$(get_distro_version)
-  log_debug "Detected $distro version: $distro_version"
 
   # Make sure tlp is installed, if not install it
   if ! pm_is_installed tlp; then
@@ -49,59 +104,14 @@ tlp_setup() {
     return 1
   fi
 
-  # 2. Service management with existence checks
-  handle_services() {
-    local action="$1"
-    shift
-    for service in "$@"; do
-      if systemctl list-unit-files | grep -q "^$service"; then
-        if ! systemctl "$action" "$service"; then
-          log_warn "Failed to $action $service"
-        fi
-      else
-        log_debug "Service $service not found - skipping"
-      fi
-    done
-  }
-
-  # 3. TuneD handling (Fedora-specific)
-  if [[ "$distro" == "fedora" ]] && [[ -n "$distro_version" ]] && ((distro_version > 40)); then
-    log_info "Handling TuneD for Fedora $distro_version..."
-    handle_services 'disable --now' tuned tuned-ppd
-
-    if pm_is_installed tuned || pm_is_installed tuned-ppd; then
-      if ! pm_remove tuned tuned-ppd; then
-        log_error "Failed to remove TuneD packages"
-        return 1
-      fi
-    fi
+  # Disable conflicting power management services (but don't remove yet)
+  # This allows fallback if TLP setup fails
+  if ! disable_conflicting_power_services; then
+    log_error "Failed to disable conflicting power services"
+    return 1
   fi
 
-  # 4. power-profile-daemon handling (distro-specific)
-  case "$distro" in
-  fedora)
-    if [[ -n "$distro_version" ]] && ((distro_version < 41)); then
-      log_info "Handling power-profile-daemon for Fedora $distro_version..."
-      handle_services 'disable --now' power-profile-daemon
-
-      if pm_is_installed power-profile-daemon; then
-        if ! pm_remove power-profile-daemon; then
-          log_error "Failed to remove power-profile-daemon"
-          return 1
-        fi
-      fi
-    fi
-    ;;
-  arch | debian)
-    # For Arch and Debian, disable power-profile-daemon if installed
-    if pm_is_installed power-profiles-daemon 2>/dev/null; then
-      log_info "Disabling power-profiles-daemon for $distro..."
-      handle_services 'disable --now' power-profiles-daemon
-    fi
-    ;;
-  esac
-
-  # 5. Enable TLP services with verification
+  # Enable TLP services with verification
   log_info "Configuring TLP services..."
   for service in tlp tlp-sleep; do
     if [[ -f "/usr/lib/systemd/system/${service}.service" ]]; then
@@ -142,7 +152,11 @@ tlp_setup() {
     log_warn "tlp-rdw command not available. Skipping radio device handling."
   fi
 
+  # TLP setup successful - now safe to remove conflicting packages
+  if ! remove_conflicting_power_packages; then
+    log_warn "TLP is working, but failed to remove conflicting packages. You may want to remove them manually."
+  fi
+
   log_info "TLP setup completed successfully."
   return 0
 }
-
