@@ -52,7 +52,7 @@ validate_install_component() {
 validate_setup_tool() {
   local tool=$1
   local valid_tools=(
-    "brave" "vscode" "qtile" "lazygit" "ollama" "protonvpn" "ohmyzsh"
+    "brave" "vscode" "qtile" "i3" "lazygit" "ueberzugpp" "ollama" "protonvpn" "ohmyzsh"
     "tlp" "thinkfan" "auto-cpufreq" "trash-cli" "borgbackup" "syncthing"
     "ufw" "hyprland" "sddm" "sddm-autologin" "virt-manager"
     "nvidia-cuda" "nvidia-open" "vaapi" "intel-xorg" "nfancurve" "zenpower"
@@ -134,14 +134,14 @@ CLI OPTIONS:
   --install GROUPS          Install package groups (comma-separated)
                             Available: core, apps, dev, games, flatpak
                             System-specific: laptop, desktop, homeserver
-  
+
   --setup TOOLS             Setup specific tools (comma-separated)
-                            Available: brave, vscode, qtile, lazygit, ollama, protonvpn,
-                            ohmyzsh, tlp, thinkfan, auto-cpufreq, trash-cli, borgbackup,
-                            syncthing, ufw, hyprland, sddm, sddm-autologin, virt-manager,
-                            nvidia-cuda, nvidia-open, vaapi, intel-xorg, nfancurve,
-                            zenpower, qtile-udev, touchpad, pm-speedup, ffmpeg-swap,
-                            remove-gnome, update-system, ssh
+                            Available: brave, vscode, qtile, i3, lazygit, ueberzugpp, ollama,
+                            protonvpn, ohmyzsh, tlp, thinkfan, auto-cpufreq, trash-cli,
+                            borgbackup, syncthing, ufw, hyprland, sddm, sddm-autologin,
+                            virt-manager, nvidia-cuda, nvidia-open, vaapi, intel-xorg,
+                            nfancurve, zenpower, qtile-udev, touchpad, pm-speedup,
+                            ffmpeg-swap, remove-gnome, update-system, ssh
 
   --config TYPES            Apply system configurations (comma-separated)
                             Available: system, default-apps
@@ -153,7 +153,7 @@ SYSTEM OPTIONS:
   --system-type TYPE        Override detection: laptop|desktop|server
   --dry-run                 Preview actions without executing
   --verbose                 Enable verbose logging (LOG_LEVEL_DEBUG)
-  
+
 UTILITY:
   -h, --help                Show this help message
 
@@ -210,9 +210,9 @@ main() {
   # Handle help flags first
   for arg in "$@"; do
     case "$arg" in
-      -h | --help)
-        usage
-        ;;
+    -h | --help)
+      usage
+      ;;
     esac
   done
 
@@ -229,110 +229,110 @@ main() {
   # Process CLI arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --install)
-        if [[ -z "$2" || "$2" == --* ]]; then
-          log_error "--install requires a comma-separated list of components"
-          exit 1
-        fi
-        local -a components
-        parse_csv "$2" components
-        for component in "${components[@]}"; do
-          if validate_install_component "$component"; then
-            install_components+=("$component")
-          else
-            exit 1
-          fi
-        done
-        shift 2
-        ;;
-
-      --setup)
-        if [[ -z "$2" || "$2" == --* ]]; then
-          log_error "--setup requires a comma-separated list of tools"
-          exit 1
-        fi
-        local -a tools
-        parse_csv "$2" tools
-        for tool in "${tools[@]}"; do
-          if validate_setup_tool "$tool"; then
-            setup_tools+=("$tool")
-          else
-            exit 1
-          fi
-        done
-        shift 2
-        ;;
-
-      --config)
-        if [[ -z "$2" || "$2" == --* ]]; then
-          log_error "--config requires a comma-separated list of configuration types"
-          exit 1
-        fi
-        local -a configs
-        parse_csv "$2" configs
-        for config in "${configs[@]}"; do
-          if validate_config_type "$config"; then
-            config_types+=("$config")
-          else
-            exit 1
-          fi
-        done
-        shift 2
-        ;;
-
-      --enable-repo)
-        if [[ -z "$2" || "$2" == --* ]]; then
-          log_error "--enable-repo requires a comma-separated list of repositories"
-          exit 1
-        fi
-        local -a repos
-        parse_csv "$2" repos
-        for repo in "${repos[@]}"; do
-          if validate_repo "$repo"; then
-            enable_repos+=("$repo")
-          else
-            exit 1
-          fi
-        done
-        shift 2
-        ;;
-
-      --system-type)
-        if [[ -z "$2" || "$2" == --* ]]; then
-          log_error "--system-type requires a value (laptop|desktop|server)"
-          exit 1
-        fi
-        if [[ ! "$2" =~ ^(laptop|desktop|server)$ ]]; then
-          log_error "Invalid system type: '$2'. Must be: laptop, desktop, or server"
-          exit 1
-        fi
-        system_type_override="$2"
-        shift 2
-        ;;
-
-      --dry-run)
-        dry_run=true
-        shift
-        ;;
-
-      --verbose)
-        LOG_LEVEL="DEBUG"
-        shift
-        ;;
-
-      *)
-        log_error "Unknown option: $1"
-        log_error "Run '$0 --help' for usage information"
+    --install)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--install requires a comma-separated list of components"
         exit 1
-        ;;
+      fi
+      local -a components
+      parse_csv "$2" components
+      for component in "${components[@]}"; do
+        if validate_install_component "$component"; then
+          install_components+=("$component")
+        else
+          exit 1
+        fi
+      done
+      shift 2
+      ;;
+
+    --setup)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--setup requires a comma-separated list of tools"
+        exit 1
+      fi
+      local -a tools
+      parse_csv "$2" tools
+      for tool in "${tools[@]}"; do
+        if validate_setup_tool "$tool"; then
+          setup_tools+=("$tool")
+        else
+          exit 1
+        fi
+      done
+      shift 2
+      ;;
+
+    --config)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--config requires a comma-separated list of configuration types"
+        exit 1
+      fi
+      local -a configs
+      parse_csv "$2" configs
+      for config in "${configs[@]}"; do
+        if validate_config_type "$config"; then
+          config_types+=("$config")
+        else
+          exit 1
+        fi
+      done
+      shift 2
+      ;;
+
+    --enable-repo)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--enable-repo requires a comma-separated list of repositories"
+        exit 1
+      fi
+      local -a repos
+      parse_csv "$2" repos
+      for repo in "${repos[@]}"; do
+        if validate_repo "$repo"; then
+          enable_repos+=("$repo")
+        else
+          exit 1
+        fi
+      done
+      shift 2
+      ;;
+
+    --system-type)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--system-type requires a value (laptop|desktop|server)"
+        exit 1
+      fi
+      if [[ ! "$2" =~ ^(laptop|desktop|server)$ ]]; then
+        log_error "Invalid system type: '$2'. Must be: laptop, desktop, or server"
+        exit 1
+      fi
+      system_type_override="$2"
+      shift 2
+      ;;
+
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+
+    --verbose)
+      LOG_LEVEL="DEBUG"
+      shift
+      ;;
+
+    *)
+      log_error "Unknown option: $1"
+      log_error "Run '$0 --help' for usage information"
+      exit 1
+      ;;
     esac
   done
 
   # Validate that at least one action is specified
-  if [[ ${#install_components[@]} -eq 0 ]] \
-    && [[ ${#setup_tools[@]} -eq 0 ]] \
-    && [[ ${#config_types[@]} -eq 0 ]] \
-    && [[ ${#enable_repos[@]} -eq 0 ]]; then
+  if [[ ${#install_components[@]} -eq 0 ]] &&
+    [[ ${#setup_tools[@]} -eq 0 ]] &&
+    [[ ${#config_types[@]} -eq 0 ]] &&
+    [[ ${#enable_repos[@]} -eq 0 ]]; then
     log_error "No actions specified. Use --install, --setup, --config, or --enable-repo"
     exit 1
   fi # Display detected distribution and system information
@@ -400,30 +400,30 @@ main() {
     log_info "Installing components: ${install_components[*]}"
     for component in "${install_components[@]}"; do
       case "$component" in
-        core)
-          install_core_packages
-          ;;
-        apps)
-          install_app_packages
-          ;;
-        dev)
-          install_dev_packages
-          ;;
-        games)
-          install_games_packages
-          ;;
-        laptop)
-          install_system_specific_packages "laptop"
-          ;;
-        desktop)
-          install_system_specific_packages "desktop"
-          ;;
-        homeserver)
-          install_system_specific_packages "homeserver"
-          ;;
-        flatpak)
-          install_flatpak_packages
-          ;;
+      core)
+        install_core_packages
+        ;;
+      apps)
+        install_app_packages
+        ;;
+      dev)
+        install_dev_packages
+        ;;
+      games)
+        install_games_packages
+        ;;
+      laptop)
+        install_system_specific_packages "laptop"
+        ;;
+      desktop)
+        install_system_specific_packages "desktop"
+        ;;
+      homeserver)
+        install_system_specific_packages "homeserver"
+        ;;
+      flatpak)
+        install_flatpak_packages
+        ;;
       esac
     done
   fi
@@ -433,37 +433,39 @@ main() {
     log_info "Setting up tools: ${setup_tools[*]}"
     for tool in "${setup_tools[@]}"; do
       case "$tool" in
-        brave) install_brave ;;
-        vscode) install_vscode ;;
-        qtile) install_qtile_packages ;;
-        lazygit) install_lazygit ;;
-        ollama) install_ollama ;;
-        protonvpn) install_protonvpn ;;
-        ohmyzsh) install_ohmyzsh ;;
-        tlp) tlp_setup ;;
-        thinkfan) thinkfan_setup ;;
-        auto-cpufreq) install_auto_cpufreq ;;
-        trash-cli) trash_cli_setup ;;
-        borgbackup) borgbackup_setup ;;
-        syncthing) syncthing_setup ;;
-        ufw) switch_ufw_setup ;;
-        hyprland) install_hyprland ;;
-        sddm) switch_to_sddm ;;
-        sddm-autologin) sddm_autologin ;;
-        virt-manager) virt_manager_setup ;;
-        nvidia-cuda) nvidia_cuda_setup ;;
-        nvidia-open) switch_nvidia_open ;;
-        vaapi) vaapi_setup ;;
-        intel-xorg) xorg_setup_intel ;;
-        nfancurve) nfancurve_setup ;;
-        zenpower) zenpower_setup ;;
-        qtile-udev) setup_qtile_backlight_rules ;;
-        touchpad) touchpad_setup ;;
-        pm-speedup) speed_up_package_manager ;;
-        ffmpeg-swap) ffmpeg_swap ;;
-        remove-gnome) remove_gnome ;;
-        update-system) system_updates ;;
-        ssh) ssh_setup ;;
+      brave) install_brave ;;
+      vscode) install_vscode ;;
+      qtile) install_qtile_packages ;;
+      i3) install_i3_packages ;;
+      lazygit) install_lazygit ;;
+      ueberzugpp) install_ueberzugpp ;;
+      ollama) install_ollama ;;
+      protonvpn) install_protonvpn ;;
+      ohmyzsh) install_ohmyzsh ;;
+      tlp) tlp_setup ;;
+      thinkfan) thinkfan_setup ;;
+      auto-cpufreq) install_auto_cpufreq ;;
+      trash-cli) trash_cli_setup ;;
+      borgbackup) borgbackup_setup ;;
+      syncthing) syncthing_setup ;;
+      ufw) switch_ufw_setup ;;
+      hyprland) install_hyprland ;;
+      sddm) switch_to_sddm ;;
+      sddm-autologin) sddm_autologin ;;
+      virt-manager) virt_manager_setup ;;
+      nvidia-cuda) nvidia_cuda_setup ;;
+      nvidia-open) switch_nvidia_open ;;
+      vaapi) vaapi_setup ;;
+      intel-xorg) xorg_setup_intel ;;
+      nfancurve) nfancurve_setup ;;
+      zenpower) zenpower_setup ;;
+      qtile-udev) setup_qtile_backlight_rules ;;
+      touchpad) touchpad_setup ;;
+      pm-speedup) speed_up_package_manager ;;
+      ffmpeg-swap) ffmpeg_swap ;;
+      remove-gnome) remove_gnome ;;
+      update-system) system_updates ;;
+      ssh) ssh_setup ;;
       esac
     done
   fi
@@ -473,12 +475,12 @@ main() {
     log_info "Applying configurations: ${config_types[*]}"
     for config in "${config_types[@]}"; do
       case "$config" in
-        system)
-          setup_files
-          ;;
-        default-apps)
-          setup_default_applications
-          ;;
+      system)
+        setup_files
+        ;;
+      default-apps)
+        setup_default_applications
+        ;;
       esac
     done
   fi
@@ -488,12 +490,12 @@ main() {
     log_info "Enabling repositories: ${enable_repos[*]}"
     for repo in "${enable_repos[@]}"; do
       case "$repo" in
-        rpm-fusion)
-          enable_rpm_fusion
-          ;;
-        flathub)
-          log_info "Flathub is enabled by default with Flatpak installation"
-          ;;
+      rpm-fusion)
+        enable_rpm_fusion
+        ;;
+      flathub)
+        log_info "Flathub is enabled by default with Flatpak installation"
+        ;;
       esac
     done
   fi

@@ -198,11 +198,13 @@ load_packages_ini() {
   mapfile -t LAPTOP_PACKAGES < <(get_ini_section "laptop")
   mapfile -t HOMESERVER_PACKAGES < <(get_ini_section "homeserver")
   mapfile -t QTILE_PACKAGES < <(get_ini_section "qtile")
+  mapfile -t I3_PACKAGES < <(get_ini_section "i3")
+  mapfile -t WM_COMMON_PACKAGES < <(get_ini_section "wm-common")
   mapfile -t FLATPAK_PACKAGES < <(get_ini_section "flatpak")
 
   # Export all arrays
   export CORE_PACKAGES APPS_PACKAGES DEV_PACKAGES GAMES_PACKAGES
-  export DESKTOP_PACKAGES LAPTOP_PACKAGES HOMESERVER_PACKAGES QTILE_PACKAGES FLATPAK_PACKAGES
+  export DESKTOP_PACKAGES LAPTOP_PACKAGES HOMESERVER_PACKAGES QTILE_PACKAGES I3_PACKAGES WM_COMMON_PACKAGES FLATPAK_PACKAGES
 
   log_info "Package arrays loaded successfully from INI"
   return 0
