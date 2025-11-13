@@ -149,6 +149,12 @@ install_games_packages() {
 install_flatpak_packages() {
   log_info "Installing Flatpak packages..."
 
+  # If no flatpak packages are defined, skip
+  if [[ ${#FLATPAK_PACKAGES[@]} -eq 0 ]]; then
+    log_info "No Flatpak packages to install."
+    return 0
+  fi
+
   # Setup flathub if not already setup
   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
@@ -157,6 +163,24 @@ install_flatpak_packages() {
     log_error "Failed to install Flatpak packages."
     return 1
   fi
+
+  # Ensure tracking is initialized (best-effort)
+  if [[ "${TRACKING_INITIALIZED:-0}" -ne 1 ]]; then
+    log_debug "Package tracking not initialized; attempting to initialize for flatpak tracking"
+    if ! init_package_tracking; then
+      log_warn "Failed to initialize package tracking; flatpak installs will not be recorded"
+    fi
+  fi
+
+  # Track installed flatpaks in the tracking database
+  for app in "${FLATPAK_PACKAGES[@]}"; do
+    # Use the convenience wrapper to record a flatpak install (defaults to flathub)
+    if track_flatpak_install "$app"; then
+      log_debug "Tracked flatpak app: $app"
+    else
+      log_warn "Failed to track flatpak app: $app"
+    fi
+  done
 
   log_info "Flatpak packages installation completed."
 }

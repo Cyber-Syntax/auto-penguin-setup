@@ -95,7 +95,7 @@ EOF
 # Purpose: Record package installation in tracking database
 # Arguments:
 #   $1 - Package name
-#   $2 - Source (COPR:user/repo, AUR:package, PPA:user/repo, or "official")
+#   $2 - Source (COPR:user/repo, AUR:package, PPA:user/repo, flatpak:remote, or "official")
 #   $3 - Category (optional, defaults to "uncategorized")
 #   $4 - Mapped name (optional, defaults to package name)
 #   $5 - Original name (optional, name from packages.ini)
@@ -122,19 +122,26 @@ track_package_install() {
   local timestamp
   timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+  # Determine install method based on source
+  # Default to pm_install for package-manager installs, use flatpak_install for flatpak sources
+  local install_method="pm_install"
+  if [[ "$source" == flatpak:* ]]; then
+    install_method="flatpak_install"
+  fi
+
   # Create section identifier
   local section="package.${package_name}"
 
   # Check if package already tracked
   if ini_section_exists "$section"; then
     log_debug "Package already tracked, updating entry: $package_name"
-    if ! _update_package_entry "$package_name" "$source" "$category" "$mapped_name" "$original_name" "$timestamp"; then
+    if ! _update_package_entry "$package_name" "$source" "$category" "$mapped_name" "$original_name" "$timestamp" "$install_method"; then
       log_error "Failed to update package entry"
       return 1
     fi
   else
     log_debug "Adding new package entry: $package_name"
-    if ! _add_package_entry "$package_name" "$source" "$category" "$mapped_name" "$original_name" "$timestamp"; then
+    if ! _add_package_entry "$package_name" "$source" "$category" "$mapped_name" "$original_name" "$timestamp" "$install_method"; then
       log_error "Failed to add package entry"
       return 1
     fi
@@ -145,8 +152,34 @@ track_package_install() {
     log_warn "Failed to update metadata timestamp"
   fi
 
-  log_debug "Package tracked: $package_name (original: $original_name)"
+  log_debug "Package tracked: $package_name (original: $original_name, method: $install_method)"
   return 0
+}
+
+# Function: track_flatpak_install
+# Purpose: Convenience wrapper to track flatpak installs
+# Arguments:
+#   $1 - Package name (flatpak app id)
+#   $2 - Remote (optional, defaults to flathub)
+#   $3 - Category (optional, defaults to "uncategorized")
+#   $4 - Mapped name (optional, defaults to package name)
+#   $5 - Original name (optional, defaults to package name)
+# Returns: 0 on success, 1 on failure
+track_flatpak_install() {
+  local package_name="$1"
+  local remote="${2:-flathub}"
+  local category="${3:-uncategorized}"
+  local mapped_name="${4:-$package_name}"
+  local original_name="${5:-$package_name}"
+  local source="flatpak:${remote}"
+
+  if [[ -z "$package_name" ]]; then
+    log_error "Package name is required for flatpak tracking"
+    return 1
+  fi
+
+  log_debug "Tracking flatpak install: $package_name (remote: $remote, category: $category)"
+  track_package_install "$package_name" "$source" "$category" "$mapped_name" "$original_name"
 }
 
 # Function: _add_package_entry
@@ -158,6 +191,7 @@ track_package_install() {
 #   $4 - Mapped name
 #   $5 - Original name
 #   $6 - Timestamp
+#   $7 - Install method (pm_install, flatpak_install, etc)
 # Returns: 0 on success, 1 on failure
 _add_package_entry() {
   local package_name="$1"
@@ -166,6 +200,7 @@ _add_package_entry() {
   local mapped_name="$4"
   local original_name="$5"
   local timestamp="$6"
+  local install_method="${7:-pm_install}"
 
   cat >>"$TRACKING_DB_FILE" <<EOF
 [package.${package_name}]
@@ -174,7 +209,7 @@ original_name=$original_name
 source=$source
 mapped_name=$mapped_name
 installed_at=$timestamp
-install_method=pm_install
+install_method=$install_method
 category=$category
 
 EOF
@@ -194,6 +229,7 @@ EOF
 #   $4 - Mapped name
 #   $5 - Original name
 #   $6 - Timestamp
+#   $7 - Install method
 # Returns: 0 on success, 1 on failure
 _update_package_entry() {
   local package_name="$1"
@@ -202,6 +238,7 @@ _update_package_entry() {
   local mapped_name="$4"
   local original_name="$5"
   local timestamp="$6"
+  local install_method="${7:-pm_install}"
 
   # Read entire file, update the section, write back
   local temp_file="${TRACKING_DB_FILE}.tmp"
@@ -219,7 +256,7 @@ _update_package_entry() {
         echo "source=$source"
         echo "mapped_name=$mapped_name"
         echo "installed_at=$timestamp"
-        echo "install_method=pm_install"
+        echo "install_method=$install_method"
         echo "category=$category"
       } >>"$temp_file"
       continue
@@ -553,6 +590,7 @@ get_tracking_stats() {
   local aur=0
   local ppa=0
   local official=0
+  local flatpak=0
 
   while IFS= read -r package; do
     [[ -z "$package" ]] && continue
@@ -571,6 +609,9 @@ get_tracking_stats() {
     PPA:*)
       ((ppa++))
       ;;
+    flatpak:*)
+      ((flatpak++))
+      ;;
     official)
       ((official++))
       ;;
@@ -582,12 +623,14 @@ get_tracking_stats() {
   echo "aur=$aur"
   echo "ppa=$ppa"
   echo "official=$official"
+  echo "flatpak=$flatpak"
 
   return 0
 }
 
 export -f init_package_tracking
 export -f track_package_install
+export -f track_flatpak_install
 export -f untrack_package
 export -f get_tracked_packages
 export -f get_package_info
