@@ -14,6 +14,10 @@ source src/core/ini_parser.sh
 # Declare associative array for mappings (loaded from INI)
 declare -A PACKAGE_MAPPINGS
 
+# Declare associative array for package metadata (for tracking integration)
+# Format: PACKAGE_MAPPING_METADATA["package_name"]="source|category|mapped_name"
+declare -gA PACKAGE_MAPPING_METADATA
+
 # Function: load_package_mappings_ini
 # Purpose: Load package name mappings from pkgmap.ini
 # Parameters:
@@ -114,14 +118,66 @@ map_package_name() {
   echo "$package"
 }
 
+# Function: _store_mapping_metadata
+# Purpose: Store package mapping metadata for later tracking
+# Arguments:
+#   $1 - Original package name
+#   $2 - Mapped package value (may include COPR:/AUR:/PPA: prefix)
+#   $3 - Category (section name)
+#   $4 - Distribution
+_store_mapping_metadata() {
+  local pkg="$1"
+  local mapped="$2"
+  local category="$3"
+  local distro="$4"
+
+  # Determine source from mapped value
+  local source="official"
+  local final_pkg_name="$mapped"
+
+  if [[ "$mapped" =~ ^COPR:([^:]+):(.+)$ ]]; then
+    source="COPR:${BASH_REMATCH[1]}"
+    final_pkg_name="${BASH_REMATCH[2]}"
+  elif [[ "$mapped" =~ ^COPR:([^:]+)$ ]]; then
+    source="COPR:${BASH_REMATCH[1]}"
+    final_pkg_name="$pkg"
+  elif [[ "$mapped" =~ ^AUR:(.+)$ ]]; then
+    source="AUR:${BASH_REMATCH[1]}"
+    final_pkg_name="${BASH_REMATCH[1]}"
+  elif [[ "$mapped" =~ ^PPA:([^:]+):(.+)$ ]]; then
+    source="PPA:${BASH_REMATCH[1]}"
+    final_pkg_name="${BASH_REMATCH[2]}"
+  elif [[ "$mapped" =~ ^PPA:([^:]+)$ ]]; then
+    source="PPA:${BASH_REMATCH[1]}"
+    final_pkg_name="$pkg"
+  fi
+
+  # Store: "source|category|final_pkg_name"
+  PACKAGE_MAPPING_METADATA["$pkg"]="$source|$category|$final_pkg_name"
+
+  log_debug "Stored metadata for $pkg: source=$source, category=$category, final=$final_pkg_name"
+}
+
+# Function: get_package_metadata
+# Purpose: Retrieve stored metadata for a package
+# Arguments:
+#   $1 - Package name
+# Returns: Prints "source|category|final_name" or empty if not found
+get_package_metadata() {
+  local pkg="$1"
+  echo "${PACKAGE_MAPPING_METADATA[$pkg]:-}"
+}
+
 # Purpose: Map an entire array of package names to the target distro
 # Parameters:
 #   $1 - Target distro (optional, uses detected distro if not specified)
-#   $@ - Array of package names (pass as "${array[@]}" starting from $2)
+#   $2 - Category (section name, e.g., "core", "apps", "dev")
+#   $@ - Array of package names (pass as "${array[@]}" starting from $3)
 # Returns: Mapped package names to stdout (newline-separated)
 map_package_list() {
   local distro="${1:-}"
-  shift
+  local category="${2:-uncategorized}"
+  shift 2
 
   if [[ $# -eq 0 ]]; then
     log_warn "No packages specified for mapping"
@@ -135,10 +191,16 @@ map_package_list() {
 
   local packages=("$@")
 
-  log_debug "Mapping ${#packages[@]} packages for $distro"
+  log_debug "Mapping ${#packages[@]} packages for $distro (category: $category)"
 
   for pkg in "${packages[@]}"; do
-    map_package_name "$pkg" "$distro"
+    local mapped
+    mapped=$(map_package_name "$pkg" "$distro")
+
+    # Store metadata for tracking
+    _store_mapping_metadata "$pkg" "$mapped" "$category" "$distro"
+
+    echo "$mapped"
   done
 }
 
@@ -216,8 +278,8 @@ extract_copr_package() {
   fi
 }
 
-export -f load_package_mappings
 export -f load_package_mappings_ini
+export -f load_package_mappings
 export -f map_package_name
 export -f map_package_list
 export -f is_aur_package
@@ -225,3 +287,5 @@ export -f is_copr_package
 export -f extract_aur_package
 export -f extract_copr_repo
 export -f extract_copr_package
+export -f _store_mapping_metadata
+export -f get_package_metadata

@@ -22,6 +22,8 @@ source src/core/package_manager.sh
 source src/core/repository_manager.sh
 source src/core/config.sh
 source src/core/install_packages.sh
+source src/core/package_tracking.sh
+source src/core/repo_migration.sh
 
 # Initialize configuration and load variables
 init_config
@@ -30,6 +32,11 @@ init_config
 init_package_manager || {
   log_error "Failed to initialize package manager"
   exit 1
+}
+
+# Initialize package tracking
+init_package_tracking || {
+  log_warn "Package tracking initialization failed, continuing without tracking"
 }
 
 # Validate install component names
@@ -154,6 +161,13 @@ SYSTEM OPTIONS:
   --dry-run                 Preview actions without executing
   --verbose                 Enable verbose logging (LOG_LEVEL_DEBUG)
 
+PACKAGE TRACKING:
+  --list-tracked            List all tracked packages
+  --track-info PACKAGE      Show detailed info for a tracked package
+  --sync-repos              Migrate packages with repository changes
+  --check-repos             Check for repository changes without migrating
+  --show-mappings           Show current package mappings from pkgmap.ini
+
 UTILITY:
   -h, --help                Show this help message
 
@@ -166,6 +180,13 @@ EXAMPLES:
 
   # Developer setup with Oh My Zsh
   $0 --install core,apps,dev,desktop --setup ohmyzsh,lazygit,vscode
+
+  # Package tracking examples
+  $0 --list-tracked
+  $0 --track-info lazygit
+  $0 --check-repos
+  $0 --sync-repos
+  $0 --show-mappings
 
 For more details, see docs/ and config_examples/.
 EOF
@@ -225,6 +246,8 @@ main() {
   local -a enable_repos=()
   local dry_run=false
   local system_type_override=""
+  local tracking_action=""
+  local tracking_package=""
 
   # Process CLI arguments
   while [[ $# -gt 0 ]]; do
@@ -320,6 +343,36 @@ main() {
       shift
       ;;
 
+    --list-tracked)
+      tracking_action="list"
+      shift
+      ;;
+
+    --track-info)
+      if [[ -z "$2" || "$2" == --* ]]; then
+        log_error "--track-info requires a package name"
+        exit 1
+      fi
+      tracking_action="info"
+      tracking_package="$2"
+      shift 2
+      ;;
+
+    --sync-repos)
+      tracking_action="sync"
+      shift
+      ;;
+
+    --check-repos)
+      tracking_action="check"
+      shift
+      ;;
+
+    --show-mappings)
+      tracking_action="mappings"
+      shift
+      ;;
+
     *)
       log_error "Unknown option: $1"
       log_error "Run '$0 --help' for usage information"
@@ -327,6 +380,65 @@ main() {
       ;;
     esac
   done
+
+  # Handle tracking actions first (they don't require other validations)
+  if [[ -n "$tracking_action" ]]; then
+    case "$tracking_action" in
+    list)
+      log_info "Listing tracked packages..."
+      list_tracked_packages
+      exit 0
+      ;;
+    info)
+      log_info "Package information for: $tracking_package"
+      if get_package_info "$tracking_package"; then
+        exit 0
+      else
+        log_error "Package not tracked: $tracking_package"
+        exit 1
+      fi
+      ;;
+    sync)
+      log_info "Synchronizing repository changes..."
+      if migrate_all_changed_repos "interactive"; then
+        log_success "Repository synchronization completed"
+        exit 0
+      else
+        log_error "Repository synchronization failed or cancelled"
+        exit 1
+      fi
+      ;;
+    check)
+      show_repo_changes
+      exit 0
+      ;;
+    mappings)
+      log_info "Loading package mappings..."
+      local pkgmap_file="${CONFIG_DIR:-$HOME/.config/auto-penguin-setup}/pkgmap.ini"
+      if [[ -f "$pkgmap_file" ]]; then
+        load_package_mappings "$pkgmap_file" || {
+          log_error "Failed to load package mappings"
+          exit 1
+        }
+        echo ""
+        echo "Package Mappings for $CURRENT_DISTRO:"
+        echo "========================================"
+        if [[ ${#PACKAGE_MAPPINGS[@]} -eq 0 ]]; then
+          echo "No mappings found for this distribution."
+        else
+          for pkg in "${!PACKAGE_MAPPINGS[@]}"; do
+            printf "%-30s -> %s\n" "$pkg" "${PACKAGE_MAPPINGS[$pkg]}"
+          done | sort
+        fi
+        echo ""
+      else
+        log_error "No pkgmap.ini found at: $pkgmap_file"
+        exit 1
+      fi
+      exit 0
+      ;;
+    esac
+  fi
 
   # Validate that at least one action is specified
   if [[ ${#install_components[@]} -eq 0 ]] &&

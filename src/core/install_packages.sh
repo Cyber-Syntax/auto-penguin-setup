@@ -15,22 +15,22 @@ install_system_specific_packages() {
   local pkg_list=()
 
   case "$system_type" in
-    desktop)
-      log_info "Installing desktop-specific packages..."
-      pkg_list=("${DESKTOP_PACKAGES[@]}")
-      ;;
-    laptop)
-      log_info "Installing laptop-specific packages..."
-      pkg_list=("${LAPTOP_PACKAGES[@]}")
-      ;;
-    homeserver)
-      log_info "Installing home server-specific packages..."
-      pkg_list=("${HOMESERVER_PACKAGES[@]}")
-      ;;
-    *)
-      log_error "Unknown system type '$system_type'. Valid types: laptop, desktop, homeserver"
-      return 1
-      ;;
+  desktop)
+    log_info "Installing desktop-specific packages..."
+    pkg_list=("${DESKTOP_PACKAGES[@]}")
+    ;;
+  laptop)
+    log_info "Installing laptop-specific packages..."
+    pkg_list=("${LAPTOP_PACKAGES[@]}")
+    ;;
+  homeserver)
+    log_info "Installing home server-specific packages..."
+    pkg_list=("${HOMESERVER_PACKAGES[@]}")
+    ;;
+  *)
+    log_error "Unknown system type '$system_type'. Valid types: laptop, desktop, homeserver"
+    return 1
+    ;;
   esac
 
   # Check if package list is empty
@@ -43,7 +43,7 @@ install_system_specific_packages() {
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${pkg_list[@]}") || {
+  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "$system_type" "${pkg_list[@]}") || {
     log_error "Failed to map $system_type packages"
     return 1
   }
@@ -62,7 +62,7 @@ install_core_packages() {
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${CORE_PACKAGES[@]}") || {
+  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "core" "${CORE_PACKAGES[@]}") || {
     log_error "Failed to map core packages"
     return 1
   }
@@ -86,7 +86,7 @@ install_app_packages() {
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${APPS_PACKAGES[@]}") || {
+  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "apps" "${APPS_PACKAGES[@]}") || {
     log_error "Failed to map application packages"
     return 1
   }
@@ -105,10 +105,18 @@ install_dev_packages() {
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${DEV_PACKAGES[@]}") || {
+  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "dev" "${DEV_PACKAGES[@]}") || {
     log_error "Failed to map development packages"
     return 1
   }
+
+  log_debug "=== install_dev_packages: Mapped Array Debug ==="
+  log_debug "Number of packages in mapped_array: ${#mapped_array[@]}"
+  log_debug "Mapped packages:"
+  for i in "${!mapped_array[@]}"; do
+    log_debug "  [$i]: '${mapped_array[$i]}'"
+  done
+  log_debug "=== End Mapped Array Debug ==="
 
   # Install using package manager abstraction
   if ! pm_install_array "${mapped_array[@]}"; then
@@ -124,7 +132,7 @@ install_games_packages() {
 
   # Map packages for current distro (outputs newline-separated list)
   local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${GAMES_PACKAGES[@]}") || {
+  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "games" "${GAMES_PACKAGES[@]}") || {
     log_error "Failed to map games packages"
     return 1
   }
