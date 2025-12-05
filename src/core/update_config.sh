@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-#TODO: refactor for new INI system
-
 # Function: update_config_schema
-# Purpose: Update existing configuration files with any new keys from example configs
+# Purpose: Update existing INI configuration files with any new keys/sections from example configs
 #          while preserving existing user values
 # Arguments: $1 - Optional flag indicating if this is running after migration
 # Returns: 0 on success, 1 on failure
@@ -18,7 +16,89 @@ update_config_schema() {
   echo
 
   local updated=0
-  local config_files=("variables.json" "packages.json")
+  local config_files=("variables.ini" "packages.ini")
+
+  # Helper: extract section names from INI
+  ini_sections() {
+    local file="$1"
+    grep -E '^\s*\[.*\]\s*$' "$file" | sed -E 's/^\s*\[|\]\s*$//g'
+  }
+
+  # Helper: extract keys for a section from INI (returns key names only)
+  ini_keys_in_section() {
+    local file="$1"
+    local section="$2"
+    # Find section header line number
+    local start
+    start=$(grep -n -E "^[[:space:]]*\\[$section\\][[:space:]]*$" "$file" | head -n1 | cut -d: -f1)
+    [[ -z "$start" ]] && return 0
+    # Determine end of section (line before next header) using relative search
+    local tail_lines rel_next end
+    tail_lines=$(tail -n +"$((start + 1))" "$file")
+    rel_next=$(printf '%s\n' "$tail_lines" | grep -n -E '^[[:space:]]*\\[.*\\][[:space:]]*$' | head -n1 | cut -d: -f1)
+    if [[ -n "$rel_next" ]]; then
+      end=$((start + rel_next - 1))
+    else
+      end=$(wc -l <"$file")
+    fi
+    # Read lines between start+1 and end, skip comments/blank lines, emit keys (left of =)
+    sed -n "$((start + 1)),$end p" "$file" | while IFS= read -r _line || [[ -n "$_line" ]]; do
+      # Trim leading/trailing whitespace
+      local line="$_line"
+      line="${line#"${line%%[![:space:]]*}"}"
+      line="${line%"${line##*[![:space:]]}"}"
+      # Skip blank or comment lines
+      [[ -z "${line//[[:space:]]/}" ]] && continue
+      case "$line" in
+        '#'* | ';'*) continue ;;
+      esac
+      if [[ "$line" == *"="* ]]; then
+        local key="${line%%=*}"
+        key="${key#"${key%%[![:space:]]*}"}"
+        key="${key%"${key##*[![:space:]]}"}"
+        printf '%s\n' "$key"
+      fi
+    done
+  }
+
+  # Helper: extract key=value lines for section from example
+  ini_kv_lines_for_section() {
+    local file="$1"
+    local section="$2"
+    # Find section header line number
+    local start
+    start=$(grep -n -E "^[[:space:]]*\\[$section\\][[:space:]]*$" "$file" | head -n1 | cut -d: -f1)
+    [[ -z "$start" ]] && return 0
+    # Determine end of section (line before next header)
+    local tail_lines rel_next end
+    tail_lines=$(tail -n +"$((start + 1))" "$file")
+    rel_next=$(printf '%s\n' "$tail_lines" | grep -n -E '^[[:space:]]*\\[.*\\][[:space:]]*$' | head -n1 | cut -d: -f1)
+    if [[ -n "$rel_next" ]]; then
+      end=$((start + rel_next - 1))
+    else
+      end=$(wc -l <"$file")
+    fi
+    # Emit non-blank lines from the section body
+    sed -n "$((start + 1)),$end p" "$file" | while IFS= read -r _line || [[ -n "$_line" ]]; do
+      # Skip pure-blank lines
+      if [[ -z "${_line//[[:space:]]/}" ]]; then
+        continue
+      fi
+      printf '%s\n' "$_line"
+    done
+  }
+
+  # Helper: append a block of lines (section header + kvs) to a file
+  append_section_block() {
+    local user_file="$1"
+    local section="$2"
+    local block_file="$3"
+    {
+      echo
+      echo "[$section]"
+      cat "$block_file"
+    } >>"$user_file"
+  }
 
   for file in "${config_files[@]}"; do
     local user_config="$CONFIG_DIR/$file"
@@ -32,54 +112,36 @@ update_config_schema() {
 
     log_info "Checking for schema updates in $file..."
 
-    # For variables.json, we need to do a deep merge to preserve nested structures
-    if [[ "$file" == "variables.json" ]]; then
-      # Check if there are differences in the structure
-      local needs_update=false
+    if [[ "$file" == "variables.ini" ]]; then
+      # Compare sections and keys between example and user
+      mapfile -t example_sections < <(ini_sections "$example_config")
+      mapfile -t user_sections < <(ini_sections "$user_config")
 
-      # This jq command will detect if the user config needs an update
-      # It checks both for missing keys and flat vs. nested structure differences
-      local jq_check_cmd="
-                # Load the configs
-                def user_config: $user;
-                def example_config: $example;
+      local sections_missing=()
+      declare -A section_missing_keys
 
-                # First check for completely missing keys
-                def has_missing_keys:
-                    def check_missing($u; $e):
-                        if ($e | type) == "object" then
-                            ($e | keys) as $ekeys |
-                            ($u | keys) as $ukeys |
-                            ($ekeys - $ukeys | length > 0) or
-                            ($ekeys | map(select($u[.] != null and ($u[.] | type) == "object" and ($e[.] | type) == "object") |
-                                check_missing($u[.]; $e[.])) | any)
-                        else false end;
-                    check_missing(user_config; example_config);
+      # Find sections missing entirely
+      for sec in "${example_sections[@]}"; do
+        if ! printf '%s\n' "${user_sections[@]}" | grep -Fxq "$sec"; then
+          sections_missing+=("$sec")
+        else
+          # For sections that exist, check for missing keys
+          mapfile -t example_keys < <(ini_keys_in_section "$example_config" "$sec")
+          mapfile -t user_keys < <(ini_keys_in_section "$user_config" "$sec")
+          local missing_keys=()
+          for key in "${example_keys[@]}"; do
+            if ! printf '%s\n' "${user_keys[@]}" | grep -Fxq "$key"; then
+              missing_keys+=("$key")
+            fi
+          done
+          if [[ ${#missing_keys[@]} -gt 0 ]]; then
+            section_missing_keys["$sec"]="${missing_keys[*]}"
+          fi
+        fi
+      done
 
-                # Then check for flat vs. nested structure differences
-                def has_structure_differences:
-                    # Define flat key equivalents to check
-                    [
-                        # Add mappings from flat to nested keys
-                        {flat: "laptop_ip", nested: ["laptop", "ip"]},
-                        {flat: "session", nested: ["desktop", "session"]},
-                        {flat: "laptop_session", nested: ["laptop", "session"]},
-                        {flat: "desktop_session", nested: ["desktop", "session"]}
-                    ] |
-                    # Check if any flat key exists that should be nested
-                    map(
-                        user_config[.flat] != null and
-                        example_config[.nested[0]][.nested[1]] != null
-                    ) |
-                    any;
-
-                # Return true if either check finds issues
-                has_missing_keys or has_structure_differences
-            "
-
-      needs_update=$(jq --argjson user "$(cat "$user_config")" --argjson example "$(cat "$example_config")" "$jq_check_cmd" 2>/dev/null)
-
-      if [[ "$needs_update" == "true" ]]; then
+      # Determine if any updates are needed
+      if [[ ${#sections_missing[@]} -gt 0 || ${#section_missing_keys[@]} -gt 0 ]]; then
         # Determine default answer based on post_migration flag
         local default_answer="n"
         local prompt_options="[y/N]"
@@ -94,115 +156,73 @@ update_config_schema() {
         fi
 
         echo "Found configuration updates needed for $file:"
-        echo "- New keys or sections need to be added"
-        echo "- Configuration structure needs modernizing from flat to nested format"
+        if [[ ${#sections_missing[@]} -gt 0 ]]; then
+          echo "- New sections need to be added:"
+          for s in "${sections_missing[@]}"; do echo "  - $s"; done
+        fi
+        if [[ ${#section_missing_keys[@]} -gt 0 ]]; then
+          echo "- Missing keys in existing sections:"
+          for s in "${!section_missing_keys[@]}"; do
+            echo "  - $s: ${section_missing_keys[$s]}"
+          done
+        fi
+
         echo -e "\n>>> WAITING FOR INPUT: Please respond to continue <<<"
         echo "Auto-continuing in $timeout seconds with default ($default_answer)..."
 
-        # Add timeout to read command to prevent indefinite blocking
-        read -t $timeout -p "Would you like to update your configuration while preserving your custom values? $prompt_options " answer || true
+        read -r -t $timeout -p "Would you like to update your configuration while preserving your custom values? $prompt_options " answer || true
         echo
 
-        # If no answer provided or read timed out, use the default
         if [[ -z "$answer" ]]; then
           answer="$default_answer"
           echo "Using default answer: $default_answer (read timed out)"
         fi
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
-          # Create backup of user's current config
           backup_config_file "$user_config"
 
-          # Use jq to merge configs while handling both nested structures and flat keys
-          jq -s '
-                        # User and example configs
-                        def user_cfg: .[0];
-                        def example_cfg: .[1];
+          # Add missing sections (copy content from example)
+          for sec in "${sections_missing[@]}"; do
+            tmp_section=$(mktemp)
+            ini_kv_lines_for_section "$example_config" "$sec" >"$tmp_section"
+            append_section_block "$user_config" "$sec" "$tmp_section"
+            rm -f "$tmp_section"
+            log_info "Appended missing section [$sec] to $user_config"
+          done
 
-                        # Recursive function to merge objects
-                        def deep_merge(a; b):
-                          if (a | type) == "object" and (b | type) == "object" then
-                            # Create an object that has all keys from both objects
-                            a + b |
-                            # For each key in the combined object
-                            to_entries |
-                            map(
-                              # If both a and b have the key and both values are objects, merge them recursively
-                              if a[.key] != null and b[.key] != null and (a[.key] | type) == "object" and (b[.key] | type) == "object" then
-                                {key: .key, value: deep_merge(a[.key]; b[.key])}
-                              # Otherwise keep the value (preference given to a, the user config)
-                              else
-                                .
-                              end
-                            ) |
-                            from_entries
-                          # If not both objects, prefer a (user config)
-                          elif a != null then
-                            a
-                          else
-                            b
-                          end;
+          # For missing keys within existing sections, insert them under the header
+          for sec in "${!section_missing_keys[@]}"; do
+            # Build temp insert file with key=value lines from example for missing keys
+            tmp_insert=$(mktemp)
+            IFS=' ' read -r -a missing_arr <<<"${section_missing_keys[$sec]}"
+            for key in "${missing_arr[@]}"; do
+              # extract the full key=value line from example using sed/grep for portability
+              sed -n "/^[[:space:]]*\\[$sec\\][[:space:]]*$/,/^[[:space:]]*\\[/{p}" "$example_config" | sed '1d;$d' \
+                | grep -E "^[[:space:]]*${key}[[:space:]]*=" >>"$tmp_insert" || true
+            done
 
-                        # Start with a deep copy of the example config
-                        example_cfg |
+            # Insert tmp_insert after the section header in user_config using a portable bash loop
+            tmp_out=$(mktemp)
+            inserted=0
+            while IFS= read -r __line || [[ -n "$__line" ]]; do
+              printf '%s\n' "$__line" >>"$tmp_out"
+              if [[ $inserted -eq 0 ]]; then
+                # Match section header exactly (allow surrounding whitespace)
+                if [[ "$__line" =~ ^[[:space:]]*\[$sec\][[:space:]]*$ ]]; then
+                  # append the missing key lines
+                  while IFS= read -r __il || [[ -n "$__il" ]]; do
+                    printf '%s\n' "$__il" >>"$tmp_out"
+                  done <"$tmp_insert"
+                  inserted=1
+                fi
+              fi
+            done <"$user_config"
+            mv "$tmp_out" "$user_config"
+            rm -f "$tmp_insert"
+            log_info "Inserted missing keys into section [$sec] in $user_config"
+          done
 
-                        # Special handling for flat keys migration
-                        . as $result |
-
-                        # Migrate flat keys to nested structure
-                        if user_cfg.laptop_ip != null and $result.laptop.ip != null then
-                            $result | .laptop.ip = user_cfg.laptop_ip
-                        else . end |
-
-                        if user_cfg.session != null and $result.desktop.session != null then
-                            $result | .desktop.session = $user_cfg.session
-                        else . end |
-
-                        if user_cfg.laptop_session != null and $result.laptop.session != null then
-                            $result | .laptop.session = $user_cfg.laptop_session
-                        else . end |
-
-                        if user_cfg.desktop_session != null and $result.desktop.session != null then
-                            $result | .desktop.session = $user_cfg.desktop_session
-                        else . end |
-
-                        # Copy over common shared fields directly
-                        if user_cfg.user != null then
-                            $result | .user = $user_cfg.user
-                        else . end |
-
-                        if user_cfg.hostnames != null then
-                            $result | .hostnames = $user_cfg.hostnames
-                        else . end |
-
-                        if user_cfg.browser != null then
-                            $result | .browser = $user_cfg.browser
-                        else . end |
-
-                        if user_cfg.system != null then
-                            $result | .system = $user_cfg.system
-                        else . end |
-
-                        # Also update nested hostnames to match flat structure if needed
-                        if user_cfg.hostnames.desktop != null and $result.desktop.host != null then
-                            $result | .desktop.host = $user_cfg.hostnames.desktop
-                        else . end |
-
-                        if user_cfg.hostnames.laptop != null and $result.laptop.host != null then
-                            $result | .laptop.host = $user_cfg.hostnames.laptop
-                        else . end
-                    ' "$user_config" "$example_config" >"${user_config}.new"
-
-          # Check if jq succeeded
-          if [[ $? -eq 0 ]] && jq empty "${user_config}.new" 2>/dev/null; then
-            # Replace the old config with the new one
-            mv "${user_config}.new" "$user_config"
-            log_info "Updated schema for $file successfully"
-            updated=$((updated + 1))
-          else
-            log_error "Failed to update schema for $file"
-            rm -f "${user_config}.new" 2>/dev/null
-          fi
+          updated=$((updated + 1))
         else
           log_info "Schema update for $file skipped by user"
         fi
@@ -210,24 +230,19 @@ update_config_schema() {
         log_info "No schema updates needed for $file"
       fi
 
-    # For packages.json, ensure all categories exist
-    elif [[ "$file" == "packages.json" ]]; then
-      # Get all package categories from example
-  local example_categories
-  mapfile -t example_categories < <(jq 'keys[]' -r "$example_config")
-  local user_categories
-  mapfile -t user_categories < <(jq 'keys[]' -r "$user_config")
-      local missing_categories=()
+    elif [[ "$file" == "packages.ini" ]]; then
+      # Ensure all package categories (sections) exist in user file
+      mapfile -t example_sections < <(ini_sections "$example_config")
+      mapfile -t user_sections < <(ini_sections "$user_config")
+      local missing_sections=()
 
-      # Find categories in example that are missing in user config
-      for category in "${example_categories[@]}"; do
-        if ! echo "${user_categories[@]}" | grep -qw "$category"; then
-          missing_categories+=("$category")
+      for sec in "${example_sections[@]}"; do
+        if ! printf '%s\n' "${user_sections[@]}" | grep -Fxq "$sec"; then
+          missing_sections+=("$sec")
         fi
       done
 
-      # If we have missing categories, update the user config
-      if [[ ${#missing_categories[@]} -gt 0 ]]; then
+      if [[ ${#missing_sections[@]} -gt 0 ]]; then
         # Determine default answer based on post_migration flag
         local default_answer="n"
         local prompt_options="[y/N]"
@@ -239,67 +254,39 @@ update_config_schema() {
           echo -e "\n>> ATTENTION: Additional package categories available after migration <<"
         fi
 
-        echo "Found new package categories in packages.json that are missing in your config:"
-        for category in "${missing_categories[@]}"; do
+        echo "Found new package categories in $file that are missing in your config:"
+        for category in "${missing_sections[@]}"; do
           echo "  - $category"
         done
 
         echo -e "\n>>> WAITING FOR INPUT: Please respond to continue <<<"
         echo "Auto-continuing in $timeout seconds with default ($default_answer)..."
 
-        # Add timeout to read command to prevent indefinite blocking
-        read -t $timeout -p "Would you like to add these new categories to your configuration? $prompt_options " answer || true
+        read -r -t $timeout -p "Would you like to add these new categories to your configuration? $prompt_options " answer || true
         echo
 
-        # If no answer provided or read timed out, use the default
         if [[ -z "$answer" ]]; then
           answer="$default_answer"
           echo "Using default answer: $default_answer (read timed out)"
         fi
 
         if [[ "$answer" =~ ^[Yy]$ ]]; then
-          # Create backup of user's current config
           backup_config_file "$user_config"
 
-          # Create a temporary file for the merged result
-          local temp_file
-          temp_file=$(mktemp)
-
-          # Start with the user's config
-          cp "$user_config" "$temp_file"
-
-          # Add each missing category with its default values
-          for category in "${missing_categories[@]}"; do
-            # Extract the default packages for this category from the example
-            local default_packages
-            default_packages=$(jq --arg cat "$category" '.[$cat]' "$example_config")
-
-            # Add the category with default packages to user config
-            jq --argjson pkgs "$default_packages" --arg cat "$category" '.[$cat] = $pkgs' "$temp_file" >"${temp_file}.new"
-
-            if [[ $? -eq 0 ]]; then
-              mv "${temp_file}.new" "$temp_file"
-            else
-              log_error "Failed to add category $category to packages.json"
-              rm -f "${temp_file}.new" 2>/dev/null
-            fi
+          for sec in "${missing_sections[@]}"; do
+            tmp_section=$(mktemp)
+            ini_kv_lines_for_section "$example_config" "$sec" >"$tmp_section"
+            append_section_block "$user_config" "$sec" "$tmp_section"
+            rm -f "$tmp_section"
+            log_info "Added missing package category [$sec] to $user_config"
           done
 
-          # Check if the updated file is valid JSON
-          if jq empty "$temp_file" 2>/dev/null; then
-            # Replace the old config with the new one
-            mv "$temp_file" "$user_config"
-            log_info "Added new package categories to packages.json successfully"
-            updated=$((updated + 1))
-          else
-            log_error "Failed to create valid JSON when updating packages.json"
-            rm -f "$temp_file" 2>/dev/null
-          fi
+          updated=$((updated + 1))
         else
           log_info "Package category updates skipped by user"
         fi
       else
-        log_info "No new package categories to add to packages.json"
+        log_info "No new package categories to add to $file"
       fi
     fi
   done

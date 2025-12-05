@@ -28,13 +28,13 @@ detect_distro() {
     source /etc/os-release
     os_id="${ID:-}";
     case "${os_id,,}" in
-      fedora)
+      fedora|nobara)
         distro_from_os="fedora";
         ;;
-      arch|archlinux|manjaro|garuda)
+      arch|archlinux|manjaro|garuda|cachyos|endeavouros)
         distro_from_os="arch";
         ;;
-      debian|ubuntu|linuxmint|pop)
+      debian|ubuntu|linuxmint|popos)
         distro_from_os="debian";
         ;;
       *)
