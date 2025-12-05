@@ -113,7 +113,7 @@ pm_update
 
 **Functions**:
 
-- `load_package_mappings()` - Load mappings from packages.json
+- `load_package_mappings()` - Load mappings from `pkgmap.ini` (INI)
 - `map_package_name <name> [distro]` - Map single package
 - `map_package_list <distro> <packages...>` - Map multiple packages
 - `get_device_packages <type> <config>` - Get device-specific packages
@@ -159,7 +159,7 @@ repo_add "ppa:neovim-ppa/unstable"
 
 #### 6. **config.sh** - Configuration Management
 
-**Purpose**: Load and manage JSON configuration files
+**Purpose**: Load and manage INI configuration files
 
 **Key Functions**:
 
@@ -223,10 +223,11 @@ thinkfan
       "arch": "arch-name",
       "debian": "debian-name"
     }
-  }
+
+}
 }
 
-```
+````
 
 ### Feature Modules
 
@@ -260,7 +261,7 @@ install_brave() {
       ;;
   esac
 }
-```
+````
 
 #### 8. **desktop.sh** - Desktop-Specific Configurations
 
@@ -331,8 +332,8 @@ install_brave() {
 The function intelligently selects the desktop session based on hostname:
 
 ```bash
-# Desktop: uses desktop_session from variables.json
-# Laptop: uses laptop_session from variables.json
+# Desktop: uses desktop_session from variables.ini
+# Laptop: uses laptop_session from variables.ini
 # Unknown: defaults to qtile
 ```
 
@@ -355,7 +356,7 @@ get_distro_version() → "41" | "rolling" | "12"
 ```bash
 detect_distro() {
   source /etc/os-release
-  
+
   case "${ID,,}" in
     fedora) echo "fedora" ;;
     arch|archlinux) echo "arch" ;;
@@ -399,7 +400,7 @@ PM_SUDO=""        # e.g., "sudo" or "" (for AUR helpers)
 
 - Simple: No need to pass state through function chains
 - Efficient: Set once, use everywhere
-- Clear: Named clearly with PM_ prefix
+- Clear: Named clearly with PM\_ prefix
 
 ### Layer 3: Package Name Mapping
 
