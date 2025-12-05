@@ -40,6 +40,12 @@ detect_repo_changes() {
     local tracked_source
     tracked_source=$(get_package_source "$package")
 
+    # Skip flatpak packages - they use a different migration path
+    if [[ "$tracked_source" == flatpak:* ]]; then
+      log_debug "Skipping flatpak package: $package"
+      continue
+    fi
+
     local config_source
     config_source=$(get_package_config_source "$package")
 
@@ -306,6 +312,12 @@ migrate_all_changed_repos() {
     local tracked_source
     tracked_source=$(get_package_source "$package")
 
+    # Skip flatpak packages - they use a different migration path
+    if [[ "$tracked_source" == flatpak:* ]]; then
+      log_debug "Skipping flatpak package: $package"
+      continue
+    fi
+
     local config_source
     config_source=$(get_package_config_source "$package")
 
@@ -409,6 +421,12 @@ show_repo_changes() {
 
     local tracked_source
     tracked_source=$(get_package_source "$package")
+
+    # Skip flatpak packages - they use a different migration path
+    if [[ "$tracked_source" == flatpak:* ]]; then
+      log_debug "Skipping flatpak package: $package"
+      continue
+    fi
 
     local config_source
     config_source=$(get_package_config_source "$package")
