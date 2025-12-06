@@ -16,17 +16,17 @@ source src/core/distro_detection.sh
 #TODO: Improve function, maybe split into repo_add_copr, repo_add_aur, repo_add_ppa would be cleaner
 repo_add() {
   local repo="${1:-}"
-  
+
   if [[ -z "$repo" ]]; then
     log_error "No repository specified"
     return 1
   fi
-  
+
   local distro
   distro=$(detect_distro) || return 1
-  
+
   log_info "Adding repository '$repo' for $distro"
-  
+
   case "$distro" in
     fedora)
       # COPR repository format: user/repo
@@ -84,7 +84,7 @@ repo_add() {
       return 1
       ;;
   esac
-  
+
   log_success "Successfully added repository: $repo"
   return 0
 }
@@ -96,17 +96,17 @@ repo_add() {
 # Returns: 0 on success, 1 on failure
 repo_enable() {
   local repo="${1:-}"
-  
+
   if [[ -z "$repo" ]]; then
     log_error "No repository specified"
     return 1
   fi
-  
+
   local distro
   distro=$(detect_distro) || return 1
-  
+
   log_info "Enabling repository '$repo' for $distro"
-  
+
   case "$distro" in
     fedora)
       if ! sudo dnf config-manager --set-enabled "$repo"; then
@@ -128,7 +128,7 @@ repo_enable() {
       return 1
       ;;
   esac
-  
+
   log_success "Repository enabled: $repo"
   return 0
 }
@@ -140,17 +140,17 @@ repo_enable() {
 # Returns: 0 on success, 1 on failure
 repo_disable() {
   local repo="${1:-}"
-  
+
   if [[ -z "$repo" ]]; then
     log_error "No repository specified"
     return 1
   fi
-  
+
   local distro
   distro=$(detect_distro) || return 1
-  
+
   log_info "Disabling repository '$repo' for $distro"
-  
+
   case "$distro" in
     fedora)
       if ! sudo dnf config-manager --set-disabled "$repo"; then
@@ -170,7 +170,7 @@ repo_disable() {
       return 1
       ;;
   esac
-  
+
   log_success "Repository disabled: $repo"
   return 0
 }
@@ -181,9 +181,9 @@ repo_disable() {
 repo_update() {
   local distro
   distro=$(detect_distro) || return 1
-  
+
   log_info "Updating repository metadata for $distro"
-  
+
   case "$distro" in
     fedora)
       if ! sudo dnf makecache --refresh; then
@@ -208,8 +208,126 @@ repo_update() {
       return 1
       ;;
   esac
-  
+
   log_success "Repository metadata updated successfully"
   return 0
 }
 
+# Function: repo_disable_copr
+# Purpose: Disable a COPR repository (Fedora only)
+# Parameters:
+#   $1 - COPR repository name (format: user/repo)
+# Returns: 0 on success, 1 on failure
+repo_disable_copr() {
+  local repo="${1:-}"
+
+  if [[ -z "$repo" ]]; then
+    log_error "No repository specified"
+    return 1
+  fi
+
+  local distro
+  distro=$(detect_distro) || return 1
+
+  if [[ "$distro" != "fedora" ]]; then
+    log_error "COPR repositories are only available on Fedora"
+    return 1
+  fi
+
+  log_info "Disabling COPR repository: $repo"
+
+  # Validate COPR format
+  if [[ ! "$repo" =~ ^[^/]+/[^/]+$ ]]; then
+    log_error "Invalid COPR repository format: $repo (expected: user/repo)"
+    return 1
+  fi
+
+  if ! sudo dnf copr disable -y "$repo"; then
+    log_error "Failed to disable COPR repository: $repo"
+    return 1
+  fi
+
+  log_success "Successfully disabled COPR repository: $repo"
+  return 0
+}
+
+# Function: repo_remove_copr
+# Purpose: Remove a COPR repository (Fedora only)
+# Parameters:
+#   $1 - COPR repository name (format: user/repo)
+# Returns: 0 on success, 1 on failure
+repo_remove_copr() {
+  local repo="${1:-}"
+
+  if [[ -z "$repo" ]]; then
+    log_error "No repository specified"
+    return 1
+  fi
+
+  local distro
+  distro=$(detect_distro) || return 1
+
+  if [[ "$distro" != "fedora" ]]; then
+    log_error "COPR repositories are only available on Fedora"
+    return 1
+  fi
+
+  log_info "Removing COPR repository: $repo"
+
+  # Validate COPR format
+  if [[ ! "$repo" =~ ^[^/]+/[^/]+$ ]]; then
+    log_error "Invalid COPR repository format: $repo (expected: user/repo)"
+    return 1
+  fi
+
+  if ! sudo dnf copr remove -y "$repo"; then
+    log_error "Failed to remove COPR repository: $repo"
+    return 1
+  fi
+
+  log_success "Successfully removed COPR repository: $repo"
+  return 0
+}
+
+# Function: repo_remove_ppa
+# Purpose: Remove a PPA repository (Debian/Ubuntu only)
+# Parameters:
+#   $1 - PPA repository (format: ppa:user/repo)
+# Returns: 0 on success, 1 on failure
+repo_remove_ppa() {
+  local repo="${1:-}"
+
+  if [[ -z "$repo" ]]; then
+    log_error "No repository specified"
+    return 1
+  fi
+
+  local distro
+  distro=$(detect_distro) || return 1
+
+  if [[ "$distro" != "debian" ]]; then
+    log_error "PPA repositories are only available on Debian/Ubuntu"
+    return 1
+  fi
+
+  log_info "Removing PPA repository: $repo"
+
+  # Validate PPA format
+  if [[ ! "$repo" =~ ^ppa: ]]; then
+    log_error "Invalid PPA format: $repo (expected: ppa:user/repo)"
+    return 1
+  fi
+
+  if ! sudo add-apt-repository --remove -y "$repo"; then
+    log_error "Failed to remove PPA repository: $repo"
+    return 1
+  fi
+
+  # Update package lists after removing PPA
+  if ! sudo apt-get update; then
+    log_warn "Failed to update package lists after removing PPA"
+  fi
+
+  log_success "Successfully removed PPA repository: $repo"
+  return 0
+}

@@ -7,41 +7,69 @@ readonly _QTILE_SOURCED=1
 # install_qtile_packages - Install Qtile window manager and dependencies
 # Follows the standard pattern from install_packages.sh
 install_qtile_packages() {
-  log_info "Installing Qtile packages..."
+  log_info "Installing Qtile and WM-common packages..."
 
   # If in test mode, just print what would be run
   if [[ -n "${BATS_TEST_TMPDIR:-}" ]]; then
     echo "sudo would run: dnf install -y ${QTILE_PACKAGES[*]}"
+    if [[ -v WM_COMMON_PACKAGES[@] ]] && [[ ${#WM_COMMON_PACKAGES[@]} -gt 0 ]]; then
+      echo "sudo would run: dnf install -y ${WM_COMMON_PACKAGES[*]}"
+    fi
     return 0
   fi
 
-  # Verify QTILE_PACKAGES array exists and is not empty
-  if [[ ! -v QTILE_PACKAGES[@] ]] || [[ ${#QTILE_PACKAGES[@]} -eq 0 ]]; then
-    log_warn "No Qtile packages defined in configuration"
+  # If neither QTILE_PACKAGES nor WM_COMMON_PACKAGES are defined, nothing to do
+  if { [[ ! -v QTILE_PACKAGES[@] ]] || [[ ${#QTILE_PACKAGES[@]} -eq 0 ]]; } &&
+    { [[ ! -v WM_COMMON_PACKAGES[@] ]] || [[ ${#WM_COMMON_PACKAGES[@]} -eq 0 ]]; }; then
+    log_warn "No Qtile or WM-common packages defined in configuration"
     return 0
   fi
 
-  log_debug "Qtile package list (${#QTILE_PACKAGES[@]} packages): ${QTILE_PACKAGES[*]}"
+  # Install Qtile-specific packages if present
+  if [[ -v QTILE_PACKAGES[@] ]] && [[ ${#QTILE_PACKAGES[@]} -gt 0 ]]; then
+    log_debug "Qtile package list (${#QTILE_PACKAGES[@]} packages): ${QTILE_PACKAGES[*]}"
 
-  # Map packages for current distro (outputs newline-separated list)
-  local mapped_array=()
-  mapfile -t mapped_array < <(map_package_list "$CURRENT_DISTRO" "${QTILE_PACKAGES[@]}") || {
-    log_error "Failed to map Qtile packages"
-    return 1
-  }
+    # Map packages for current distro (outputs newline-separated list)
+    local q_mapped_array=()
+    mapfile -t q_mapped_array < <(map_package_list "$CURRENT_DISTRO" "${QTILE_PACKAGES[@]}") || {
+      log_error "Failed to map Qtile packages"
+      return 1
+    }
 
-  log_debug "Mapped ${#mapped_array[@]} packages for $CURRENT_DISTRO:"
-  for i in "${!mapped_array[@]}"; do
-    log_debug "  [$i]: '${mapped_array[$i]}'"
-  done
+    log_debug "Mapped ${#q_mapped_array[@]} Qtile packages for $CURRENT_DISTRO:"
+    for i in "${!q_mapped_array[@]}"; do
+      log_debug "  [qtile][$i]: '${q_mapped_array[$i]}'"
+    done
 
-  # Install using package manager abstraction
-  if ! pm_install_array "${mapped_array[@]}"; then
-    log_error "Failed to install Qtile packages"
-    return 1
+    # Install using package manager abstraction
+    if ! pm_install_array "${q_mapped_array[@]}"; then
+      log_error "Failed to install Qtile packages"
+      return 1
+    fi
   fi
 
-  log_info "Qtile packages installation completed"
+  # Install common WM packages (shared by X11-based window managers) if present
+  if [[ -v WM_COMMON_PACKAGES[@] ]] && [[ ${#WM_COMMON_PACKAGES[@]} -gt 0 ]]; then
+    log_debug "WM-common package list (${#WM_COMMON_PACKAGES[@]} packages): ${WM_COMMON_PACKAGES[*]}"
+
+    local w_mapped_array=()
+    mapfile -t w_mapped_array < <(map_package_list "$CURRENT_DISTRO" "${WM_COMMON_PACKAGES[@]}") || {
+      log_error "Failed to map WM-common packages"
+      return 1
+    }
+
+    log_debug "Mapped ${#w_mapped_array[@]} WM-common packages for $CURRENT_DISTRO:"
+    for i in "${!w_mapped_array[@]}"; do
+      log_debug "  [wm-common][$i]: '${w_mapped_array[$i]}'"
+    done
+
+    if ! pm_install_array "${w_mapped_array[@]}"; then
+      log_error "Failed to install WM-common packages"
+      return 1
+    fi
+  fi
+
+  log_info "Qtile and WM-common packages installation completed"
   return 0
 }
 
@@ -95,4 +123,3 @@ setup_qtile_backlight_rules() {
 
   log_info "Udev rules reloaded."
 }
-

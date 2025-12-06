@@ -2,23 +2,6 @@
 
 **Comprehensive Reference for Contributing Developers**
 
----
-
-## Table of Contents
-
-1. [Getting Started](#getting-started)
-2. [Development Environment](#development-environment)
-3. [Module Reference](#module-reference)
-4. [Function Call Chains](#function-call-chains)
-5. [Adding New Features](#adding-new-features)
-6. [Code Style & Conventions](#code-style--conventions)
-7. [Testing Guide](#testing-guide)
-8. [Common Development Tasks](#common-development-tasks)
-9. [Debugging Tips](#debugging-tips)
-10. [Contributing Guidelines](#contributing-guidelines)
-
----
-
 ## Getting Started
 
 ### Prerequisites
@@ -28,7 +11,7 @@
 - Bash 4.0+
 - `src/core/ini_parser.sh` (project INI parser)
 - `git`
-- One of: Fedora 41+, Arch Linux, or Debian/Ubuntu
+- One of: Fedora 42+, Arch Linux, or Debian/Ubuntu
 
 **Recommended Tools**:
 
@@ -36,32 +19,6 @@
 - `shfmt` (bash formatter)
 - `bats` (Bash Automated Testing System)
 - Docker/Podman (for cross-distro testing)
-
-### Setting Up Development Environment
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/auto-penguin-setup.git
-cd auto-penguin-setup
-
-# 2. Install development dependencies
-# Fedora
-sudo dnf install shellcheck shfmt bats
-
-# Arch
-sudo pacman -S shellcheck shfmt bats
-
-# Debian/Ubuntu
-sudo apt install shellcheck shfmt bats
-
-# 3. Set up test configuration
-mkdir -p ~/.config/auto-penguin-setup
-cp config_examples/* ~/.config/auto-penguin-setup/
-
-# 4. Run tests to verify setup
-cd tests
-bats test_*.sh
-```
 
 ### Project Structure Quick Reference
 
@@ -90,83 +47,6 @@ auto-penguin-setup/
 ---
 
 ## Development Environment
-
-### Editor Setup
-
-#### VS Code
-
-Recommended extensions:
-
-```json
-{
-  "recommendations": [
-    "timonwong.shellcheck",
-    "foxundermoon.shell-format",
-    "mads-hartmann.bash-ide-vscode"
-  ]
-}
-```
-
-Settings (`.vscode/settings.json`):
-
-```json
-{
-  "shellcheck.enable": true,
-  "shellcheck.run": "onType",
-  "shellformat.effectLanguages": ["shellscript"],
-  "shellformat.flag": "-i 2 -ci -bn"
-}
-```
-
-#### Vim/Neovim
-
-Add to `.vimrc`:
-
-```vim
-" Bash syntax checking
-let g:syntastic_sh_checkers = ['shellcheck']
-
-" Auto-format on save
-autocmd FileType sh autocmd BufWritePre <buffer> %!shfmt -i 2 -ci -bn
-```
-
-### Git Hooks
-
-Set up pre-commit hooks:
-
-```bash
-# .git/hooks/pre-commit
-#!/bin/bash
-
-echo "Running pre-commit checks..."
-
-# 1. Run shellcheck
-for file in $(git diff --cached --name-only | grep '\.sh$'); do
-  echo "Checking $file..."
-  shellcheck "$file" || exit 1
-done
-
-# 2. Run shfmt
-for file in $(git diff --cached --name-only | grep '\.sh$'); do
-  echo "Formatting $file..."
-  shfmt -i 2 -ci -bn -w "$file"
-  git add "$file"
-done
-
-# 3. Run tests
-echo "Running tests..."
-cd tests && bats test_*.sh || exit 1
-
-echo "All checks passed!"
-```
-
-Make it executable:
-
-```bash
-chmod +x .git/hooks/pre-commit
-```
-
----
 
 ## Module Reference
 
@@ -213,12 +93,12 @@ cleanup_old_logs <days> # Clean up old logs
 # In your function
 my_function() {
   log_info "Starting my_function..."
-  
+
   if ! some_command; then
     log_error "some_command failed"
     return 1
   fi
-  
+
   log_success "my_function completed successfully"
   return 0
 }
@@ -374,7 +254,7 @@ fi
 ```bash
 init_package_manager() {
   CURRENT_DISTRO=$(detect_distro) || return 1
-  
+
   case "$CURRENT_DISTRO" in
     fedora)
       PM_INSTALL="dnf install -y"
@@ -432,7 +312,7 @@ declare -A PACKAGE_MAPPINGS  # Associative array of mappings
 **Public Functions**:
 
 ```bash
-# Load mappings from JSON
+# Load mappings from INI (pkgmap.ini)
 load_package_mappings <config_file> → 0 | 1
 
 # Map single package name
@@ -484,18 +364,32 @@ PACKAGE_MAPPINGS["python3-devel:debian"]="python3-dev"
 
 **Adding New Mappings**:
 
-In `packages.ini`:
+In `pkgmap.ini`:
 
-```json
-{
-  "mappings": {
-    "new-package": {
-      "fedora": "fedora-package-name",
-      "arch": "arch-package-name",
-      "debian": "debian-package-name"
-    }
-  }
-}
+```ini
+[pkgmap.arch]
+python3-dbus-fast=python-dbus-fast
+gh=github-cli
+fd-find=fd
+pip=python-pip
+python3-devel=python
+dbus-devel=dbus
+qtile-extras=AUR:qtile-extras
+lazygit=AUR:lazygit
+yarnpkg=yarn
+git-credential-libsecret=libsecret
+xset=xorg-xset
+xev=xorg-xev
+xautolock=AUR:xautolock
+thinkfan=AUR:thinkfan
+
+[pkgmap.fedora]
+qtile-extras=COPR:frostyx/qtile
+#NOTE: atim/lazygit unmaintained now switched to dejan/lazygit -> 0.56.0-1 last version
+lazygit=COPR:dejan/lazygit
+shellcheck=ShellCheck
+#WARN: repo is outdated but there isn't new repo - https://copr.fedorainfracloud.org/coprs/atim/starship/builds/
+starship=COPR:atim/starship
 ```
 
 ---
@@ -553,7 +447,7 @@ Repository identifier formats:
 enable_rpm_fusion_distro_agnostic() {
   local distro
   distro=$(detect_distro) || return 1
-  
+
   case "$distro" in
     fedora)
       # Enable RPM Fusion free and nonfree
@@ -575,7 +469,7 @@ enable_rpm_fusion_distro_agnostic() {
 
 #### config.sh
 
-**Purpose**: Configuration file management and JSON parsing.
+**Purpose**: Configuration file management and INI parsing.
 
 **Dependencies**: `logging.sh`, `distro_detection.sh`, `package_manager.sh`, `package_mapping.sh`
 
@@ -621,7 +515,7 @@ load_variables() → 0 | 1
 load_package_arrays() → 0 | 1
 
 # Variable getters
-get_variable <jq_path> → value
+get_ini_value <section> <key> → value
 
 # Package getters
 load_packages <category> → space_separated_list
@@ -661,9 +555,9 @@ dev_packages=$(load_packages "dev")
 **Configuration Flow**:
 
 1. **check_and_create_config**:
-   - Checks if `~/.config/auto-penguin-setup/` exists
-   - Prompts user to create if missing
-   - Copies examples with customization
+    - Checks if `~/.config/auto-penguin-setup/` exists
+    - Prompts user to create if missing
+    - Copies examples with customization
 
 2. **load_variables**:
 
@@ -730,7 +624,7 @@ install_lazygit_from_github() → 0 | 1
 ```bash
 install_application() {
   log_info "Installing Application..."
-  
+
   case "$CURRENT_DISTRO" in
     fedora)
       # 1. Add repository (if needed)
@@ -751,7 +645,7 @@ install_application() {
       return 1
       ;;
   esac
-  
+
   log_success "Application installation completed"
   return 0
 }
@@ -770,7 +664,7 @@ Example:
 ```bash
 install_my_app() {
   log_info "Installing My App..."
-  
+
   case "$CURRENT_DISTRO" in
     fedora)
       repo_add "user/myapp-copr"
@@ -785,13 +679,13 @@ install_my_app() {
       pm_install myapp
       ;;
   esac
-  
+
   # Verify installation
   if ! command -v myapp &>/dev/null; then
     log_error "My App installation failed"
     return 1
   fi
-  
+
   log_success "My App installed successfully"
   return 0
 }
@@ -832,16 +726,16 @@ remove_gnome() → 0 | 1
 ```bash
 nvidia_cuda_setup() {
   log_info "Setting up NVIDIA CUDA..."
-  
+
   # Validate NVIDIA GPU present
   if ! lspci | grep -i nvidia &>/dev/null; then
     log_error "No NVIDIA GPU detected"
     return 1
   fi
-  
+
   local distro
   distro=$(detect_distro) || return 1
-  
+
   case "$distro" in
     fedora)
       local version
@@ -857,13 +751,13 @@ nvidia_cuda_setup() {
       # Install cuda-toolkit
       ;;
   esac
-  
+
   # Verify installation
   if ! command -v nvcc &>/dev/null; then
     log_error "CUDA installation failed"
     return 1
   fi
-  
+
   log_success "CUDA setup completed"
   return 0
 }
@@ -903,25 +797,25 @@ ssh_setup_laptop() → 0 | 1
 ```bash
 tlp_setup() {
   log_info "Setting up TLP..."
-  
+
   # 1. Install TLP if not present
   if ! pm_is_installed tlp; then
     pm_install tlp || return 1
   fi
-  
+
   # 2. Copy configuration
   sudo cp "$tlp_file" "$dir_tlp"
-  
+
   # 3. Handle conflicting services (distro-specific)
   local distro
   distro=$(detect_distro)
-  
+
   case "$distro" in
     fedora)
       # Disable TuneD on Fedora 41+
       systemctl disable --now tuned tuned-ppd
       pm_remove tuned tuned-ppd
-      
+
       # Disable power-profiles-daemon on older Fedora
       systemctl disable --now power-profiles-daemon
       ;;
@@ -930,16 +824,16 @@ tlp_setup() {
       systemctl disable --now power-profiles-daemon
       ;;
   esac
-  
+
   # 4. Enable TLP services
   systemctl enable --now tlp tlp-sleep
-  
+
   # 5. Mask rfkill (let TLP handle radios)
   systemctl mask systemd-rfkill.service systemd-rfkill.socket
-  
+
   # 6. Enable TLP radio device handling
   tlp-rdw enable
-  
+
   log_success "TLP setup completed"
   return 0
 }
@@ -999,9 +893,9 @@ app_name_to_desktop_file <app_name> → desktop_file
 speed_up_package_manager() {
   local distro
   distro=$(detect_distro) || return 1
-  
+
   log_info "Optimizing package manager for $distro..."
-  
+
   case "$distro" in
     fedora)
       speed_up_package_manager
@@ -1017,7 +911,7 @@ speed_up_package_manager() {
       return 1
       ;;
   esac
-  
+
   log_success "Package manager optimization completed"
 }
 ```
@@ -1141,7 +1035,7 @@ tlp_setup()
 ```bash
 detect_distro() {
   source /etc/os-release
-  
+
   case "${ID,,}" in
     fedora) distro="fedora" ;;
     arch|archlinux|manjaro) distro="arch" ;;
@@ -1152,7 +1046,7 @@ detect_distro() {
       return 1
       ;;
   esac
-  
+
   echo "$distro"
 }
 
@@ -1169,7 +1063,7 @@ is_opensuse() {
 ```bash
 init_package_manager() {
   CURRENT_DISTRO=$(detect_distro) || return 1
-  
+
   case "$CURRENT_DISTRO" in
     # ... existing cases
     opensuse)  # NEW
@@ -1243,9 +1137,9 @@ install_application() {
 ```
 
 7. **Update documentation**:
-   - README.md: Add to supported distributions table
-   - WIKI.md: Add openSUSE examples
-   - ARCHITECTURE.md: Document openSUSE-specific patterns
+    - README.md: Add to supported distributions table
+    - WIKI.md: Add openSUSE examples
+    - ARCHITECTURE.md: Document openSUSE-specific patterns
 
 ---
 
@@ -1261,31 +1155,31 @@ install_application() {
 # Returns: 0 on success, 1 on failure
 install_my_app() {
   log_info "Installing My App..."
-  
+
   case "$CURRENT_DISTRO" in
     fedora)
       # Fedora/RPM-based installation
       log_info "Adding My App repository for Fedora..."
-      
+
       # Import GPG key (if needed)
       if ! sudo rpm --import https://example.com/gpg.key; then
         log_error "Failed to import My App GPG key"
         return 1
       fi
-      
+
       # Add repository
       if ! repo_add "user/myapp-copr"; then
         log_error "Failed to add My App repository"
         return 1
       fi
-      
+
       # Install package
       if ! pm_install "myapp"; then
         log_error "Failed to install My App"
         return 1
       fi
       ;;
-      
+
     arch)
       # Arch Linux installation
       log_info "Installing My App from AUR..."
@@ -1294,47 +1188,47 @@ install_my_app() {
         return 1
       fi
       ;;
-      
+
     debian)
       # Debian/Ubuntu installation
       log_info "Adding My App repository for Debian..."
-      
+
       # Import GPG key
       if ! wget -qO- https://example.com/gpg.key | sudo apt-key add -; then
         log_error "Failed to import My App GPG key"
         return 1
       fi
-      
+
       # Add repository
       if ! repo_add "ppa:user/myapp"; then
         log_error "Failed to add My App repository"
         return 1
       fi
-      
+
       # Update and install
       if ! pm_update; then
         log_error "Failed to update package lists"
         return 1
       fi
-      
+
       if ! pm_install "myapp"; then
         log_error "Failed to install My App"
         return 1
       fi
       ;;
-      
+
     *)
       log_error "Unsupported distribution: $CURRENT_DISTRO"
       return 1
       ;;
   esac
-  
+
   # Verify installation
   if ! command -v myapp &>/dev/null; then
     log_error "My App installation failed - binary not found"
     return 1
   fi
-  
+
   log_success "My App installation completed"
   return 0
 }
@@ -1435,20 +1329,20 @@ pm_install() {
     log_error "Package manager not initialized"
     return 1
   fi
-  
+
   if [[ $# -eq 0 ]]; then
     log_warn "No packages specified"
     return 0
   fi
-  
+
   log_info "Installing packages: $*"
-  
+
   if [[ -n "$PM_SUDO" ]]; then
     $PM_SUDO $PM_INSTALL "$@" || return 1
   else
     $PM_INSTALL "$@" || return 1
   fi
-  
+
   log_success "Packages installed successfully"
   return 0
 }
@@ -1463,31 +1357,31 @@ function_name() {
     log_error "Parameter required"
     return 1
   fi
-  
+
   # 2. Check preconditions
   if [[ ! -f "$file" ]]; then
     log_error "File not found: $file"
     return 1
   fi
-  
+
   # 3. Create backup (if modifying)
   if ! cp "$file" "$file.bak"; then
     log_error "Failed to create backup"
     return 1
   fi
-  
+
   # 4. Perform operation
   if ! operation; then
     log_error "Operation failed"
     return 1
   fi
-  
+
   # 5. Verify result
   if ! verify; then
     log_error "Verification failed"
     return 1
   fi
-  
+
   # 6. Success
   log_success "Operation completed"
   return 0
@@ -1516,7 +1410,7 @@ if [[ -f $file ]]; then
 fi
 ```
 
-**Use [[ ]] instead of [ ]**:
+**Use [[]] instead of [ ]**:
 
 ```bash
 # Good
@@ -1588,7 +1482,7 @@ setup() {
   # Set up test environment
   export BATS_TEST_TMPDIR="$(mktemp -d)"
   export PATH="$BATS_TEST_DIRNAME/mocks:$PATH"
-  
+
   # Source module
   source src/module_name.sh
 }
@@ -1600,14 +1494,14 @@ teardown() {
 
 @test "function_name succeeds with valid input" {
   run function_name "valid_input"
-  
+
   [ "$status" -eq 0 ]
   [ "$output" = "expected output" ]
 }
 
 @test "function_name fails with invalid input" {
   run function_name "invalid_input"
-  
+
   [ "$status" -eq 1 ]
   [[ "$output" =~ "error message" ]]
 }
@@ -1653,7 +1547,7 @@ setup() {
 @test "pm_install uses mocked dnf" {
   export CURRENT_DISTRO="fedora"
   init_package_manager
-  
+
   run pm_install vim
   [ "$status" -eq 0 ]
 }
@@ -1689,31 +1583,31 @@ mapfile -t MY_NEW_CATEGORY_PACKAGES < <(parse_ini_lines "$packages_file" "my_new
 ```
 
 # ... existing arrays
-  
+
 # New category
 
 # Assuming packages are listed under [my_new_category]
 
-  mapfile -t MY_NEW_CATEGORY_PACKAGES < <(awk 'BEGIN{in=0} /^\\[my_new_category\]/{in=1;next} /^\[/{in=0} in && NF{print $0}' "$packages_file")
-  export MY_NEW_CATEGORY_PACKAGES
+mapfile -t MY_NEW_CATEGORY_PACKAGES < <(awk 'BEGIN{in=0} /^\\[my_new_category\]/{in=1;next} /^\[/{in=0} in && NF{print $0}' "$packages_file")
+export MY_NEW_CATEGORY_PACKAGES
 }
 
-```
+````
 
 **3. Create installation function**:
 
 ```bash
 install_my_new_category() {
   log_info "Installing my new category packages..."
-  
+
   if [[ ${#MY_NEW_CATEGORY_PACKAGES[@]} -eq 0 ]]; then
     log_warn "No my new category packages defined"
     return 0
   fi
-  
+
   pm_install_array "${MY_NEW_CATEGORY_PACKAGES[@]}"
 }
-```
+````
 
 **4. Add to `setup.sh`**:
 
@@ -1759,16 +1653,16 @@ EndSection
 # Returns: 0 on success, 1 on failure
 setup_intel_gpu() {
   log_info "Setting up Intel GPU configuration..."
-  
+
   # Check if Intel GPU present
   if ! lspci | grep -i "intel.*graphics" &>/dev/null; then
     log_error "No Intel GPU detected"
     return 1
   fi
-  
+
   local distro
   distro=$(detect_distro) || return 1
-  
+
   # Install driver (if not present)
   case "$distro" in
     fedora)
@@ -1781,31 +1675,31 @@ setup_intel_gpu() {
       pm_install xserver-xorg-video-intel
       ;;
   esac
-  
+
   # Copy configuration
   local config_file="./configs/20-intel.conf"
   local target_dir="/etc/X11/xorg.conf.d"
   local target_file="$target_dir/20-intel.conf"
-  
+
   # Create directory if needed
   if [[ ! -d "$target_dir" ]]; then
     sudo mkdir -p "$target_dir"
   fi
-  
+
   # Backup if exists
   if [[ -f "$target_file" && ! -f "${target_file}.bak" ]]; then
     sudo cp "$target_file" "${target_file}.bak"
   fi
-  
+
   # Copy configuration
   if ! sudo cp "$config_file" "$target_file"; then
     log_error "Failed to copy Intel GPU configuration"
     return 1
   fi
-  
+
   # Set permissions
   sudo chmod 644 "$target_file"
-  
+
   log_success "Intel GPU configuration completed"
   log_info "Reboot required for changes to take effect"
   return 0
@@ -1895,97 +1789,3 @@ Commands in debugger:
 - `q` - Quit
 
 ---
-
-## Contributing Guidelines
-
-### Before Contributing
-
-1. Read all documentation (WIKI.md, ARCHITECTURE.md, this file)
-2. Set up development environment
-3. Run existing tests to ensure they pass
-4. Check issues and PRs to avoid duplicate work
-
-### Contribution Process
-
-**1. Fork and Clone**:
-
-```bash
-git clone https://github.com/yourusername/auto-penguin-setup.git
-cd auto-penguin-setup
-git remote add upstream https://github.com/original/auto-penguin-setup.git
-```
-
-**2. Create Feature Branch**:
-
-```bash
-git checkout -b feature/my-new-feature
-```
-
-**3. Make Changes**:
-
-- Follow code style guide
-- Add tests for new functionality
-- Update documentation
-- Ensure all tests pass
-
-**4. Commit**:
-
-```bash
-# Use conventional commits
-git add .
-git commit -m "feat: add support for openSUSE"
-git commit -m "fix: resolve issue with TLP on Arch"
-git commit -m "docs: update DEVELOPER.md with new examples"
-```
-
-**5. Push and PR**:
-
-```bash
-git push origin feature/my-new-feature
-# Create pull request on GitHub
-```
-
-### Pull Request Template
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-
-## Testing
-- [ ] All existing tests pass
-- [ ] New tests added (if applicable)
-- [ ] Tested on: Fedora / Arch / Debian (specify)
-
-## Checklist
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-- [ ] Comments added to complex code
-- [ ] Documentation updated
-- [ ] No new warnings generated
-```
-
----
-
-## Conclusion
-
-This developer guide provides comprehensive reference material for contributing to auto-penguin-setup. Key takeaways:
-
-1. **Understand the Architecture**: Abstraction layers make cross-distro support possible
-2. **Follow Patterns**: Use established templates for new features
-3. **Test Thoroughly**: Add tests for all new functionality
-4. **Document Well**: Help future contributors understand your code
-5. **Respect the Philosophy**: Keep it simple, modular, and configuration-driven
-
-For questions or clarifications, open an issue or discussion on GitHub.
-
----
-
-**Last Updated**: October 15, 2025  
-**Version**: 2.0.0  
-**License**: BSD 3-Clause

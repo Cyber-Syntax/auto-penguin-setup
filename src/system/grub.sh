@@ -4,6 +4,12 @@
 [[ -n "${_GRUB_SOURCED:-}" ]] && return 0
 readonly _GRUB_SOURCED=1
 
+#TODO: "GRUB_DISABLE_OS_PROBER=true" add this option for user, it is 
+# install `os-prober` and enable it in grub config
+# seems like security risk so disabled by default, need user confirmation,
+# we might make a subcommand for this
+# good for dual-boot users.
+
 # Backup GRUB configuration file
 _backup_grub_config() {
   local grub_file="/etc/default/grub"
