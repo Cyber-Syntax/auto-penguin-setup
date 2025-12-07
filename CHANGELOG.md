@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha]
+
+### Added
+
+- **Complete Python Migration**: Migrated entire codebase from Bash to Python for better maintainability, performance, and testability
+- **Python CLI Framework**: New command-line interface built with Python using argparse and rich for enhanced user experience
+- **Package Management Abstraction**: Unified package management system supporting Fedora, Arch, and Debian-based distributions
+- **Comprehensive Test Suite**: 106+ pytest tests covering all core functionality with high coverage
+- **Hardware Detection Module**: Python implementation for detecting and configuring hardware-specific settings
+- **System Configuration Module**: Python-based system setup and configuration management
+- **Window Manager Support**: Python modules for configuring various window managers (Qtile, i3, Hyprland)
+- **Display Manager Setup**: Python implementation for configuring display managers (GDM, LightDM, SDDM)
+- **Repository Management**: Enhanced repository handling with automatic migration and cleanup
+- **Package Tracking System**: Improved tracking with metadata storage and repository migration capabilities
+- **Configuration Parser**: Robust INI configuration parsing with validation and error handling
+- **Development Tools**: Added uv package manager support, pre-commit hooks, and development dependencies
+
+### Changed
+
+- **Architecture**: Complete rewrite from shell scripts to object-oriented Python modules
+- **Error Handling**: Improved error handling with proper exceptions and logging
+- **Type Safety**: Added type hints throughout the codebase for better code quality
+- **Testing**: Migrated from BATS to pytest for more comprehensive and maintainable tests
+- **Dependency Management**: Switched to modern Python packaging with pyproject.toml
+- **CLI Interface**: Enhanced command-line interface with better argument parsing and help messages
+
+### Removed
+
+- **Bash Scripts**: All 50+ Bash scripts replaced with Python equivalents
+- **Shell Dependencies**: Eliminated reliance on shell-specific utilities and improved security
+- **Legacy Code**: Removed outdated and unmaintained shell script components
+
 ## [0.1.0-alpha]
 
 ### Added
@@ -75,4 +107,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added repository removal functions
     - Improved code formatting
 
-[0.1.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.1.0-alpha...HEAD
+[0.2.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.1.0-alpha...v0.2.0-alpha
+[0.1.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/releases/tag/v0.1.0-alpha

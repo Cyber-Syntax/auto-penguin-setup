@@ -12,6 +12,7 @@
 - [ ] Keep only the name, source and maybe time in the tracking database for simplicity
 - [ ] make cli tool like `aps install`
 - [ ] add option to remove the packages, which it would remove from tracked database
+- [ ] test aps commands in virtual machines for all distros
 - [ ] keepchangelog
       <https://keepachangelog.com/en/1.1.0/>
 

@@ -1,0 +1,322 @@
+"""Tests for setup manager module."""
+
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+
+from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
+from aps.core.setup import SetupError, SetupManager
+
+
+@pytest.fixture
+def arch_distro():
+    """Create Arch Linux distro info."""
+    return DistroInfo(
+        name="Arch Linux",
+        version="rolling",
+        id="arch",
+        id_like=[],
+        package_manager=PackageManagerType.PACMAN,
+        family=DistroFamily.ARCH,
+    )
+
+
+@pytest.fixture
+def fedora_distro():
+    """Create Fedora distro info."""
+    return DistroInfo(
+        name="Fedora",
+        version="39",
+        id="fedora",
+        id_like=["rhel", "fedora"],
+        package_manager=PackageManagerType.DNF,
+        family=DistroFamily.FEDORA,
+    )
+
+
+@pytest.fixture
+def setup_manager_arch(arch_distro):
+    """Create SetupManager for Arch Linux."""
+    return SetupManager(arch_distro)
+
+
+@pytest.fixture
+def setup_manager_fedora(fedora_distro):
+    """Create SetupManager for Fedora."""
+    return SetupManager(fedora_distro)
+
+
+class TestSetupManagerAURHelper:
+    """Tests for AUR helper setup."""
+
+    def test_aur_helper_already_installed_paru(self, setup_manager_arch):
+        """Test that setup skips if paru is already installed."""
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = "/usr/bin/paru"
+            setup_manager_arch.setup_aur_helper()
+            # Should not raise, just skip installation
+
+    def test_aur_helper_already_installed_yay(self, setup_manager_arch):
+        """Test that setup skips if yay is already installed."""
+        with patch("shutil.which") as mock_which:
+            # First call for paru returns None, second for yay returns path
+            mock_which.side_effect = [None, "/usr/bin/yay"]
+            setup_manager_arch.setup_aur_helper()
+            # Should not raise, just skip installation
+
+    def test_aur_helper_not_available_on_non_arch(self, setup_manager_fedora):
+        """Test that AUR helper setup raises error on non-Arch distros."""
+        with pytest.raises(SetupError, match="only available for Arch-based"):
+            setup_manager_fedora.setup_aur_helper()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    @patch("pathlib.Path.home")
+    @patch("pathlib.Path.exists")
+    def test_aur_helper_installation_success(
+        self, mock_exists, mock_home, mock_which, mock_run, setup_manager_arch
+    ):
+        """Test successful paru installation."""
+        # Setup mocks
+        mock_home.return_value = Path("/home/testuser")
+        mock_exists.return_value = True
+
+        # Mock which() calls: not installed initially, then installed after build
+        mock_which.side_effect = [
+            None,  # paru not installed initially
+            None,  # yay not installed
+            "/usr/bin/paru",  # paru installed after build
+        ]
+
+        # Mock successful subprocess calls
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        setup_manager_arch.setup_aur_helper()
+
+        # Verify pacman was called for build deps
+        pacman_call = [
+            call
+            for call in mock_run.call_args_list
+            if "pacman" in str(call) and "base-devel" in str(call)
+        ]
+        assert len(pacman_call) > 0
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    @patch("pathlib.Path.home")
+    @patch("pathlib.Path.exists")
+    def test_aur_helper_build_deps_failure(
+        self, mock_exists, mock_home, mock_which, mock_run, setup_manager_arch
+    ):
+        """Test that build dependency installation failure raises error."""
+        mock_home.return_value = Path("/home/testuser")
+        mock_exists.return_value = True
+        mock_which.side_effect = [None, None]  # Not installed
+
+        # Mock failed pacman call
+        mock_run.return_value = Mock(returncode=1, stdout="", stderr="Permission denied")
+
+        with pytest.raises(SetupError, match="Failed to install build dependencies"):
+            setup_manager_arch.setup_aur_helper()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    @patch("pathlib.Path.home")
+    @patch("pathlib.Path.exists")
+    def test_aur_helper_clone_failure(
+        self, mock_exists, mock_home, mock_which, mock_run, setup_manager_arch
+    ):
+        """Test that git clone failure raises error."""
+        mock_home.return_value = Path("/home/testuser")
+        mock_exists.return_value = True
+        mock_which.side_effect = [None, None]
+
+        def run_side_effect(cmd, **kwargs):
+            # Success for pacman, failure for git clone
+            if "git" in cmd and "clone" in cmd:
+                return Mock(returncode=1, stdout="", stderr="Clone failed")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = run_side_effect
+
+        with pytest.raises(SetupError, match="Failed to clone paru-bin repository"):
+            setup_manager_arch.setup_aur_helper()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    @patch("pathlib.Path.home")
+    @patch("pathlib.Path.exists")
+    def test_aur_helper_verification_failure(
+        self, mock_exists, mock_home, mock_which, mock_run, setup_manager_arch
+    ):
+        """Test that verification failure after build raises error."""
+        mock_home.return_value = Path("/home/testuser")
+        mock_exists.return_value = True
+
+        # paru never becomes available
+        mock_which.return_value = None
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        with pytest.raises(SetupError, match="paru installation verification failed"):
+            setup_manager_arch.setup_aur_helper()
+
+
+class TestSetupManagerOllama:
+    """Tests for Ollama setup."""
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_arch_nvidia_success(self, mock_which, mock_run, setup_manager_arch):
+        """Test Ollama installation on Arch with NVIDIA GPU."""
+
+        # Mock nvidia-smi available (NVIDIA GPU)
+        def which_side_effect(cmd):
+            if cmd == "nvidia-smi":
+                return "/usr/bin/nvidia-smi"
+            elif cmd == "ollama":
+                return "/usr/bin/ollama"  # Installed after pacman
+            return None
+
+        mock_which.side_effect = which_side_effect
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        setup_manager_arch.setup_ollama()
+
+        # Verify ollama-cuda was installed
+        pacman_call = [call for call in mock_run.call_args_list if "ollama-cuda" in str(call)]
+        assert len(pacman_call) > 0
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_arch_amd_success(self, mock_which, mock_run, setup_manager_arch):
+        """Test Ollama installation on Arch with AMD GPU."""
+
+        def which_side_effect(cmd):
+            if cmd == "nvidia-smi":
+                return None
+            elif cmd == "ollama":
+                return "/usr/bin/ollama"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
+        # Mock lspci output for AMD GPU
+        def run_side_effect(cmd, **kwargs):
+            if "lspci" in cmd:
+                return Mock(returncode=0, stdout="VGA compatible: AMD/ATI Device", stderr="")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        mock_run.side_effect = run_side_effect
+
+        setup_manager_arch.setup_ollama()
+
+        # Verify ollama-rocm was installed
+        pacman_call = [call for call in mock_run.call_args_list if "ollama-rocm" in str(call)]
+        assert len(pacman_call) > 0
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_arch_no_gpu(self, mock_which, mock_run, setup_manager_arch):
+        """Test Ollama installation on Arch without specific GPU."""
+
+        def which_side_effect(cmd):
+            if cmd == "ollama":
+                return "/usr/bin/ollama"
+            return None
+
+        mock_which.side_effect = which_side_effect
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        setup_manager_arch.setup_ollama()
+
+        # Verify generic ollama package was installed
+        pacman_call = [
+            call
+            for call in mock_run.call_args_list
+            if "pacman" in str(call) and '"ollama"' in str(call) or "'ollama'" in str(call)
+        ]
+        assert len(pacman_call) > 0
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_fedora_official_installer(self, mock_which, mock_run, setup_manager_fedora):
+        """Test Ollama installation on Fedora using official installer."""
+        mock_which.side_effect = [None, "/usr/bin/ollama"]  # Not installed, then installed
+        mock_run.return_value = Mock(returncode=0)
+
+        setup_manager_fedora.setup_ollama()
+
+        # Verify the shell command was called
+        assert mock_run.called
+        call_args = mock_run.call_args
+        assert "shell=True" in str(call_args) or call_args.kwargs.get("shell") is True
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_installation_verification_failure(
+        self, mock_which, mock_run, setup_manager_fedora
+    ):
+        """Test that verification failure after install raises error."""
+        mock_which.return_value = None  # Never becomes available
+        mock_run.return_value = Mock(returncode=0)
+
+        with pytest.raises(SetupError, match="Ollama binary not found after"):
+            setup_manager_fedora.setup_ollama()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_ollama_official_installer_execution_failure(
+        self, mock_which, mock_run, setup_manager_fedora
+    ):
+        """Test that installer execution failure raises error."""
+        mock_which.return_value = None
+        mock_run.return_value = Mock(returncode=1)
+
+        with pytest.raises(SetupError, match="Failed to install Ollama"):
+            setup_manager_fedora.setup_ollama()
+
+    @patch("shutil.which")
+    def test_ollama_already_installed(self, mock_which, setup_manager_fedora):
+        """Test that Ollama update succeeds when already installed."""
+        mock_which.return_value = "/usr/bin/ollama"  # Already installed
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=0)
+            setup_manager_fedora.setup_ollama()
+            # Should complete without error
+
+
+class TestDetectGPUVendor:
+    """Tests for GPU vendor detection."""
+
+    @patch("shutil.which")
+    def test_detect_nvidia_gpu(self, mock_which, setup_manager_arch):
+        """Test NVIDIA GPU detection."""
+        mock_which.return_value = "/usr/bin/nvidia-smi"
+        vendor = setup_manager_arch._detect_gpu_vendor()
+        assert vendor == "nvidia"
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_detect_amd_gpu(self, mock_which, mock_run, setup_manager_arch):
+        """Test AMD GPU detection."""
+        mock_which.return_value = None  # No nvidia-smi
+        mock_run.return_value = Mock(
+            returncode=0,
+            stdout="01:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Display",
+            stderr="",
+        )
+
+        vendor = setup_manager_arch._detect_gpu_vendor()
+        assert vendor == "amd"
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_detect_unknown_gpu(self, mock_which, mock_run, setup_manager_arch):
+        """Test unknown GPU detection."""
+        mock_which.return_value = None
+        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        vendor = setup_manager_arch._detect_gpu_vendor()
+        assert vendor == "unknown"
