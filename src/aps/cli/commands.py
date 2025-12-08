@@ -367,14 +367,7 @@ def cmd_setup(args: Namespace) -> None:
     manager = SetupManager(distro_info)
 
     try:
-        if args.component == "aur-helper":
-            manager.setup_aur_helper()
-            print("AUR helper setup completed successfully")
-        elif args.component == "ollama":
-            manager.setup_ollama()
-            print("Ollama setup completed successfully")
-        else:
-            print(f"Unknown component: {args.component}")
-            print("Available components: aur-helper, ollama")
+        manager.setup_component(args.component)
+        print(f"{args.component} setup completed successfully")
     except SetupError as e:
         print(f"Setup failed: {e}")

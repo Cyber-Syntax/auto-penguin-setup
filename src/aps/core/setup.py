@@ -4,8 +4,24 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from aps.core.distro import DistroInfo, PackageManagerType
+from aps.installers import (
+    AutoCPUFreqInstaller,
+    BorgbackupInstaller,
+    BraveInstaller,
+    NfancurveInstaller,
+    OhMyZshInstaller,
+    ProtonVPNInstaller,
+    SyncthingInstaller,
+    ThinkfanInstaller,
+    TLPInstaller,
+    TrashCLIInstaller,
+    UeberzugppInstaller,
+    VirtManagerInstaller,
+    VSCodeInstaller,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +33,70 @@ class SetupError(Exception):
 class SetupManager:
     """Manages setup operations for AUR helpers, ollama, and other components."""
 
+    # Registry of available setup components
+    COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
+        "aur-helper": {
+            "description": "Install paru AUR helper (Arch Linux only)",
+            "installer": None,  # Built-in method
+        },
+        "ollama": {
+            "description": "Install/update Ollama AI runtime",
+            "installer": None,  # Built-in method
+        },
+        "ohmyzsh": {
+            "description": "Install Oh-My-Zsh with custom plugins",
+            "installer": OhMyZshInstaller,
+        },
+        "brave": {
+            "description": "Install Brave browser",
+            "installer": BraveInstaller,
+        },
+        "protonvpn": {
+            "description": "Install ProtonVPN",
+            "installer": ProtonVPNInstaller,
+        },
+        "thinkfan": {
+            "description": "Install Thinkfan thermal management",
+            "installer": ThinkfanInstaller,
+        },
+        "tlp": {
+            "description": "Install TLP power management",
+            "installer": TLPInstaller,
+        },
+        "autocpufreq": {
+            "description": "Install Auto-CPUFreq power optimization",
+            "installer": AutoCPUFreqInstaller,
+        },
+        "borgbackup": {
+            "description": "Install BorgBackup with Vorta GUI",
+            "installer": BorgbackupInstaller,
+        },
+        "nfancurve": {
+            "description": "Install NVIDIA fan curve control",
+            "installer": NfancurveInstaller,
+        },
+        "syncthing": {
+            "description": "Install Syncthing file synchronization",
+            "installer": SyncthingInstaller,
+        },
+        "trashcli": {
+            "description": "Install Trash-CLI utilities",
+            "installer": TrashCLIInstaller,
+        },
+        "ueberzugpp": {
+            "description": "Install Ueberzug++ image preview",
+            "installer": UeberzugppInstaller,
+        },
+        "virtmanager": {
+            "description": "Install Virtual Machine Manager",
+            "installer": VirtManagerInstaller,
+        },
+        "vscode": {
+            "description": "Install Visual Studio Code",
+            "installer": VSCodeInstaller,
+        },
+    }
+
     def __init__(self, distro_info: DistroInfo):
         """
         Initialize setup manager.
@@ -25,6 +105,54 @@ class SetupManager:
             distro_info: Distribution information for platform-specific setup
         """
         self.distro = distro_info
+
+    @classmethod
+    def get_available_components(cls) -> dict[str, str]:
+        """
+        Get all available setup components.
+
+        Returns:
+            Dictionary mapping component names to descriptions
+        """
+        return {name: info["description"] for name, info in cls.COMPONENT_REGISTRY.items()}
+
+    def setup_component(self, component: str) -> None:
+        """
+        Setup a component by name.
+
+        Args:
+            component: Name of the component to setup
+
+        Raises:
+            SetupError: If component is unknown or setup fails
+        """
+        if component not in self.COMPONENT_REGISTRY:
+            msg = f"Unknown component: {component}"
+            raise SetupError(msg)
+
+        component_info = self.COMPONENT_REGISTRY[component]
+        installer_class = component_info["installer"]
+
+        # Use built-in methods for aur-helper and ollama
+        if installer_class is None:
+            if component == "aur-helper":
+                self.setup_aur_helper()
+            elif component == "ollama":
+                self.setup_ollama()
+            return
+
+        # Use installer class for other components
+        logger.info("Setting up %s...", component)
+        try:
+            installer = installer_class()
+            success = installer.install()
+            if not success:
+                msg = f"Failed to setup {component}"
+                raise SetupError(msg)
+            logger.info("%s setup completed successfully", component)
+        except Exception as e:
+            msg = f"Error during {component} setup: {e}"
+            raise SetupError(msg) from e
 
     def setup_aur_helper(self) -> None:
         """

@@ -2,6 +2,8 @@
 
 import argparse
 
+from aps.core.setup import SetupManager
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser for aps CLI."""
@@ -42,23 +44,29 @@ Examples:
     # aps status
     subparsers.add_parser("status", help="Show installation status")
 
-    # aps setup
+    # aps setup - dynamically build component list
+    available_components = SetupManager.get_available_components()
+    component_list = "\n".join(
+        [f"  {name:<15} - {desc}" for name, desc in sorted(available_components.items())]
+    )
+
     setup_parser = subparsers.add_parser(
         "setup",
         help="Setup system components",
-        epilog="""
+        epilog=f"""
 Available components:
-  aur-helper - Install paru AUR helper (Arch Linux only)
-  ollama     - Install/update Ollama AI runtime
+{component_list}
 
 Examples:
   aps setup aur-helper
   aps setup ollama
+  aps setup ohmyzsh
+  aps setup brave
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     setup_parser.add_argument(
-        "component", choices=["aur-helper", "ollama"], help="Component to setup"
+        "component", choices=list(available_components.keys()), help="Component to setup"
     )
 
     return parser
