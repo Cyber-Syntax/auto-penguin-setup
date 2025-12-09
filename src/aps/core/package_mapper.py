@@ -90,28 +90,36 @@ class PackageMapper:
         Args:
             pkgmap_path: Path to pkgmap.ini file
         """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.debug("Loading mappings from %s", pkgmap_path)
         if not pkgmap_path.exists():
+            logger.debug("pkgmap.ini not found at %s", pkgmap_path)
             return
 
         parser = APSConfigParser(pkgmap_path)
 
         # Determine section name based on distro family
         section_map = {
-            DistroFamily.FEDORA: "fedora",
-            DistroFamily.ARCH: "arch",
-            DistroFamily.DEBIAN: "debian",
+            DistroFamily.FEDORA: "pkgmap.fedora",
+            DistroFamily.ARCH: "pkgmap.arch",
+            DistroFamily.DEBIAN: "pkgmap.debian",
         }
 
         section = section_map.get(self.distro.family)
+        logger.debug("Looking for section %s", section)
         if not section or not parser.has_section(section):
+            logger.debug("Section %s not found in %s", section, pkgmap_path)
             return
 
         # Load mappings for current distro
         raw_mappings = parser.get_package_mappings(section)
-
+        logger.debug("Raw mappings: %s", raw_mappings)
         for original_name, mapped_value in raw_mappings.items():
             mapping = self._parse_mapping(original_name, mapped_value)
             self.mappings[original_name] = mapping
+        logger.debug("Loaded %d mappings", len(self.mappings))
 
     def _parse_mapping(self, original_name: str, mapped_value: str) -> PackageMapping:
         """

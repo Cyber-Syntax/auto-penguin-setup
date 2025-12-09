@@ -102,7 +102,7 @@ class DnfManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True, ""
         else:
@@ -115,7 +115,7 @@ class DnfManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True, ""
         else:
@@ -124,7 +124,7 @@ class DnfManager(PackageManager):
 
     def search(self, query: str) -> list[str]:
         cmd = ["dnf", "search", "--quiet", query]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             return []
@@ -140,12 +140,12 @@ class DnfManager(PackageManager):
 
     def is_installed(self, package: str) -> bool:
         cmd = ["rpm", "-q", package]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def update_cache(self) -> bool:
         cmd = ["sudo", "dnf", "makecache"]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
 
@@ -170,18 +170,85 @@ class PacmanManager(PackageManager):
                 return helper
         return None
 
+    def install_paru(self, assume_yes: bool = True) -> bool:
+        """
+        Install paru AUR helper.
+
+        Args:
+            assume_yes: Auto-confirm installation
+
+        Returns:
+            True if paru was installed successfully, False otherwise
+        """
+        import os
+        import tempfile
+
+        logger = logging.getLogger(__name__)
+        logger.info("Installing paru AUR helper...")
+
+        # Check if paru is already installed
+        if shutil.which("paru"):
+            logger.info("paru is already installed")
+            return True
+
+        # Install base-devel first
+        logger.info("Installing base-devel...")
+        cmd = ["sudo", "pacman", "-S", "--needed"]
+        if assume_yes:
+            cmd.append("--noconfirm")
+        cmd.append("base-devel")
+
+        result = subprocess.run(cmd, check=False)
+        if result.returncode != 0:
+            logger.error("Failed to install base-devel")
+            return False
+
+        # Clone and build paru
+        with tempfile.TemporaryDirectory() as tmpdir:
+            logger.info("Cloning paru from AUR...")
+            clone_cmd = ["git", "clone", "https://aur.archlinux.org/paru.git"]
+            result = subprocess.run(clone_cmd, cwd=tmpdir, check=False)
+            if result.returncode != 0:
+                logger.error("Failed to clone paru repository")
+                return False
+
+            paru_dir = os.path.join(tmpdir, "paru")
+            logger.info("Building paru...")
+            build_cmd = ["makepkg", "-si"]
+            if assume_yes:
+                build_cmd.append("--noconfirm")
+
+            result = subprocess.run(build_cmd, cwd=paru_dir, check=False)
+            if result.returncode != 0:
+                logger.error("Failed to build and install paru")
+                return False
+
+        # Verify installation
+        if shutil.which("paru"):
+            logger.info("paru installed successfully")
+            self.aur_helper = "paru"
+            return True
+        else:
+            logger.error("paru installation verification failed")
+            return False
+
     def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+        logger = logging.getLogger(__name__)
+        logger.info("Installing packages: %s", ", ".join(packages))
+
         cmd = ["sudo", "pacman", "-S", "--needed"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
+            logger.info("Successfully installed packages")
             return True, ""
         else:
-            logging.error("Failed to install packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+            logger.error("Failed to install packages %s", packages)
+            return False, "Package installation failed"
 
     def install_aur(self, packages: list[str], assume_yes: bool = True) -> bool:
         """
@@ -195,18 +262,30 @@ class PacmanManager(PackageManager):
             True if installation succeeded, False otherwise
 
         Raises:
-            PackageManagerError: If no AUR helper is available
+            PackageManagerError: If no AUR helper is available and installation fails
         """
+        logger = logging.getLogger(__name__)
+
         if not self.aur_helper:
-            raise PackageManagerError("No AUR helper found. Please install paru or yay.")
+            logger.info("No AUR helper found. Installing paru...")
+            if not self.install_paru(assume_yes=assume_yes):
+                raise PackageManagerError("Failed to install paru AUR helper")
+
+        logger.info("Installing AUR packages: %s", ", ".join(packages))
 
         cmd = [self.aur_helper, "-S"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True)
-        return result.returncode == 0
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
+        if result.returncode == 0:
+            logger.info("Successfully installed AUR packages")
+            return True
+        else:
+            logger.error("Failed to install AUR packages")
+            return False
 
     def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
         cmd = ["sudo", "pacman", "-R"]
@@ -214,7 +293,7 @@ class PacmanManager(PackageManager):
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True, ""
         else:
@@ -223,7 +302,7 @@ class PacmanManager(PackageManager):
 
     def search(self, query: str) -> list[str]:
         cmd = ["pacman", "-Ss", query]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             return []
@@ -239,12 +318,12 @@ class PacmanManager(PackageManager):
 
     def is_installed(self, package: str) -> bool:
         cmd = ["pacman", "-Q", package]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def update_cache(self) -> bool:
         cmd = ["sudo", "pacman", "-Sy"]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
 
@@ -259,7 +338,7 @@ class AptManager(PackageManager):
 
         # Set DEBIAN_FRONTEND to avoid interactive prompts
         env = {"DEBIAN_FRONTEND": "noninteractive"}
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
         if result.returncode == 0:
             return True, ""
         else:
@@ -273,7 +352,7 @@ class AptManager(PackageManager):
         cmd.extend(packages)
 
         env = {"DEBIAN_FRONTEND": "noninteractive"}
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
         if result.returncode == 0:
             return True, ""
         else:
@@ -282,7 +361,7 @@ class AptManager(PackageManager):
 
     def search(self, query: str) -> list[str]:
         cmd = ["apt-cache", "search", query]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             return []
@@ -298,12 +377,12 @@ class AptManager(PackageManager):
 
     def is_installed(self, package: str) -> bool:
         cmd = ["dpkg", "-s", package]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def update_cache(self) -> bool:
         cmd = ["sudo", "apt-get", "update"]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
 

@@ -15,34 +15,41 @@ from aps.cli.commands import (
 )
 
 
-def setup_logging() -> None:
-    """Set up logging to write to ~/.config/auto-penguin-setup/logs/aps.log."""
+def setup_logging(verbose: bool = False) -> None:
+    """Set up logging to write to ~/.config/auto-penguin-setup/logs/aps.log.
+
+    Args:
+        verbose: If True, show DEBUG messages. Otherwise show INFO and above.
+    """
     log_dir = Path.home() / ".config" / "auto-penguin-setup" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "aps.log"
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(log_file),
         ],
     )
 
-    # Add stream handler for stderr with WARNING level to hide INFO messages from terminal
+    # Add stream handler for stderr - show INFO by default, DEBUG if verbose
     stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setLevel(logging.WARNING)
+    stream_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    stream_handler.setFormatter(logging.Formatter("%(message)s"))
     logging.getLogger().addHandler(stream_handler)
 
 
 def main() -> int:
     """Main entry point for the aps CLI."""
-    setup_logging()
-    logger = logging.getLogger(__name__)
-    logger.info("Starting aps CLI")
-
+    # Parse args first to get verbose flag
     parser = create_parser()
     args = parser.parse_args()
+
+    # Setup logging with verbose flag
+    setup_logging(verbose=args.verbose)
+    logger = logging.getLogger(__name__)
+    logger.debug("Starting aps CLI")
 
     # Dispatch to command handlers
     command_handlers = {
@@ -56,9 +63,9 @@ def main() -> int:
 
     handler = command_handlers.get(args.command)
     if handler:
-        logger.info("Executing command: %s", args.command)
+        logger.debug("Executing command: %s", args.command)
         handler(args)
-        logger.info("Command %s completed successfully", args.command)
+        logger.debug("Command %s completed successfully", args.command)
         return 0
     else:
         parser.print_help()

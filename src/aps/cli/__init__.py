@@ -10,6 +10,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="aps", description="Auto Penguin Setup - Cross-distro package management"
     )
+
+    # Add global verbose flag
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
+
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # aps install
