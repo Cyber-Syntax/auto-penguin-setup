@@ -23,39 +23,81 @@ class OhMyZshInstaller(BaseInstaller):
             True if installation successful, False otherwise
         """
         logger.info("Installing oh-my-zsh...")
+        print("Installing oh-my-zsh...")
 
         target_dir = Path.home() / ".config" / "oh-my-zsh"
         default_dir = Path.home() / ".oh-my-zsh"
 
+        # Precheck: ensure zsh binary exists so installer doesn't fail silently
+        if shutil.which("zsh") is None:
+            logger.error(
+                "Zsh is not installed. Please install zsh first (e.g., 'sudo apt install zsh' or your distro equivalent)."
+            )
+            return False
+
         # Determine which zshrc file to use
         zshrc_path = self._get_zshrc_path()
         logger.info("Using zshrc at: %s", zshrc_path)
+        print(f"Using zshrc at: {zshrc_path}")
 
-        # Run official installer non-interactively
-        installer_url = "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
+        # Check if already installed
+        already_installed = target_dir.exists() or default_dir.exists()
 
-        try:
-            result = subprocess.run(
-                ["sh", "-c", f"$(wget -O- {installer_url})"],
-                env={**os.environ, "RUNZSH": "no", "CHSH": "no"},
-                check=True,
-                capture_output=True,
-                text=True,
+        if already_installed:
+            logger.info("oh-my-zsh is already installed, updating configuration...")
+            print("oh-my-zsh is already installed, updating configuration...")
+            # Ensure we're using the correct directory
+            if default_dir.exists() and not target_dir.exists():
+                logger.info("Moving oh-my-zsh from %s to %s", default_dir, target_dir)
+                print(f"Moving oh-my-zsh from {default_dir} to {target_dir}")
+                target_dir.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    shutil.move(str(default_dir), str(target_dir))
+                except (OSError, shutil.Error) as e:
+                    logger.error("Failed to move oh-my-zsh to target directory: %s", e)
+                    return False
+        else:
+            # Run official installer non-interactively, installing directly to target_dir
+            installer_url = (
+                "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
             )
-            logger.debug("Installer output: %s", result.stdout)
-        except subprocess.CalledProcessError as e:
-            logger.error("oh-my-zsh installation failed: %s", e.stderr)
-            return False
 
-        # Move installation to target directory if needed
-        if default_dir.exists() and default_dir != target_dir:
-            logger.info("Moving oh-my-zsh from %s to %s", default_dir, target_dir)
+            install_env = os.environ.copy()
+            install_env.update(
+                {
+                    "RUNZSH": "no",  # don't auto-start zsh after install
+                    "CHSH": "no",  # don't change default shell
+                    "KEEP_ZSHRC": "yes",
+                    "ZSH": str(target_dir),  # install into desired path
+                }
+            )
+
+            # Ensure target directory parent exists
             target_dir.parent.mkdir(parents=True, exist_ok=True)
 
+            # Use sh -s -- to pass --unattended; capture both stdout and stderr
+            cmd = f"wget -O- {installer_url} | sh -s -- --unattended"
+
             try:
-                shutil.move(str(default_dir), str(target_dir))
-            except (OSError, shutil.Error) as e:
-                logger.error("Failed to move oh-my-zsh to target directory: %s", e)
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    env=install_env,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                logger.debug("Installer stdout: %s", result.stdout)
+                if result.stderr:
+                    logger.debug("Installer stderr: %s", result.stderr)
+            except subprocess.CalledProcessError as e:
+                combined_output = (
+                    (e.stdout or "") + ("\n" if e.stdout and e.stderr else "") + (e.stderr or "")
+                )
+                logger.error(
+                    "oh-my-zsh installation failed. Full output follows:\n%s",
+                    combined_output.strip(),
+                )
                 return False
 
         # Ensure custom plugins directory exists
@@ -78,6 +120,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         # Fix path references in zshrc
         logger.info("Updating %s with correct paths...", zshrc_path)
+        print(f"Updating {zshrc_path} with correct paths...")
 
         # Create backup
         backup_path = Path(f"{zshrc_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -88,15 +131,19 @@ class OhMyZshInstaller(BaseInstaller):
             logger.warning("Failed to create backup: %s", e)
 
         # Update zshrc with correct paths
-        if not self._update_zshrc(zshrc_path, target_dir):
+        if not self._update_zshrc(zshrc_path):
             logger.error("Failed to update zshrc configuration")
             return False
 
         logger.info("oh-my-zsh installation completed successfully!")
+        print("oh-my-zsh installation completed successfully!")
         logger.info("Installation directory: %s", target_dir)
+        print(f"Installation directory: {target_dir}")
         logger.info("Configuration file: %s", zshrc_path)
-        logger.info("")
+        print(f"Configuration file: {zshrc_path}")
+        print("")
         logger.info("Please restart your shell or run: source %s", zshrc_path)
+        print(f"Please restart your shell or run: source {zshrc_path}")
 
         return True
 
@@ -131,6 +178,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         if not plugin_path.exists():
             logger.info("Installing %s plugin...", name)
+            print(f"Installing {name} plugin...")
             try:
                 subprocess.run(
                     ["git", "clone", url, str(plugin_path)],
@@ -144,12 +192,11 @@ class OhMyZshInstaller(BaseInstaller):
         else:
             logger.debug("Plugin already installed: %s", name)
 
-    def _update_zshrc(self, zshrc_path: Path, target_dir: Path) -> bool:
+    def _update_zshrc(self, zshrc_path: Path) -> bool:
         """Update zshrc file with correct paths.
 
         Args:
             zshrc_path: Path to zshrc file
-            target_dir: Target oh-my-zsh directory
 
         Returns:
             True if successful, False otherwise
