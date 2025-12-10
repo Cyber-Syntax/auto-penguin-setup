@@ -77,11 +77,11 @@ class TestCmdSyncRepos:
 
         return config_dir
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
     def test_no_changes_detected(
         self,
         mock_parser_class,
@@ -122,11 +122,11 @@ class TestCmdSyncRepos:
         assert "No repository changes detected" in caplog.text
         assert "All tracked packages are in sync" in caplog.text
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
     def test_flatpak_packages_skipped(
         self,
         mock_parser_class,
@@ -167,11 +167,11 @@ class TestCmdSyncRepos:
         # Verify - Flatpak should be skipped, so no changes
         assert "No repository changes detected" in caplog.text
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
     @patch("builtins.input")
     def test_changes_detected_user_cancels(
         self,
@@ -222,12 +222,12 @@ class TestCmdSyncRepos:
         assert "COPR:dejan/lazygit" in caplog.text
         assert "Migration cancelled" in caplog.text
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
-    @patch("aps.cli.commands.logging")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.logging")
     def test_successful_migration_with_auto_flag(
         self,
         mock_logging,
@@ -290,12 +290,12 @@ class TestCmdSyncRepos:
         mock_tracker.remove_package.assert_called_once_with("lazygit")
         mock_tracker.track_install.assert_called_once()
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
-    @patch("aps.cli.commands.logging")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.logging")
     def test_migration_failure_with_rollback(
         self,
         mock_logging,
@@ -355,11 +355,11 @@ class TestCmdSyncRepos:
         # Verify rollback was attempted
         assert mock_pm.install.call_count == 2
 
-    @patch("aps.cli.commands.Path.home")
-    @patch("aps.cli.commands.get_package_manager")
-    @patch("aps.cli.commands.detect_distro")
-    @patch("aps.cli.commands.PackageTracker")
-    @patch("aps.cli.commands.APSConfigParser")
+    @patch("aps.cli.commands.sync_repos.Path.home")
+    @patch("aps.cli.commands.sync_repos.get_package_manager")
+    @patch("aps.cli.commands.sync_repos.detect_distro")
+    @patch("aps.cli.commands.sync_repos.PackageTracker")
+    @patch("aps.cli.commands.sync_repos.APSConfigParser")
     def test_missing_config_file(
         self,
         mock_parser_class,

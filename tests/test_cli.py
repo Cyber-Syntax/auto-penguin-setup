@@ -102,8 +102,8 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = []
 
         with (
-            patch("aps.cli.commands.detect_distro", return_value=mock_distro),
-            patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
+            patch("aps.cli.commands.status.detect_distro", return_value=mock_distro),
+            patch("aps.cli.commands.status.PackageTracker", return_value=mock_tracker),
         ):
             args = Namespace()
             cmd_status(args)
@@ -126,7 +126,7 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = []
 
         with (
-            patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
+            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
         ):
             args = Namespace(source=None)
             cmd_list(args)
@@ -153,7 +153,7 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = [mock_record]
 
         with (
-            patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
+            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
         ):
             args = Namespace(source=None)
             cmd_list(args)
@@ -188,7 +188,7 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
 
         with (
-            patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
+            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
         ):
             args = Namespace(source="aur")
             cmd_list(args)
