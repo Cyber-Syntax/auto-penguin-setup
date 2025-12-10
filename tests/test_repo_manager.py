@@ -226,7 +226,12 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak already installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.enable_flatpak_remote("flathub")
 
@@ -241,6 +246,7 @@ class TestRepositoryManager:
                     "https://flathub.org/repo/flathub.flatpakrepo",
                 ],
                 capture_output=True,
+                check=False,
             )
 
     def test_enable_flatpak_remote_custom(self, fedora_distro: DistroInfo) -> None:
@@ -248,7 +254,12 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak already installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.enable_flatpak_remote(
                 "custom", "https://example.com/repo.flatpakrepo"
@@ -261,15 +272,23 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with pytest.raises(ValueError, match="remote_url is required"):
-            repo_mgr.enable_flatpak_remote("custom")
+        with patch("shutil.which") as mock_which:
+            # Simulate flatpak already installed
+            mock_which.return_value = "/usr/bin/flatpak"
+            with pytest.raises(ValueError, match="remote_url is required"):
+                repo_mgr.enable_flatpak_remote("custom")
 
     def test_is_flatpak_remote_enabled_true(self, fedora_distro: DistroInfo) -> None:
         """Test checking if Flatpak remote is enabled returns True."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0, stdout="flathub\n")
             result = repo_mgr.is_flatpak_remote_enabled("flathub")
 
@@ -280,7 +299,12 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0, stdout="")
             result = repo_mgr.is_flatpak_remote_enabled("flathub")
 
@@ -291,7 +315,12 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=1, stdout="")
             result = repo_mgr.is_flatpak_remote_enabled("flathub")
 
@@ -302,14 +331,20 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak already installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.install_flatpak("org.mozilla.firefox")
 
             assert result is True
+            # No -y flag - installation is interactive
             mock_run.assert_called_once_with(
-                ["sudo", "flatpak", "install", "-y", "flathub", "org.mozilla.firefox"],
-                capture_output=True,
+                ["sudo", "flatpak", "install", "flathub", "org.mozilla.firefox"],
+                check=False,
             )
 
     def test_install_flatpak_custom_remote(self, fedora_distro: DistroInfo) -> None:
@@ -317,14 +352,20 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # Simulate flatpak already installed
+            mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.install_flatpak("org.mozilla.firefox", remote="fedora")
 
             assert result is True
+            # No -y flag - installation is interactive
             mock_run.assert_called_once_with(
-                ["sudo", "flatpak", "install", "-y", "fedora", "org.mozilla.firefox"],
-                capture_output=True,
+                ["sudo", "flatpak", "install", "fedora", "org.mozilla.firefox"],
+                check=False,
             )
 
     def test_remove_flatpak_success(self, fedora_distro: DistroInfo) -> None:
@@ -340,4 +381,132 @@ class TestRepositoryManager:
             mock_run.assert_called_once_with(
                 ["sudo", "flatpak", "uninstall", "-y", "org.mozilla.firefox"],
                 capture_output=True,
+                check=False,
             )
+
+    def test_is_flatpak_installed_true(self, arch_distro: DistroInfo) -> None:
+        """Test checking if flatpak is installed returns True."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = "/usr/bin/flatpak"
+            result = repo_mgr.is_flatpak_installed()
+
+            assert result is True
+            mock_which.assert_called_once_with("flatpak")
+
+    def test_is_flatpak_installed_false(self, arch_distro: DistroInfo) -> None:
+        """Test checking if flatpak is installed returns False."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = None
+            result = repo_mgr.is_flatpak_installed()
+
+            assert result is False
+            mock_which.assert_called_once_with("flatpak")
+
+    def test_is_flatpak_remote_enabled_not_installed(self, arch_distro: DistroInfo) -> None:
+        """Test checking remote when flatpak is not installed returns False."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = None
+            result = repo_mgr.is_flatpak_remote_enabled("flathub")
+
+            assert result is False
+            mock_which.assert_called_once_with("flatpak")
+
+    def test_ensure_flatpak_installed_already_installed(self, arch_distro: DistroInfo) -> None:
+        """Test ensuring flatpak is installed when already present."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = "/usr/bin/flatpak"
+            result = repo_mgr.ensure_flatpak_installed()
+
+            assert result is True
+            mock_which.assert_called_once_with("flatpak")
+            # Should not call install since it's already installed
+            pm.install.assert_not_called()
+
+    def test_ensure_flatpak_installed_success(self, arch_distro: DistroInfo) -> None:
+        """Test installing flatpak successfully when not present."""
+        pm = Mock(spec=PackageManager)
+        pm.install.return_value = (True, "")
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            # First call: flatpak not installed, second call: flatpak installed
+            mock_which.side_effect = [None, "/usr/bin/flatpak"]
+            result = repo_mgr.ensure_flatpak_installed()
+
+            assert result is True
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)
+
+    def test_ensure_flatpak_installed_install_fails(self, arch_distro: DistroInfo) -> None:
+        """Test handling installation failure."""
+        pm = Mock(spec=PackageManager)
+        pm.install.return_value = (False, "Installation failed")
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            mock_which.return_value = None
+            with pytest.raises(
+                PackageManagerError, match="Failed to install flatpak: Installation failed"
+            ):
+                repo_mgr.ensure_flatpak_installed()
+
+    def test_ensure_flatpak_installed_verification_fails(self, arch_distro: DistroInfo) -> None:
+        """Test handling verification failure after installation."""
+        pm = Mock(spec=PackageManager)
+        pm.install.return_value = (True, "")
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with patch("shutil.which") as mock_which:
+            # Always return None to simulate verification failure
+            mock_which.return_value = None
+            with pytest.raises(
+                PackageManagerError, match="flatpak installation verification failed"
+            ):
+                repo_mgr.ensure_flatpak_installed()
+
+    def test_enable_flatpak_remote_installs_flatpak_first(self, arch_distro: DistroInfo) -> None:
+        """Test that enabling remote installs flatpak if needed."""
+        pm = Mock(spec=PackageManager)
+        pm.install.return_value = (True, "")
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # First call: not installed, second call: installed
+            mock_which.side_effect = [None, "/usr/bin/flatpak"]
+            mock_run.return_value = Mock(returncode=0)
+            result = repo_mgr.enable_flatpak_remote("flathub")
+
+            assert result is True
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)
+
+    def test_install_flatpak_installs_flatpak_first(self, arch_distro: DistroInfo) -> None:
+        """Test that installing flatpak package installs flatpak command if needed."""
+        pm = Mock(spec=PackageManager)
+        pm.install.return_value = (True, "")
+        repo_mgr = RepositoryManager(arch_distro, pm)
+
+        with (
+            patch("shutil.which") as mock_which,
+            patch("subprocess.run") as mock_run,
+        ):
+            # First call: not installed, second call: installed
+            mock_which.side_effect = [None, "/usr/bin/flatpak"]
+            mock_run.return_value = Mock(returncode=0)
+            result = repo_mgr.install_flatpak("org.mozilla.firefox")
+
+            assert result is True
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)

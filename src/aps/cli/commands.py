@@ -21,7 +21,7 @@ def get_tracking_db_path() -> Path:
 
 def load_category_packages(category: str) -> list[str]:
     """Load packages for a given category from config files."""
-    config_dir = Path(__file__).parent.parent.parent.parent / "config_examples"
+    config_dir = Path.home() / ".config" / "auto-penguin-setup"
     parser = APSConfigParser()
     parser.load(config_dir / "packages.ini")
 
@@ -184,11 +184,12 @@ def cmd_install(args: Namespace) -> None:
                     logger.error("Failed to enable flathub remote")
                     return
 
-            cmd = ["flatpak", "install", "-y", "flathub"] + flatpak_packages
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            # Don't capture output - let user see flatpak installation progress and approve permissions
+            cmd = ["flatpak", "install", "flathub"] + flatpak_packages
+            result = subprocess.run(cmd, check=False)
             if result.returncode != 0:
-                print(f"Failed to install flatpak packages: {result.stderr}")
-                logger.error("Failed to install flatpak packages: %s", result.stderr)
+                print("Failed to install flatpak packages")
+                logger.error("Failed to install flatpak packages")
                 return
 
         # Track packages

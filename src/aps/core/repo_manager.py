@@ -1,5 +1,7 @@
 """Repository management for COPR, AUR, and PPA sources."""
 
+import logging
+import shutil
 import subprocess
 
 from aps.core.distro import DistroFamily, DistroInfo
@@ -19,6 +21,7 @@ class RepositoryManager:
         """
         self.distro = distro
         self.pm = package_manager
+        self.logger = logging.getLogger(__name__)
 
     def enable_copr(self, repo: str) -> bool:
         """
@@ -146,6 +149,46 @@ class RepositoryManager:
         result = subprocess.run(cmd, capture_output=True)
         return result.returncode == 0
 
+    def is_flatpak_installed(self) -> bool:
+        """
+        Check if flatpak command is available.
+
+        Returns:
+            True if flatpak is installed
+        """
+        return shutil.which("flatpak") is not None
+
+    def ensure_flatpak_installed(self, assume_yes: bool = True) -> bool:
+        """
+        Ensure flatpak is installed, installing it if necessary.
+
+        Args:
+            assume_yes: Auto-confirm installation
+
+        Returns:
+            True if flatpak is available (already installed or successfully installed)
+
+        Raises:
+            PackageManagerError: If flatpak installation fails
+        """
+        if self.is_flatpak_installed():
+            self.logger.debug("flatpak is already installed")
+            return True
+
+        self.logger.info("flatpak not found, installing...")
+
+        # Install flatpak using system package manager
+        success, error = self.pm.install(["flatpak"], assume_yes=assume_yes)
+        if not success:
+            raise PackageManagerError(f"Failed to install flatpak: {error}")
+
+        # Verify installation
+        if self.is_flatpak_installed():
+            self.logger.info("flatpak installed successfully")
+            return True
+        else:
+            raise PackageManagerError("flatpak installation verification failed")
+
     def enable_flatpak_remote(self, remote_name: str, remote_url: str | None = None) -> bool:
         """
         Enable Flatpak remote repository.
@@ -157,6 +200,9 @@ class RepositoryManager:
         Returns:
             True if remote was enabled successfully
         """
+        # Ensure flatpak is installed before trying to use it
+        self.ensure_flatpak_installed()
+
         if remote_url is None and remote_name.lower() == "flathub":
             remote_url = "https://flathub.org/repo/flathub.flatpakrepo"
 
@@ -164,7 +210,7 @@ class RepositoryManager:
             raise ValueError(f"remote_url is required for remote: {remote_name}")
 
         cmd = ["sudo", "flatpak", "remote-add", "--if-not-exists", remote_name, remote_url]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_flatpak_remote_enabled(self, remote_name: str) -> bool:
@@ -177,8 +223,13 @@ class RepositoryManager:
         Returns:
             True if remote is enabled
         """
+        # Ensure flatpak is installed before checking remotes
+        if not self.is_flatpak_installed():
+            self.logger.debug("flatpak not installed, remote cannot be enabled")
+            return False
+
         cmd = ["flatpak", "remotes"]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             return False
@@ -197,8 +248,12 @@ class RepositoryManager:
         Returns:
             True if package was installed successfully
         """
-        cmd = ["sudo", "flatpak", "install", "-y", remote, package]
-        result = subprocess.run(cmd, capture_output=True)
+        # Ensure flatpak is installed before trying to use it
+        self.ensure_flatpak_installed()
+
+        # Don't use -y flag - let user see and approve permissions interactively
+        cmd = ["sudo", "flatpak", "install", remote, package]
+        result = subprocess.run(cmd, check=False)
         return result.returncode == 0
 
     def remove_flatpak(self, package: str) -> bool:
@@ -212,5 +267,5 @@ class RepositoryManager:
             True if package was removed successfully
         """
         cmd = ["sudo", "flatpak", "uninstall", "-y", package]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
