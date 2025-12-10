@@ -102,14 +102,14 @@ def sample_packages_ini(tmp_path):
     """Sample packages.ini configuration."""
     content = """
 [development]
-1=git
-2=vim
-3=python3
+git
+vim
+python3
 
 [multimedia]
-1=ffmpeg
-2=vlc
-3=gimp
+ffmpeg
+vlc
+gimp
 """
     packages_ini = tmp_path / "packages.ini"
     packages_ini.write_text(content)

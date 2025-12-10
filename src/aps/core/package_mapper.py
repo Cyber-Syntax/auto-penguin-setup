@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from aps.core.config_parser import APSConfigParser
+from aps.core.config import APSConfigParser
 from aps.core.distro import DistroFamily, DistroInfo
 
 

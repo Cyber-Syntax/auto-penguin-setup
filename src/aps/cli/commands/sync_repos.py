@@ -5,7 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from aps.cli.commands._utils import get_tracking_db_path
-from aps.core.config_parser import APSConfigParser
+from aps.core.config import APSConfigParser, ensure_config_files
 from aps.core.distro import detect_distro
 from aps.core.package_manager import PackageManagerError, get_package_manager
 from aps.core.tracking import PackageRecord, PackageTracker
@@ -73,18 +73,15 @@ def cmd_sync_repos(args: Namespace) -> None:
 
     # Load package configuration
     config_dir = Path.home() / ".config" / "auto-penguin-setup"
-    packages_ini = config_dir / "packages.ini"
-    pkgmap_ini = config_dir / "pkgmap.ini"
 
-    if not packages_ini.exists():
-        logger.error("Error: Configuration file not found: %s", packages_ini)
-        logger.error("Please create configuration files before running sync-repos.")
-        return
+    # Ensure config files exist, creating them from examples if needed
+    ensure_config_files(config_dir)
+
+    pkgmap_ini = config_dir / "pkgmap.ini"
 
     # Parse package mappings to get sources
     pkgmap_parser = APSConfigParser()
-    if pkgmap_ini.exists():
-        pkgmap_parser.load(pkgmap_ini)
+    pkgmap_parser.load(pkgmap_ini)
 
     # Get distro-specific section
     distro_section = f"pkgmap.{distro_info.name.lower()}"

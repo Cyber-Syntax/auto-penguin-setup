@@ -77,6 +77,7 @@ class TestCmdSyncRepos:
 
         return config_dir
 
+    @patch("aps.cli.commands.sync_repos.ensure_config_files")
     @patch("aps.cli.commands.sync_repos.Path.home")
     @patch("aps.cli.commands.sync_repos.get_package_manager")
     @patch("aps.cli.commands.sync_repos.detect_distro")
@@ -89,6 +90,7 @@ class TestCmdSyncRepos:
         mock_detect_distro,
         mock_get_pm,
         mock_home,
+        mock_ensure_config,
         tmp_path,
         caplog,
     ):
@@ -122,6 +124,7 @@ class TestCmdSyncRepos:
         assert "No repository changes detected" in caplog.text
         assert "All tracked packages are in sync" in caplog.text
 
+    @patch("aps.cli.commands.sync_repos.ensure_config_files")
     @patch("aps.cli.commands.sync_repos.Path.home")
     @patch("aps.cli.commands.sync_repos.get_package_manager")
     @patch("aps.cli.commands.sync_repos.detect_distro")
@@ -134,6 +137,7 @@ class TestCmdSyncRepos:
         mock_detect_distro,
         mock_get_pm,
         mock_home,
+        mock_ensure_config,
         tmp_path,
         caplog,
     ):

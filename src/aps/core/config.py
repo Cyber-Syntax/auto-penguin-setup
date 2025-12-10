@@ -1,5 +1,6 @@
 """Configuration file parser for INI files with special APS formats."""
 
+import shutil
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -9,7 +10,7 @@ class APSConfigParser:
     Parser for Auto Penguin Setup INI configuration files.
 
     Extends standard ConfigParser to handle special formats:
-    - Numeric keys: 1=package1, 2=package2 (for package lists)
+    - Package lists with comma-separated values
     - Package mappings: generic_name=distro:specific_name
     - Prefix handling: COPR:user/repo:package, AUR:package, PPA:user/repo:package
     """
@@ -25,7 +26,8 @@ class APSConfigParser:
         self._path = config_path
 
         if config_path and config_path.exists():
-            self._parser.read(config_path, encoding="utf-8")
+            processed_content = self._preprocess_config_file(config_path)
+            self._parser.read_string(processed_content)
 
     def load(self, config_path: Path) -> None:
         """
@@ -41,15 +43,15 @@ class APSConfigParser:
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
         self._path = config_path
-        # Preprocess the file to handle bare lines in sections
         processed_content = self._preprocess_config_file(config_path)
-
-        # Write to a temporary string and read from it
         self._parser.read_string(processed_content)
 
     def _preprocess_config_file(self, config_path: Path) -> str:
         """
         Preprocess config file to convert bare lines to key=value format.
+
+        Bare lines (lines without '=') are converted to numbered keys.
+        This allows ConfigParser to read them while maintaining compatibility.
 
         Args:
             config_path: Path to config file
@@ -60,7 +62,7 @@ class APSConfigParser:
         lines = config_path.read_text(encoding="utf-8").splitlines()
         processed_lines = []
         current_section = None
-        key_counter = {}
+        key_counter: dict[str, int] = {}
 
         for line in lines:
             stripped = line.strip()
@@ -77,19 +79,19 @@ class APSConfigParser:
                 processed_lines.append(line)
                 continue
 
-            # Key-value pair
+            # Key-value pair - keep as is
             if "=" in stripped:
                 processed_lines.append(line)
                 continue
 
-            # Bare line in section - convert to key=value
+            # Bare line in section - convert to numbered key=value
             if current_section and stripped:
-                key = str(key_counter[current_section])
+                key = f"_pkg_{key_counter[current_section]}"
                 processed_lines.append(f"{key}={stripped}")
                 key_counter[current_section] += 1
                 continue
 
-            # Unrecognized line
+            # Unrecognized line - keep as is
             processed_lines.append(line)
 
         return "\n".join(processed_lines)
@@ -104,40 +106,49 @@ class APSConfigParser:
 
     def get_section_packages(self, section: str) -> list[str]:
         """
-        Get list of packages from a section with numeric keys.
+        Get list of packages from a section.
 
-        Handles format like:
-        [section]
-        1=package1
-        2=package2
-        3=package3
+        Supports multiple formats:
+        - Comma-separated values: curl, wget, git
+        - One package per line
+        - Mixed format with inline comments
+        - Whitespace tolerance
+
+        Example:
+            [core]
+            curl, wget  # download tools
+            # firewall
+            ufw
+            trash-cli, syncthing
+            borgbackup
 
         Args:
             section: Section name to read packages from
 
         Returns:
-            List of package names in order
+            List of package names
         """
         if not self._parser.has_section(section):
             return []
 
         packages: list[str] = []
-        items = self._parser.items(section)
 
-        # Sort by numeric key, then extract values
-        numeric_items = []
-        for key, value in items:
-            try:
-                # Try to convert key to int for sorting
-                num_key = int(key)
-                numeric_items.append((num_key, value.strip()))
-            except ValueError:
-                # Skip non-numeric keys
-                continue
+        # Get all items from section
+        for _, value in self._parser.items(section):
+            # Split by comma first
+            parts = value.split(",")
 
-        # Sort by numeric key and extract values
-        numeric_items.sort(key=lambda x: x[0])
-        packages = [value for _, value in numeric_items if value]
+            for part in parts:
+                # Remove inline comments
+                if "#" in part:
+                    part = part.split("#")[0]
+                if ";" in part:
+                    part = part.split(";")[0]
+
+                # Strip whitespace and filter out empty strings
+                cleaned = part.strip()
+                if cleaned:
+                    packages.append(cleaned)
 
         return packages
 
@@ -161,13 +172,6 @@ class APSConfigParser:
 
         mappings: dict[str, str] = {}
         for key, value in self._parser.items(section):
-            # Skip numeric keys (those are for package lists)
-            try:
-                int(key)
-                continue
-            except ValueError:
-                pass
-
             mappings[key.strip()] = value.strip()
 
         return mappings
@@ -253,3 +257,49 @@ def parse_config(config_path: Path) -> APSConfigParser:
     parser = APSConfigParser()
     parser.load(config_path)
     return parser
+
+
+def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
+    """
+    Ensure configuration files exist, creating them from examples if needed.
+
+    Args:
+        config_dir: Directory for config files (default: ~/.config/auto-penguin-setup)
+
+    Returns:
+        Dictionary mapping filename to whether it was created (True) or already existed (False)
+    """
+    if config_dir is None:
+        config_dir = Path.home() / ".config" / "auto-penguin-setup"
+
+    # Get the source examples directory
+    # Assuming this module is in src/aps/core/config.py
+    package_root = Path(__file__).parent.parent.parent.parent
+    examples_dir = package_root / "config_examples"
+
+    if not examples_dir.exists():
+        raise FileNotFoundError(f"Config examples directory not found: {examples_dir}")
+
+    # Ensure config directory exists
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    # Track which files were created
+    results: dict[str, bool] = {}
+
+    # Copy example config files if they don't exist
+    config_files = ["packages.ini", "pkgmap.ini", "variables.ini"]
+
+    for filename in config_files:
+        source = examples_dir / filename
+        destination = config_dir / filename
+
+        if not destination.exists():
+            if source.exists():
+                shutil.copy2(source, destination)
+                results[filename] = True
+            else:
+                raise FileNotFoundError(f"Example config file not found: {source}")
+        else:
+            results[filename] = False
+
+    return results
