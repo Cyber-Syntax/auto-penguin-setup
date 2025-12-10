@@ -7,7 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from aps.__main__ import main, setup_logging
+from aps.__main__ import main
+from aps.core.logger import setup_logging
 
 
 class TestSetupLogging:
@@ -36,12 +37,12 @@ class TestSetupLogging:
         root_logger = logging.getLogger()
         handlers = root_logger.handlers
 
-        # Should have at least 2 handlers: FileHandler and StreamHandler
-        assert len(handlers) >= 2
+        # Should have exactly 2 handlers: RotatingFileHandler and StreamHandler
+        assert len(handlers) == 2
 
-        # Check that there's a StreamHandler with WARNING level
+        # Check that there's a StreamHandler with INFO level (default non-verbose)
         stream_handlers = [h for h in handlers if isinstance(h, logging.StreamHandler)]
-        assert any(h.level == logging.WARNING for h in stream_handlers)
+        assert any(h.level == logging.INFO for h in stream_handlers)
 
 
 class TestMain:

@@ -107,10 +107,8 @@ def cmd_install(args: Namespace) -> None:
     for m in flatpak_mapped:
         remote = m.get_repo_name()
         if remote and not repo_mgr.is_flatpak_remote_enabled(remote):
-            print(f"Enabling flatpak remote {remote}...")
-            logger.debug("Enabling flatpak remote %s", remote)
+            logger.info("Enabling flatpak remote %s...", remote)
             if not repo_mgr.enable_flatpak_remote(remote):
-                print(f"Failed to enable flatpak remote {remote}")
                 logger.error("Failed to enable flatpak remote %s", remote)
                 return
         flatpak_packages.append(m.mapped_name)
@@ -120,23 +118,22 @@ def cmd_install(args: Namespace) -> None:
     if distro_info.family == DistroFamily.FEDORA:
         for m in copr_pkgs:
             repo = m.get_repo_name()
-            if repo and not repo_mgr.is_copr_enabled(repo):
-                print(f"Enabling COPR repo {repo}...")
-                logger.debug("Enabling COPR repo %s", repo)
-                if not repo_mgr.enable_copr(repo):
-                    print(f"Failed to enable COPR repo {repo}")
-                    logger.error("Failed to enable COPR repo %s", repo)
-                    return
+            if repo:
+                if not repo_mgr.is_copr_enabled(repo):
+                    logger.info("Enabling COPR repo %s...", repo)
+                    if not repo_mgr.enable_copr(repo):
+                        logger.error("Failed to enable COPR repo %s", repo)
+                        return
+                else:
+                    logger.info("COPR repo %s is already enabled", repo)
 
     # Enable PPA repos (Debian/Ubuntu only)
     if distro_info.family == DistroFamily.DEBIAN:
         for m in ppa_pkgs:
             repo = m.get_repo_name()
             if repo:
-                print(f"Adding PPA {repo}...")
-                logger.debug("Adding PPA %s", repo)
+                logger.info("Adding PPA %s...", repo)
                 if not repo_mgr.add_ppa(repo):
-                    print(f"Failed to add PPA {repo}")
                     logger.error("Failed to add PPA %s", repo)
                     return
 

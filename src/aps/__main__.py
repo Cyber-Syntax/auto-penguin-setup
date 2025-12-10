@@ -1,8 +1,6 @@
 """CLI entry point for Auto Penguin Setup."""
 
-import logging
 import sys
-from pathlib import Path
 
 from aps.cli import create_parser
 from aps.cli.commands import (
@@ -13,31 +11,7 @@ from aps.cli.commands import (
     cmd_status,
     cmd_sync_repos,
 )
-
-
-def setup_logging(verbose: bool = False) -> None:
-    """Set up logging to write to ~/.config/auto-penguin-setup/logs/aps.log.
-
-    Args:
-        verbose: If True, show DEBUG messages. Otherwise show INFO and above.
-    """
-    log_dir = Path.home() / ".config" / "auto-penguin-setup" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "aps.log"
-
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(log_file),
-        ],
-    )
-
-    # Add stream handler for stderr - show INFO by default, DEBUG if verbose
-    stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
-    stream_handler.setFormatter(logging.Formatter("%(message)s"))
-    logging.getLogger().addHandler(stream_handler)
+from aps.core.logger import get_logger, setup_logging
 
 
 def main() -> int:
@@ -48,7 +22,7 @@ def main() -> int:
 
     # Setup logging with verbose flag
     setup_logging(verbose=args.verbose)
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__)
     logger.debug("Starting aps CLI")
 
     # Dispatch to command handlers

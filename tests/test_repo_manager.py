@@ -116,6 +116,12 @@ class TestRepositoryManager:
             result = repo_mgr.is_copr_enabled("user/repo")
 
             assert result is True
+            mock_run.assert_called_once_with(
+                ["dnf", "repolist", "--enabled"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
     def test_is_copr_enabled_false(self, fedora_distro: DistroInfo) -> None:
         """Test checking if COPR is enabled returns False."""
@@ -127,6 +133,12 @@ class TestRepositoryManager:
             result = repo_mgr.is_copr_enabled("user/repo")
 
             assert result is False
+            mock_run.assert_called_once_with(
+                ["dnf", "repolist", "--enabled"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
     def test_is_copr_enabled_non_fedora(self, arch_distro: DistroInfo) -> None:
         """Test checking COPR on non-Fedora returns False."""
@@ -135,6 +147,17 @@ class TestRepositoryManager:
 
         result = repo_mgr.is_copr_enabled("user/repo")
         assert result is False
+
+    def test_is_copr_enabled_command_failure(self, fedora_distro: DistroInfo) -> None:
+        """Test that command failure returns False."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(fedora_distro, pm)
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=1, stdout="")
+            result = repo_mgr.is_copr_enabled("user/repo")
+
+            assert result is False
 
     def test_install_aur_package_success(self, arch_distro: DistroInfo) -> None:
         """Test installing AUR package successfully."""

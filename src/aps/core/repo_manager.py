@@ -39,14 +39,14 @@ class RepositoryManager:
         if self.distro.family != DistroFamily.FEDORA:
             raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
 
-        self.logger.info("Enabling COPR repository: %s", repo)
+        self.logger.debug("Enabling COPR repository: %s", repo)
         cmd = ["sudo", "dnf", "copr", "enable", "-y", repo]
         # Don't capture output - let it display to user
         result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
-            self.logger.info("Successfully enabled COPR repository: %s", repo)
+            self.logger.debug("Successfully enabled COPR repository: %s", repo)
         else:
-            self.logger.error("Failed to enable COPR repository: %s", repo)
+            self.logger.debug("Failed to enable COPR repository: %s", repo)
         return result.returncode == 0
 
     def disable_copr(self, repo: str) -> bool:
@@ -80,11 +80,15 @@ class RepositoryManager:
             return False
 
         # List enabled repos and check if our COPR is present
-        cmd = ["dnf", "repolist", "enabled"]
+        cmd = ["dnf", "repolist", "--enabled"]
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
+        if result.returncode != 0:
+            return False
+
         # COPR repos show up with format like "copr:copr.fedorainfracloud.org:user:repo"
-        repo_id = repo.replace("/", ":")
+        # Convert "user/repo" to "copr:copr.fedorainfracloud.org:user:repo"
+        repo_id = f"copr:copr.fedorainfracloud.org:{repo.replace('/', ':')}"
         return repo_id in result.stdout
 
     def install_aur_package(self, package: str) -> bool:
