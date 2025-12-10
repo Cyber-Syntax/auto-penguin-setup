@@ -13,6 +13,8 @@ from aps.core.repo_manager import RepositoryManager
 from aps.core.setup import SetupError, SetupManager
 from aps.core.tracking import PackageRecord, PackageTracker
 
+logger = logging.getLogger(__name__)
+
 
 def get_tracking_db_path() -> Path:
     """Get the path to the package tracking database."""
@@ -33,7 +35,6 @@ def load_category_packages(category: str) -> list[str]:
 
 def cmd_install(args: Namespace) -> None:
     """Handle 'aps install' command."""
-    logger = logging.getLogger(__name__)
     logger.debug("Starting aps install command")
 
     distro_info = detect_distro()
@@ -141,7 +142,7 @@ def cmd_install(args: Namespace) -> None:
 
     if args.dry_run:
         for p in all_packages:
-            print(f"Would install: {p}")
+            logger.info("Would install: %s", p)
         logger.debug("Dry run completed")
     else:
         # Install system packages
@@ -150,7 +151,6 @@ def cmd_install(args: Namespace) -> None:
         if system_to_install:
             success, error = pm.install(system_to_install, assume_yes=True)
             if not success:
-                print(f"Failed to install system packages: {error}")
                 logger.error("Failed to install system packages: %s", error)
                 return
 
@@ -161,11 +161,9 @@ def cmd_install(args: Namespace) -> None:
             if isinstance(pm, PacmanManager):
                 success = pm.install_aur(aur_to_install, assume_yes=True)
                 if not success:
-                    print("Failed to install AUR packages")
                     logger.error("Failed to install AUR packages")
                     return
             else:
-                print("AUR packages not supported on this distro")
                 logger.error("AUR packages not supported on this distro")
                 return
 
@@ -174,10 +172,8 @@ def cmd_install(args: Namespace) -> None:
             logger.debug("Installing flatpak packages: %s", flatpak_packages)
             # Ensure flathub remote is enabled (for category flatpak)
             if not repo_mgr.is_flatpak_remote_enabled("flathub"):
-                print("Enabling flathub remote...")
-                logger.debug("Enabling flathub remote")
+                logger.info("Enabling flathub remote...")
                 if not repo_mgr.enable_flatpak_remote("flathub"):
-                    print("Failed to enable flathub remote")
                     logger.error("Failed to enable flathub remote")
                     return
 
@@ -185,7 +181,6 @@ def cmd_install(args: Namespace) -> None:
             cmd = ["flatpak", "install", "flathub"] + flatpak_packages
             result = subprocess.run(cmd, check=False)
             if result.returncode != 0:
-                print("Failed to install flatpak packages")
                 logger.error("Failed to install flatpak packages")
                 return
 
@@ -199,7 +194,7 @@ def cmd_install(args: Namespace) -> None:
             )
             tracker.track_install(record)
             logger.debug("Tracked package: %s from %s", m.original_name, m.source)
-            print(f"Installed: {m.original_name}")
+            logger.info("Installed: %s", m.original_name)
 
         # Track category flatpak packages
         for p in flatpak_packages:
@@ -213,7 +208,7 @@ def cmd_install(args: Namespace) -> None:
             )
             tracker.track_install(record)
             logger.debug("Tracked flatpak package: %s", p)
-            print(f"Installed: {p}")
+            logger.info("Installed: %s", p)
 
     logger.debug("aps install command completed")
 
@@ -226,14 +221,14 @@ def cmd_remove(args: Namespace) -> None:
 
     for pkg in args.packages:
         if args.dry_run:
-            print(f"Would remove: {pkg}")
+            logger.info("Would remove: %s", pkg)
         else:
             success, error = pm.remove([pkg])
             if success:
                 tracker.remove_package(pkg)
-                print(f"Removed: {pkg}")
+                logger.info("Removed: %s", pkg)
             else:
-                print(f"Failed to remove {pkg}: {error}")
+                logger.error("Failed to remove %s: %s", pkg, error)
 
 
 def cmd_list(args: Namespace) -> None:
@@ -252,15 +247,25 @@ def cmd_list(args: Namespace) -> None:
     category_width = 15
     date_width = 24
 
-    print("Tracked Packages:")
-    print("=" * (name_width + source_width + category_width + date_width + 3))
-    print(
-        f"{'Name':<{name_width}} {'Source':<{source_width}} {'Category':<{category_width}} {'Installed At':<{date_width}}"
+    logger.info("Tracked Packages:")
+    logger.info("=" * (name_width + source_width + category_width + date_width + 3))
+    logger.info(
+        "%s %s %s %s",
+        "Name".ljust(name_width),
+        "Source".ljust(source_width),
+        "Category".ljust(category_width),
+        "Installed At".ljust(date_width),
     )
-    print(f"{'-' * name_width} {'-' * source_width} {'-' * category_width} {'-' * date_width}")
+    logger.info(
+        "%s %s %s %s", "-" * name_width, "-" * source_width, "-" * category_width, "-" * date_width
+    )
     for pkg in packages:
-        print(
-            f"{pkg.name:<{name_width}} {pkg.source:<{source_width}} {(pkg.category or 'N/A'):<{category_width}} {pkg.installed_at:<{date_width}}"
+        logger.info(
+            "%s %s %s %s",
+            pkg.name.ljust(name_width),
+            pkg.source.ljust(source_width),
+            (pkg.category or "N/A").ljust(category_width),
+            pkg.installed_at.ljust(date_width),
         )
 
 
@@ -276,8 +281,8 @@ def cmd_sync_repos(args: Namespace) -> None:
     pkgmap_ini = config_dir / "pkgmap.ini"
 
     if not packages_ini.exists():
-        print(f"Error: Configuration file not found: {packages_ini}")
-        print("Please create configuration files before running sync-repos.")
+        logger.error("Error: Configuration file not found: %s", packages_ini)
+        logger.error("Please create configuration files before running sync-repos.")
         return
 
     # Parse package mappings to get sources
@@ -311,34 +316,34 @@ def cmd_sync_repos(args: Namespace) -> None:
             changes.append((pkg, pkg.source, new_source))
 
     if not changes:
-        print("No repository changes detected.")
-        print("All tracked packages are in sync with configuration.")
+        logger.info("No repository changes detected.")
+        logger.info("All tracked packages are in sync with configuration.")
         return
 
     # Display detected changes
-    print("Repository Changes Detected:")
-    print("=" * 80)
-    print(f"{'Package':<25} {'Old Source':<25} {'New Source':<25}")
-    print("-" * 80)
+    logger.info("Repository Changes Detected:")
+    logger.info("=" * 80)
+    logger.info("%s %s %s", "Package".ljust(25), "Old Source".ljust(25), "New Source".ljust(25))
+    logger.info("-" * 80)
     for pkg, old_source, new_source in changes:
-        print(f"{pkg.name:<25} {old_source:<25} {new_source:<25}")
-    print("=" * 80)
-    print(f"\nTotal packages to migrate: {len(changes)}")
+        logger.info("%s %s %s", pkg.name.ljust(25), old_source.ljust(25), new_source.ljust(25))
+    logger.info("=" * 80)
+    logger.info("\nTotal packages to migrate: %s", len(changes))
 
     # Confirmation prompt (unless --auto flag is set)
     if not getattr(args, "auto", False):
         response = input("\nProceed with migration? [y/N]: ")
         if response.lower() not in ("y", "yes"):
-            print("Migration cancelled.")
+            logger.info("Migration cancelled.")
             return
 
     # Execute migrations
-    print("\nMigrating packages...")
+    logger.info("\nMigrating packages...")
     success_count = 0
     failed_migrations: list[tuple[str, str]] = []  # (package, error)
 
     for pkg, old_source, new_source in changes:
-        print(f"\nMigrating {pkg.name}: {old_source} -> {new_source}")
+        logger.info("\nMigrating %s: %s -> %s", pkg.name, old_source, new_source)
 
         # Get the actual package name to install/remove
         package_name = pkg.mapped_name if pkg.mapped_name else pkg.name
@@ -346,17 +351,17 @@ def cmd_sync_repos(args: Namespace) -> None:
 
         try:
             # Step 1: Remove from old source
-            print(f"  Removing from {old_source}...")
+            logger.info("  Removing from %s...", old_source)
             success, error = pm.remove([package_name], assume_yes=True)
             if not success:
                 raise PackageManagerError(f"Failed to remove: {error}")
 
             # Step 2: Install from new source
-            print(f"  Installing from {new_source}...")
+            logger.info("  Installing from %s...", new_source)
             success, error = pm.install([new_package_name], assume_yes=True)
             if not success:
                 # Rollback: try to reinstall from old source
-                print("  Installation failed. Attempting rollback...")
+                logger.warning("  Installation failed. Attempting rollback...")
                 rollback_success, _ = pm.install([package_name], assume_yes=True)
                 if rollback_success:
                     raise PackageManagerError(
@@ -377,30 +382,29 @@ def cmd_sync_repos(args: Namespace) -> None:
             )
             tracker.track_install(new_record)
 
-            print(f"  ✓ Successfully migrated {pkg.name}")
+            logger.info("  ✓ Successfully migrated %s", pkg.name)
             success_count += 1
 
         except PackageManagerError as e:
             error_msg = str(e)
-            print(f"  ✗ Failed to migrate {pkg.name}: {error_msg}")
+            logger.error("  ✗ Failed to migrate %s: %s", pkg.name, error_msg)
             failed_migrations.append((pkg.name, error_msg))
-            logging.error("Migration failed for %s: %s", pkg.name, error_msg)
 
     # Summary
-    print("\n" + "=" * 80)
-    print("Migration Summary")
-    print("=" * 80)
-    print(f"Total packages: {len(changes)}")
-    print(f"Successful: {success_count}")
-    print(f"Failed: {len(failed_migrations)}")
+    logger.info("\n" + "=" * 80)
+    logger.info("Migration Summary")
+    logger.info("=" * 80)
+    logger.info("Total packages: %s", len(changes))
+    logger.info("Successful: %s", success_count)
+    logger.info("Failed: %s", len(failed_migrations))
 
     if failed_migrations:
-        print("\nFailed Migrations:")
+        logger.info("\nFailed Migrations:")
         for pkg_name, error in failed_migrations:
-            print(f"  - {pkg_name}: {error}")
-        print("\nPlease review the errors and try again or install manually.")
+            logger.info("  - %s: %s", pkg_name, error)
+        logger.info("\nPlease review the errors and try again or install manually.")
     else:
-        print("\n✓ All packages migrated successfully!")
+        logger.info("\n✓ All packages migrated successfully!")
 
 
 def _parse_package_source(config_value: str) -> str:
@@ -460,11 +464,11 @@ def cmd_status(args: Namespace) -> None:  # noqa: ARG001
     distro_info = detect_distro()
     tracker = PackageTracker(get_tracking_db_path())
 
-    print(f"Distribution: {distro_info.name} {distro_info.version}")
-    print(f"Package Manager: {distro_info.package_manager.value}")
+    logger.info("Distribution: %s %s", distro_info.name, distro_info.version)
+    logger.info("Package Manager: %s", distro_info.package_manager.value)
 
     packages = tracker.get_tracked_packages()
-    print(f"Tracked Packages: {len(packages)}")
+    logger.info("Tracked Packages: %s", len(packages))
 
     # Count by source
     sources: dict[str, int] = {}
@@ -472,9 +476,9 @@ def cmd_status(args: Namespace) -> None:  # noqa: ARG001
         source_type = pkg.source.split(":")[0] if ":" in pkg.source else pkg.source
         sources[source_type] = sources.get(source_type, 0) + 1
 
-    print("By Source:")
+    logger.info("By Source:")
     for source, count in sources.items():
-        print(f"  {source}: {count}")
+        logger.info("  %s: %s", source, count)
 
 
 def cmd_setup(args: Namespace) -> None:
@@ -484,6 +488,6 @@ def cmd_setup(args: Namespace) -> None:
 
     try:
         manager.setup_component(args.component)
-        print(f"{args.component} setup completed successfully")
+        logger.info("%s setup completed successfully", args.component)
     except SetupError as e:
-        print(f"Setup failed: {e}")
+        logger.error("Setup failed: %s", e)

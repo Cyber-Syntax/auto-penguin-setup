@@ -23,7 +23,6 @@ class OhMyZshInstaller(BaseInstaller):
             True if installation successful, False otherwise
         """
         logger.info("Installing oh-my-zsh...")
-        print("Installing oh-my-zsh...")
 
         target_dir = Path.home() / ".config" / "oh-my-zsh"
         default_dir = Path.home() / ".oh-my-zsh"
@@ -38,18 +37,15 @@ class OhMyZshInstaller(BaseInstaller):
         # Determine which zshrc file to use
         zshrc_path = self._get_zshrc_path()
         logger.info("Using zshrc at: %s", zshrc_path)
-        print(f"Using zshrc at: {zshrc_path}")
 
         # Check if already installed
         already_installed = target_dir.exists() or default_dir.exists()
 
         if already_installed:
             logger.info("oh-my-zsh is already installed, updating configuration...")
-            print("oh-my-zsh is already installed, updating configuration...")
             # Ensure we're using the correct directory
             if default_dir.exists() and not target_dir.exists():
                 logger.info("Moving oh-my-zsh from %s to %s", default_dir, target_dir)
-                print(f"Moving oh-my-zsh from {default_dir} to {target_dir}")
                 target_dir.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     shutil.move(str(default_dir), str(target_dir))
@@ -120,7 +116,6 @@ class OhMyZshInstaller(BaseInstaller):
 
         # Fix path references in zshrc
         logger.info("Updating %s with correct paths...", zshrc_path)
-        print(f"Updating {zshrc_path} with correct paths...")
 
         # Create backup
         backup_path = Path(f"{zshrc_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -136,14 +131,10 @@ class OhMyZshInstaller(BaseInstaller):
             return False
 
         logger.info("oh-my-zsh installation completed successfully!")
-        print("oh-my-zsh installation completed successfully!")
         logger.info("Installation directory: %s", target_dir)
-        print(f"Installation directory: {target_dir}")
         logger.info("Configuration file: %s", zshrc_path)
-        print(f"Configuration file: {zshrc_path}")
-        print("")
+        logger.info("")
         logger.info("Please restart your shell or run: source %s", zshrc_path)
-        print(f"Please restart your shell or run: source {zshrc_path}")
 
         return True
 
@@ -178,7 +169,6 @@ class OhMyZshInstaller(BaseInstaller):
 
         if not plugin_path.exists():
             logger.info("Installing %s plugin...", name)
-            print(f"Installing {name} plugin...")
             try:
                 subprocess.run(
                     ["git", "clone", url, str(plugin_path)],

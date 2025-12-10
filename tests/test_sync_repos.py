@@ -90,7 +90,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test when no repository changes are detected."""
         # Setup mocks
@@ -119,9 +119,8 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify
-        captured = capsys.readouterr()
-        assert "No repository changes detected" in captured.out
-        assert "All tracked packages are in sync" in captured.out
+        assert "No repository changes detected" in caplog.text
+        assert "All tracked packages are in sync" in caplog.text
 
     @patch("aps.cli.commands.Path.home")
     @patch("aps.cli.commands.get_package_manager")
@@ -136,7 +135,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test that Flatpak packages are skipped from migration."""
         # Setup mocks
@@ -166,8 +165,7 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify - Flatpak should be skipped, so no changes
-        captured = capsys.readouterr()
-        assert "No repository changes detected" in captured.out
+        assert "No repository changes detected" in caplog.text
 
     @patch("aps.cli.commands.Path.home")
     @patch("aps.cli.commands.get_package_manager")
@@ -184,7 +182,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test when changes are detected but user cancels."""
         # Setup mocks
@@ -218,12 +216,11 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify
-        captured = capsys.readouterr()
-        assert "Repository Changes Detected" in captured.out
-        assert "lazygit" in captured.out
-        assert "COPR:atim/lazygit" in captured.out
-        assert "COPR:dejan/lazygit" in captured.out
-        assert "Migration cancelled" in captured.out
+        assert "Repository Changes Detected" in caplog.text
+        assert "lazygit" in caplog.text
+        assert "COPR:atim/lazygit" in caplog.text
+        assert "COPR:dejan/lazygit" in caplog.text
+        assert "Migration cancelled" in caplog.text
 
     @patch("aps.cli.commands.Path.home")
     @patch("aps.cli.commands.get_package_manager")
@@ -240,7 +237,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test successful migration with --auto flag."""
         # Setup mocks
@@ -279,12 +276,11 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify
-        captured = capsys.readouterr()
-        assert "Repository Changes Detected" in captured.out
-        assert "Migrating packages" in captured.out
-        assert "Successfully migrated lazygit" in captured.out or "✓" in captured.out
-        assert "Migration Summary" in captured.out
-        assert "Successful: 1" in captured.out
+        assert "Repository Changes Detected" in caplog.text
+        assert "Migrating packages" in caplog.text
+        assert "Successfully migrated" in caplog.text
+        assert "Migration Summary" in caplog.text
+        assert "Successful: 1" in caplog.text
 
         # Verify package manager calls
         mock_pm.remove.assert_called_once()
@@ -309,7 +305,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test migration failure with successful rollback."""
         # Setup mocks
@@ -351,10 +347,10 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify
-        captured = capsys.readouterr()
-        assert "Failed to migrate lazygit" in captured.out or "✗" in captured.out
-        assert "Failed: 1" in captured.out
-        assert "rolled back" in captured.out or "rollback" in captured.out.lower()
+        assert "Failed to migrate lazygit" in caplog.text or "\u2717" in caplog.text
+        assert "Migration Summary" in caplog.text
+        assert "Failed: 1" in caplog.text
+        assert "rolled back" in caplog.text or "rollback" in caplog.text.lower()
 
         # Verify rollback was attempted
         assert mock_pm.install.call_count == 2
@@ -372,7 +368,7 @@ class TestCmdSyncRepos:
         mock_get_pm,
         mock_home,
         tmp_path,
-        capsys,
+        caplog,
     ):
         """Test error when configuration file is missing."""
         # Setup - no config files
@@ -387,6 +383,5 @@ class TestCmdSyncRepos:
         cmd_sync_repos(args)
 
         # Verify
-        captured = capsys.readouterr()
-        assert "Error: Configuration file not found" in captured.out
-        assert "packages.ini" in captured.out
+        assert "Error: Configuration file not found" in caplog.text
+        assert "Please create configuration files" in caplog.text

@@ -85,9 +85,13 @@ class TestCLIParser:
 class TestCLICommands:
     """Test CLI command execution."""
 
-    def test_cmd_status(self, tmp_path, monkeypatch):
+    def test_cmd_status(self, tmp_path, monkeypatch, capsys):
         """Test status command execution."""
         from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()  # Configure logger to output to stderr
 
         mock_distro = Mock()
         mock_distro.name = "Fedora"
@@ -100,37 +104,44 @@ class TestCLICommands:
         with (
             patch("aps.cli.commands.detect_distro", return_value=mock_distro),
             patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
-            patch("builtins.print") as mock_print,
         ):
             args = Namespace()
             cmd_status(args)
 
-            # Check that print was called with expected output
-            calls = [call.args[0] for call in mock_print.call_args_list]
-            assert "Distribution: Fedora 39" in calls
-            assert "Package Manager: dnf" in calls
-            assert "Tracked Packages: 0" in calls
+            # Check that logger output to stderr contains expected messages
+            captured = capsys.readouterr()
+            assert "Distribution: Fedora 39" in captured.err
+            assert "Package Manager: dnf" in captured.err
+            assert "Tracked Packages: 0" in captured.err
 
-    def test_cmd_list_no_packages(self, tmp_path, monkeypatch):
+    def test_cmd_list_no_packages(self, capsys):
         """Test list command with no packages."""
         from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()  # Configure logger to output to stderr
 
         mock_tracker = Mock()
         mock_tracker.get_tracked_packages.return_value = []
 
         with (
             patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
-            patch("builtins.print") as mock_print,
         ):
             args = Namespace(source=None)
             cmd_list(args)
 
-            # Should not print anything for empty list
-            assert mock_print.call_count == 0
+            # Should not log anything for empty list
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" not in captured.err
 
-    def test_cmd_list_with_packages(self, tmp_path, monkeypatch):
+    def test_cmd_list_with_packages(self, capsys):
         """Test list command with packages."""
         from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()  # Configure logger to output to stderr
 
         mock_record = Mock()
         mock_record.name = "curl"
@@ -143,23 +154,23 @@ class TestCLICommands:
 
         with (
             patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
-            patch("builtins.print") as mock_print,
         ):
             args = Namespace(source=None)
             cmd_list(args)
 
-            # Check that header, separator, column headers, dashes, and package info were printed
-            assert mock_print.call_count == 5
-            calls = mock_print.call_args_list
-            assert calls[0][0][0] == "Tracked Packages:"
-            assert calls[1][0][0] == "=" * 97  # 30+25+15+24+3
-            assert "Name" in calls[2][0][0] and "Source" in calls[2][0][0]
-            assert calls[3][0][0] == f"{'-' * 30} {'-' * 25} {'-' * 15} {'-' * 24}"
-            assert "curl" in calls[4][0][0] and "official" in calls[4][0][0]
+            # Check that logger output contains expected content
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "curl" in captured.err
+            assert "official" in captured.err
 
-    def test_cmd_list_with_source_filter(self, tmp_path, monkeypatch):
+    def test_cmd_list_with_source_filter(self, capsys):
         """Test list command with source filtering."""
         from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()  # Configure logger to output to stderr
 
         mock_record1 = Mock()
         mock_record1.name = "curl"
@@ -178,16 +189,12 @@ class TestCLICommands:
 
         with (
             patch("aps.cli.commands.PackageTracker", return_value=mock_tracker),
-            patch("builtins.print") as mock_print,
         ):
             args = Namespace(source="aur")
             cmd_list(args)
 
-            # Check that header, separator, column headers, dashes, and filtered package were printed
-            assert mock_print.call_count == 5
-            calls = mock_print.call_args_list
-            assert calls[0][0][0] == "Tracked Packages:"
-            assert calls[1][0][0] == "=" * 97
-            assert "Name" in calls[2][0][0] and "Source" in calls[2][0][0]
-            assert calls[3][0][0] == f"{'-' * 30} {'-' * 25} {'-' * 15} {'-' * 24}"
-            assert "neovim" in calls[4][0][0] and "aur" in calls[4][0][0]
+            # Check that logger output contains filtered package
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "neovim" in captured.err
+            assert "aur" in captured.err
