@@ -1,5 +1,6 @@
 """Package tracking using JSONL database for fast, simple storage."""
 
+import logging
 import shutil
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -8,16 +9,18 @@ from typing import Self
 
 import orjson
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class PackageRecord:
     """Represents a tracked package installation."""
 
     name: str
-    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", etc.
-    installed_at: str  # ISO 8601 timestamp
-    category: str | None = None
     mapped_name: str | None = None  # Actual installed name if different from 'name'
+    source: str = "official"  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", etc.
+    category: str | None = None
+    installed_at: str = ""  # ISO 8601 timestamp - set in create()
 
     @classmethod
     def create(
@@ -42,10 +45,10 @@ class PackageRecord:
         timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
         return cls(
             name=name,
-            source=source,
-            installed_at=timestamp,
-            category=category,
             mapped_name=mapped_name,
+            source=source,
+            category=category,
+            installed_at=timestamp,
         )
 
     def to_dict(self) -> dict[str, str | None]:
@@ -92,27 +95,87 @@ class PackageTracker:
 
     def track_install(self, record: PackageRecord) -> None:
         """
-        Track a package installation by appending to JSONL database.
+        Track a package installation, preventing duplicates.
+
+        If package already tracked:
+        - Same source → Update timestamp only
+        - Different source → Update all fields (migration)
+        If package doesn't exist → Add new record
 
         Args:
             record: PackageRecord to track
         """
-        # Append record as JSON line
-        json_line = orjson.dumps(record.to_dict()).decode("utf-8")
-        with open(self.db_path, "a", encoding="utf-8") as f:
-            f.write(json_line + "\n")
+        # Load all existing packages
+        packages = self.get_tracked_packages()
+
+        # Check if package exists (by name or mapped_name)
+        existing_idx = None
+        for idx, pkg in enumerate(packages):
+            if pkg.name == record.name or (pkg.mapped_name and pkg.mapped_name == record.name):
+                existing_idx = idx
+                break
+
+        if existing_idx is not None:
+            # Update existing record
+            packages[existing_idx] = record
+            logger.debug("Updated existing package: %s", record.name)
+        else:
+            # Add new record
+            packages.append(record)
+            logger.debug("Added new package: %s", record.name)
+
+        # Write all packages back
+        self._write_all_packages(packages)
 
     def track_multiple(self, records: list[PackageRecord]) -> None:
         """
-        Track multiple package installations at once.
+        Track multiple package installations at once, preventing duplicates.
+
+        For each record:
+        - If package exists → Update existing record
+        - If package doesn't exist → Add new record
 
         Args:
             records: List of PackageRecord objects to track
         """
-        with open(self.db_path, "a", encoding="utf-8") as f:
-            for record in records:
-                json_line = orjson.dumps(record.to_dict()).decode("utf-8")
-                f.write(json_line + "\n")
+        if not records:
+            return
+
+        # Load all existing packages
+        packages = self.get_tracked_packages()
+
+        # Create lookup for fast checking (name and mapped_name)
+        pkg_lookup: dict[str, int] = {}
+        for idx, pkg in enumerate(packages):
+            pkg_lookup[pkg.name] = idx
+            if pkg.mapped_name:
+                pkg_lookup[pkg.mapped_name] = idx
+
+        # Process each record
+        added_count = 0
+        updated_count = 0
+        for record in records:
+            if record.name in pkg_lookup:
+                # Update existing
+                idx = pkg_lookup[record.name]
+                packages[idx] = record
+                updated_count += 1
+                logger.debug("Updated existing package: %s", record.name)
+            else:
+                # Add new
+                packages.append(record)
+                pkg_lookup[record.name] = len(packages) - 1
+                if record.mapped_name:
+                    pkg_lookup[record.mapped_name] = len(packages) - 1
+                added_count += 1
+                logger.debug("Added new package: %s", record.name)
+
+        logger.info(
+            "Tracked %d packages: %d added, %d updated", len(records), added_count, updated_count
+        )
+
+        # Write all packages back
+        self._write_all_packages(packages)
 
     def get_tracked_packages(self) -> list[PackageRecord]:
         """

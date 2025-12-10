@@ -267,3 +267,132 @@ class TestPackageTracker:
         tracker.track_multiple(records)
 
         assert tracker.count_packages() == 3
+
+    def test_track_install_prevents_duplicates(self, tmp_path):
+        """Test that tracking same package twice doesn't create duplicates."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        # Track package first time
+        record1 = PackageRecord.create("git", source="official", category="dev")
+        tracker.track_install(record1)
+
+        # Track same package again
+        record2 = PackageRecord.create("git", source="official", category="dev")
+        tracker.track_install(record2)
+
+        # Should only have one entry
+        packages = tracker.get_tracked_packages()
+        assert len(packages) == 1
+        assert packages[0].name == "git"
+
+    def test_track_install_updates_existing_package(self, tmp_path):
+        """Test that tracking existing package updates the record."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        # Track package from official source
+        record1 = PackageRecord.create("git", source="official", category="dev")
+        tracker.track_install(record1)
+
+        # Update to different source
+        record2 = PackageRecord.create("git", source="COPR:test/git", category="tools")
+        tracker.track_install(record2)
+
+        # Should still have one entry with updated info
+        packages = tracker.get_tracked_packages()
+        assert len(packages) == 1
+        assert packages[0].name == "git"
+        assert packages[0].source == "COPR:test/git"
+        assert packages[0].category == "tools"
+
+    def test_track_multiple_prevents_duplicates(self, tmp_path):
+        """Test that tracking multiple packages prevents duplicates."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        # Track initial packages
+        records1 = [
+            PackageRecord.create("git", source="official"),
+            PackageRecord.create("vim", source="official"),
+        ]
+        tracker.track_multiple(records1)
+
+        # Track again with some duplicates and new packages
+        records2 = [
+            PackageRecord.create("git", source="official"),  # duplicate
+            PackageRecord.create("emacs", source="official"),  # new
+            PackageRecord.create("vim", source="official"),  # duplicate
+        ]
+        tracker.track_multiple(records2)
+
+        # Should have 3 unique packages
+        packages = tracker.get_tracked_packages()
+        assert len(packages) == 3
+        names = {p.name for p in packages}
+        assert names == {"git", "vim", "emacs"}
+
+    def test_track_multiple_with_all_duplicates(self, tmp_path):
+        """Test tracking multiple packages that are all duplicates."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        # Track initial packages
+        records1 = [
+            PackageRecord.create("git", source="official"),
+            PackageRecord.create("vim", source="official"),
+        ]
+        tracker.track_multiple(records1)
+
+        # Track same packages again
+        records2 = [
+            PackageRecord.create("git", source="official"),
+            PackageRecord.create("vim", source="official"),
+        ]
+        tracker.track_multiple(records2)
+
+        # Should still have only 2 packages
+        packages = tracker.get_tracked_packages()
+        assert len(packages) == 2
+
+    def test_field_order_consistency(self, tmp_path):
+        """Test that JSONL field order is consistent."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        record = PackageRecord.create(
+            "git", source="official", category="dev", mapped_name="git-core"
+        )
+        tracker.track_install(record)
+
+        # Read raw JSONL and verify field order
+        import orjson
+
+        with open(db_path, encoding="utf-8") as f:
+            line = f.readline().strip()
+            data = orjson.loads(line)
+
+        # Verify field order: name, mapped_name, source, category, installed_at
+        keys = list(data.keys())
+        assert keys[0] == "name"
+        assert keys[1] == "mapped_name"
+        assert keys[2] == "source"
+        assert keys[3] == "category"
+        assert keys[4] == "installed_at"
+
+    def test_track_by_mapped_name_prevents_duplicates(self, tmp_path):
+        """Test that tracking by mapped_name also prevents duplicates."""
+        db_path = tmp_path / "tracking.jsonl"
+        tracker = PackageTracker(db_path)
+
+        # Track package with mapped_name
+        record1 = PackageRecord.create("git", source="official", mapped_name="git-core")
+        tracker.track_install(record1)
+
+        # Try to track by mapped_name (should update, not duplicate)
+        record2 = PackageRecord.create("git-core", source="official")
+        tracker.track_install(record2)
+
+        # Should only have one entry
+        packages = tracker.get_tracked_packages()
+        assert len(packages) == 1
