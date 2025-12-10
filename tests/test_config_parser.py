@@ -38,7 +38,7 @@ class TestAPSConfigParser:
         """Test retrieving package mappings."""
         parser = APSConfigParser(sample_pkgmap_ini)
 
-        fedora_mappings = parser.get_package_mappings("fedora")
+        fedora_mappings = parser.get_package_mappings("pkgmap.fedora")
         assert "brave-browser" in fedora_mappings
         assert fedora_mappings["brave-browser"] == "COPR:lecramyajiv/brave-browser:brave-browser"
 

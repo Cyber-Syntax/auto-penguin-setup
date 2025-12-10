@@ -120,17 +120,17 @@ def sample_packages_ini(tmp_path):
 def sample_pkgmap_ini(tmp_path):
     """Sample pkgmap.ini configuration."""
     content = """
-[fedora]
+[pkgmap.fedora]
 brave-browser=COPR:lecramyajiv/brave-browser:brave-browser
 visual-studio-code=code
-lazygit=COPR:atim/lazygit:lazygit
+lazygit=COPR:atim/lazygit
 
-[arch]
+[pkgmap.arch]
 brave-browser=AUR:brave-bin
 visual-studio-code=visual-studio-code-bin
 lazygit=lazygit
 
-[debian]
+[pkgmap.debian]
 brave-browser=brave-browser
 visual-studio-code=code
 lazygit=lazygit

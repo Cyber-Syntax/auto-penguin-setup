@@ -139,13 +139,15 @@ class PackageMapper:
         Returns:
             PackageMapping with extracted information
         """
-        # Check for COPR format: COPR:user/repo:package
-        copr_match = re.match(r"^COPR:([^:]+):(.+)$", mapped_value)
+        # Check for COPR format: COPR:user/repo or COPR:user/repo:package
+        copr_match = re.match(r"^COPR:([^:]+)(?::(.+))?$", mapped_value)
         if copr_match:
             repo, package = copr_match.groups()
+            # If no explicit package name, use original_name
+            package_name = package if package else original_name
             return PackageMapping(
                 original_name=original_name,
-                mapped_name=package,
+                mapped_name=package_name,
                 source=f"COPR:{repo}",
             )
 

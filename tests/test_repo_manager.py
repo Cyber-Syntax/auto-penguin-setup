@@ -68,7 +68,7 @@ class TestRepositoryManager:
             assert result is True
             mock_run.assert_called_once_with(
                 ["sudo", "dnf", "copr", "enable", "-y", "user/repo"],
-                capture_output=True,
+                check=False,
             )
 
     def test_enable_copr_non_fedora(self, arch_distro: DistroInfo) -> None:
@@ -92,6 +92,7 @@ class TestRepositoryManager:
             mock_run.assert_called_once_with(
                 ["sudo", "dnf", "copr", "disable", "-y", "user/repo"],
                 capture_output=True,
+                check=False,
             )
 
     def test_disable_copr_non_fedora(self, debian_distro: DistroInfo) -> None:
@@ -174,7 +175,7 @@ class TestRepositoryManager:
             assert result is True
             mock_run.assert_called_once_with(
                 ["sudo", "add-apt-repository", "-y", "ppa:user/repo"],
-                capture_output=True,
+                check=False,
             )
             pm.update_cache.assert_called_once()
 
@@ -211,6 +212,7 @@ class TestRepositoryManager:
             mock_run.assert_called_once_with(
                 ["sudo", "add-apt-repository", "-y", "--remove", "ppa:user/repo"],
                 capture_output=True,
+                check=False,
             )
 
     def test_remove_ppa_non_debian(self, arch_distro: DistroInfo) -> None:

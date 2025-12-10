@@ -118,6 +118,20 @@ class TestPackageMapper:
         assert mapping.source == "COPR:user/repo"
         assert mapping.mapped_name == "package"
 
+    def test_parse_copr_mapping_without_package(self, tmp_path, fedora_distro):
+        """Test parsing COPR mapping without explicit package name - uses original_name."""
+        # Create empty pkgmap for mapper initialization
+        empty_pkgmap = tmp_path / "empty.ini"
+        empty_pkgmap.write_text("")
+
+        mapper = PackageMapper(empty_pkgmap, fedora_distro)
+
+        # When COPR mapping is just "COPR:user/repo", it should use original_name
+        mapping = mapper._parse_mapping("lazygit", "COPR:dejan/lazygit")
+        assert mapping.source == "COPR:dejan/lazygit"
+        assert mapping.mapped_name == "lazygit"
+        assert mapping.original_name == "lazygit"
+
     def test_parse_aur_mapping(self, tmp_path, arch_distro):
         """Test parsing AUR mapping format."""
         # Create empty pkgmap for mapper initialization

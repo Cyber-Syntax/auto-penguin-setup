@@ -39,8 +39,14 @@ class RepositoryManager:
         if self.distro.family != DistroFamily.FEDORA:
             raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
 
+        self.logger.info("Enabling COPR repository: %s", repo)
         cmd = ["sudo", "dnf", "copr", "enable", "-y", repo]
-        result = subprocess.run(cmd, capture_output=True)
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
+        if result.returncode == 0:
+            self.logger.info("Successfully enabled COPR repository: %s", repo)
+        else:
+            self.logger.error("Failed to enable COPR repository: %s", repo)
         return result.returncode == 0
 
     def disable_copr(self, repo: str) -> bool:
@@ -57,7 +63,7 @@ class RepositoryManager:
             raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
 
         cmd = ["sudo", "dnf", "copr", "disable", "-y", repo]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_copr_enabled(self, repo: str) -> bool:
@@ -75,7 +81,7 @@ class RepositoryManager:
 
         # List enabled repos and check if our COPR is present
         cmd = ["dnf", "repolist", "enabled"]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         # COPR repos show up with format like "copr:copr.fedorainfracloud.org:user:repo"
         repo_id = repo.replace("/", ":")
@@ -120,13 +126,18 @@ class RepositoryManager:
                 f"PPA is only available on Debian/Ubuntu, not {self.distro.name}"
             )
 
+        self.logger.info("Adding PPA repository: %s", ppa)
         cmd = ["sudo", "add-apt-repository", "-y", f"ppa:{ppa}"]
-        result = subprocess.run(cmd, capture_output=True)
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
 
         if result.returncode == 0:
+            self.logger.info("Successfully added PPA repository: %s", ppa)
             # Update apt cache after adding PPA
             self.pm.update_cache()
             return True
+        else:
+            self.logger.error("Failed to add PPA repository: %s", ppa)
 
         return False
 
@@ -146,7 +157,7 @@ class RepositoryManager:
             )
 
         cmd = ["sudo", "add-apt-repository", "-y", "--remove", f"ppa:{ppa}"]
-        result = subprocess.run(cmd, capture_output=True)
+        result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_flatpak_installed(self) -> bool:

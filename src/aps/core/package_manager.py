@@ -97,30 +97,40 @@ class DnfManager(PackageManager):
     """Package manager for Fedora and RHEL-based distributions using dnf."""
 
     def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+        logger = logging.getLogger(__name__)
+        logger.info("Installing packages: %s", ", ".join(packages))
+
         cmd = ["sudo", "dnf", "install"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
+            logger.info("Successfully installed packages")
             return True, ""
         else:
-            logging.error("Failed to install packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+            logger.error("Failed to install packages %s", packages)
+            return False, "Package installation failed"
 
     def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+        logger = logging.getLogger(__name__)
+        logger.info("Removing packages: %s", ", ".join(packages))
+
         cmd = ["sudo", "dnf", "remove"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        # Don't capture output - let it display to user
+        result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
+            logger.info("Successfully removed packages")
             return True, ""
         else:
-            logging.error("Failed to remove packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+            logger.error("Failed to remove packages %s", packages)
+            return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
         cmd = ["dnf", "search", "--quiet", query]
@@ -331,33 +341,49 @@ class AptManager(PackageManager):
     """Package manager for Debian and Ubuntu-based distributions using apt."""
 
     def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+        logger = logging.getLogger(__name__)
+        logger.info("Installing packages: %s", ", ".join(packages))
+
         cmd = ["sudo", "apt-get", "install"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
         # Set DEBIAN_FRONTEND to avoid interactive prompts
-        env = {"DEBIAN_FRONTEND": "noninteractive"}
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
+        # Don't capture output - let it display to user
+        import os
+
+        env = os.environ.copy()
+        env["DEBIAN_FRONTEND"] = "noninteractive"
+        result = subprocess.run(cmd, env=env, check=False)
         if result.returncode == 0:
+            logger.info("Successfully installed packages")
             return True, ""
         else:
-            logging.error("Failed to install packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+            logger.error("Failed to install packages %s", packages)
+            return False, "Package installation failed"
 
     def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+        logger = logging.getLogger(__name__)
+        logger.info("Removing packages: %s", ", ".join(packages))
+
         cmd = ["sudo", "apt-get", "remove"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
-        env = {"DEBIAN_FRONTEND": "noninteractive"}
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
+        # Don't capture output - let it display to user
+        import os
+
+        env = os.environ.copy()
+        env["DEBIAN_FRONTEND"] = "noninteractive"
+        result = subprocess.run(cmd, env=env, check=False)
         if result.returncode == 0:
+            logger.info("Successfully removed packages")
             return True, ""
         else:
-            logging.error("Failed to remove packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+            logger.error("Failed to remove packages %s", packages)
+            return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
         cmd = ["apt-cache", "search", query]
