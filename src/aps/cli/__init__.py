@@ -34,21 +34,36 @@ Examples:
     )
     install_parser.add_argument("packages", nargs="+", help="Package names or @category")
     install_parser.add_argument("--dry-run", action="store_true")
+    install_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
 
     # aps remove
     remove_parser = subparsers.add_parser("remove", help="Remove packages")
     remove_parser.add_argument("packages", nargs="+")
+    remove_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
 
     # aps list
     list_parser = subparsers.add_parser("list", help="List tracked packages")
     list_parser.add_argument("--source", choices=["official", "copr", "aur", "ppa", "flatpak"])
+    list_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
 
     # aps sync-repos
     sync_parser = subparsers.add_parser("sync-repos", help="Migrate repository changes")
     sync_parser.add_argument("--auto", action="store_true", help="Auto-approve migrations")
+    sync_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
 
     # aps status
-    subparsers.add_parser("status", help="Show installation status")
+    status_parser = subparsers.add_parser("status", help="Show installation status")
+    status_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
 
     # aps setup - dynamically build component list
     available_components = SetupManager.get_available_components()
@@ -73,6 +88,9 @@ Examples:
     )
     setup_parser.add_argument(
         "component", choices=list(available_components.keys()), help="Component to setup"
+    )
+    setup_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     return parser
