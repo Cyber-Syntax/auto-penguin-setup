@@ -4,7 +4,7 @@ version = "0.2.0-alpha"
 description = "Automated Linux setup tool supporting Fedora, Arch, and Debian-based systems"
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "MIT" }
+license = { text = "BSD-3-Clause" }
 authors = [
     { name = "Cyber-Syntax" }
 ]
@@ -12,7 +12,7 @@ keywords = ["linux", "automation", "setup", "package-manager"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: BSD License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -20,18 +20,39 @@ classifiers = [
 ]
 
 dependencies = [
-    "orjson>=3.9.0",
+    "orjson>=3.9.0"
 ]
 
 [project.scripts]
 aps = "aps.__main__:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=79", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/aps"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aps*"]
+exclude = ["autocomplete*", "tests*", "scripts*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+aps = ["configs/**"]
+
+[dependency-groups]
+dev = [
+  "pytest"
+]
+lint = [
+  "ruff"
+]
+
+[tool.uv]
+managed = true
+required-environments = [ 
+    "sys_platform == 'linux'"]
+
+[tool.uv.dependency-groups]
+dev = {requires-python = ">=3.12"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

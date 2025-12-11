@@ -280,50 +280,42 @@ items2=item4
 class TestEnsureConfigFiles:
     """Test ensure_config_files functionality."""
 
-    def test_create_config_files(self, tmp_path: Path) -> None:
+    def test_create_config_files(self, tmp_path: Path, monkeypatch) -> None:
         """Test creating config files from examples."""
         config_dir = tmp_path / "config"
 
-        # Create a mock config_examples directory
-        package_root = tmp_path / "package_root"
-        examples_dir = package_root / "config_examples"
-        examples_dir.mkdir(parents=True)
+        # Create a mock default_aps_configs directory
+        examples_dir = tmp_path / "default_aps_configs"
+        examples_dir.mkdir()
 
         # Create example files
         (examples_dir / "packages.ini").write_text("[core]\npackages=test")
         (examples_dir / "pkgmap.ini").write_text("[pkgmap.arch]\ntest=test")
         (examples_dir / "variables.ini").write_text("[variables]\ntest=value")
 
-        # Temporarily patch the examples directory path
-        import aps.core.config as config_module
+        # Mock the get_default_configs_dir function
+        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: examples_dir)
 
-        original_file = config_module.__file__
-        config_module.__file__ = str(package_root / "src" / "aps" / "core" / "config.py")
+        results = ensure_config_files(config_dir)
 
-        try:
-            results = ensure_config_files(config_dir)
+        # All files should be created
+        assert results["packages.ini"] is True
+        assert results["pkgmap.ini"] is True
+        assert results["variables.ini"] is True
 
-            # All files should be created
-            assert results["packages.ini"] is True
-            assert results["pkgmap.ini"] is True
-            assert results["variables.ini"] is True
+        # Files should exist
+        assert (config_dir / "packages.ini").exists()
+        assert (config_dir / "pkgmap.ini").exists()
+        assert (config_dir / "variables.ini").exists()
 
-            # Files should exist
-            assert (config_dir / "packages.ini").exists()
-            assert (config_dir / "pkgmap.ini").exists()
-            assert (config_dir / "variables.ini").exists()
-        finally:
-            config_module.__file__ = original_file
-
-    def test_skip_existing_files(self, tmp_path: Path) -> None:
+    def test_skip_existing_files(self, tmp_path: Path, monkeypatch) -> None:
         """Test that existing files are not overwritten."""
         config_dir = tmp_path / "config"
         config_dir.mkdir()
 
-        # Create a mock config_examples directory
-        package_root = tmp_path / "package_root"
-        examples_dir = package_root / "config_examples"
-        examples_dir.mkdir(parents=True)
+        # Create a mock default_aps_configs directory
+        examples_dir = tmp_path / "default_aps_configs"
+        examples_dir.mkdir()
 
         # Create example files
         (examples_dir / "packages.ini").write_text("[core]\npackages=test")
@@ -334,38 +326,27 @@ class TestEnsureConfigFiles:
         existing_content = "[core]\npackages=existing"
         (config_dir / "packages.ini").write_text(existing_content)
 
-        # Temporarily patch the examples directory path
-        import aps.core.config as config_module
+        # Mock the get_default_configs_dir function
+        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: examples_dir)
 
-        original_file = config_module.__file__
-        config_module.__file__ = str(package_root / "src" / "aps" / "core" / "config.py")
+        results = ensure_config_files(config_dir)
 
-        try:
-            results = ensure_config_files(config_dir)
+        # packages.ini should not be created (already exists)
+        assert results["packages.ini"] is False
+        # Other files should be created
+        assert results["pkgmap.ini"] is True
+        assert results["variables.ini"] is True
 
-            # packages.ini should not be created (already exists)
-            assert results["packages.ini"] is False
-            # Other files should be created
-            assert results["pkgmap.ini"] is True
-            assert results["variables.ini"] is True
+        # Existing file should not be overwritten
+        assert (config_dir / "packages.ini").read_text() == existing_content
 
-            # Existing file should not be overwritten
-            assert (config_dir / "packages.ini").read_text() == existing_content
-        finally:
-            config_module.__file__ = original_file
-
-    def test_missing_examples_directory(self, tmp_path: Path) -> None:
+    def test_missing_examples_directory(self, tmp_path: Path, monkeypatch) -> None:
         """Test error when examples directory is missing."""
         config_dir = tmp_path / "config"
 
-        # Point to non-existent examples directory
-        import aps.core.config as config_module
+        # Mock the get_default_configs_dir function to return non-existent directory
+        nonexistent_dir = tmp_path / "nonexistent"
+        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: nonexistent_dir)
 
-        original_file = config_module.__file__
-        config_module.__file__ = str(tmp_path / "nonexistent" / "config.py")
-
-        try:
-            with pytest.raises(FileNotFoundError, match="Config examples directory"):
-                ensure_config_files(config_dir)
-        finally:
-            config_module.__file__ = original_file
+        with pytest.raises(FileNotFoundError, match="Config examples directory"):
+            ensure_config_files(config_dir)

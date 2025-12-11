@@ -5,6 +5,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ class TLPInstaller(BaseInstaller):
                 logger.warning("Failed to create backup of TLP configuration")
 
         # Copy new configuration
-        conf_src = Path("configs/01-mytlp.conf")
+        conf_src = resolve_config_file("01-mytlp.conf")
         if not conf_src.exists():
             logger.error("TLP config file not found at %s", conf_src)
             return False

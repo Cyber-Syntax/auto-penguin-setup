@@ -5,6 +5,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -24,8 +26,8 @@ class TrashCLIInstaller(BaseInstaller):
         # Define paths
         service_dest = Path("/etc/systemd/system/trash-cli.service")
         timer_dest = Path("/etc/systemd/system/trash-cli.timer")
-        service_src = Path("configs/trash-cli/trash-cli.service")
-        timer_src = Path("configs/trash-cli/trash-cli.timer")
+        service_src = resolve_config_file("trash-cli/trash-cli.service")
+        timer_src = resolve_config_file("trash-cli/trash-cli.timer")
 
         # Copy service file
         try:

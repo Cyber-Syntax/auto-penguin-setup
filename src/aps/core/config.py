@@ -4,6 +4,8 @@ import shutil
 from configparser import ConfigParser
 from pathlib import Path
 
+from aps.utils.paths import get_default_configs_dir
+
 
 class APSConfigParser:
     """
@@ -273,9 +275,7 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
         config_dir = Path.home() / ".config" / "auto-penguin-setup"
 
     # Get the source examples directory
-    # Assuming this module is in src/aps/core/config.py
-    package_root = Path(__file__).parent.parent.parent.parent
-    examples_dir = package_root / "config_examples"
+    examples_dir = get_default_configs_dir()
 
     if not examples_dir.exists():
         raise FileNotFoundError(f"Config examples directory not found: {examples_dir}")

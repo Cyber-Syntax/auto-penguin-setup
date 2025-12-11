@@ -4,6 +4,7 @@ import logging
 import os
 
 from aps.hardware.base import BaseHardwareConfig
+from aps.utils.paths import resolve_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class IntelConfig(BaseHardwareConfig):
         """
         super().__init__(distro)
 
-    def setup_xorg(self, config_source: str = "./configs/20-intel.conf") -> bool:
+    def setup_xorg(self, config_source: str | None = None) -> bool:
         """Setup Xorg configuration for Intel graphics.
 
         Args:
@@ -28,6 +29,9 @@ class IntelConfig(BaseHardwareConfig):
         Returns:
             True if setup succeeds, False otherwise
         """
+        if config_source is None:
+            config_source = str(resolve_config_file("20-intel.conf"))
+
         self.logger.info("Setting up xorg configuration...")
 
         destination = "/etc/X11/xorg.conf.d/20-intel.conf"
@@ -47,7 +51,7 @@ class IntelConfig(BaseHardwareConfig):
 
         Supported operations via kwargs:
             - xorg: bool - Setup Xorg configuration
-            - config_source: str - Path to Intel config file (default: ./configs/20-intel.conf)
+            - config_source: str - Path to Intel config file (default: resolved from package)
 
         Args:
             **kwargs: Configuration options
@@ -56,7 +60,7 @@ class IntelConfig(BaseHardwareConfig):
             True if all requested operations succeed
         """
         if kwargs.get("xorg", False):
-            config_source = kwargs.get("config_source", "./configs/20-intel.conf")
+            config_source = kwargs.get("config_source", str(resolve_config_file("20-intel.conf")))
             return self.setup_xorg(config_source)
 
         return True

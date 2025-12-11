@@ -4,6 +4,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class BorgbackupInstaller(BaseInstaller):
 
         # Copy backup script to /opt/borg
         script_dest = Path("/opt/borg/home-borgbackup.sh")
-        script_src = Path("configs/borg/home-borgbackup.sh")
+        script_src = resolve_config_file("borg/home-borgbackup.sh")
 
         if not script_dest.exists():
             logger.debug("Copying home-borgbackup.sh to /opt/borg...")
@@ -71,8 +73,8 @@ class BorgbackupInstaller(BaseInstaller):
         # Copy systemd service and timer files
         service_dest = Path("/etc/systemd/system/borgbackup-home.service")
         timer_dest = Path("/etc/systemd/system/borgbackup-home.timer")
-        service_src = Path("configs/borg/borgbackup-home.service")
-        timer_src = Path("configs/borg/borgbackup-home.timer")
+        service_src = resolve_config_file("borg/borgbackup-home.service")
+        timer_src = resolve_config_file("borg/borgbackup-home.timer")
 
         if not service_src.exists() or not timer_src.exists():
             logger.error("Borgbackup service/timer files not found in configs/borg/")

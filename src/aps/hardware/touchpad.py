@@ -4,6 +4,7 @@ import logging
 import os
 
 from aps.hardware.base import BaseHardwareConfig
+from aps.utils.paths import resolve_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class TouchpadConfig(BaseHardwareConfig):
         """
         super().__init__(distro)
 
-    def setup(self, config_source: str = "./configs/99-touchpad.conf") -> bool:
+    def setup(self, config_source: str | None = None) -> bool:
         """Setup touchpad configuration.
 
         Args:
@@ -28,6 +29,9 @@ class TouchpadConfig(BaseHardwareConfig):
         Returns:
             True if setup succeeds, False otherwise
         """
+        if config_source is None:
+            config_source = str(resolve_config_file("99-touchpad.conf"))
+
         self.logger.info("Setting up touchpad configuration...")
 
         destination = "/etc/X11/xorg.conf.d/99-touchpad.conf"
@@ -47,7 +51,7 @@ class TouchpadConfig(BaseHardwareConfig):
 
         Supported operations via kwargs:
             - setup: bool - Setup touchpad configuration
-            - config_source: str - Path to touchpad config file (default: ./configs/99-touchpad.conf)
+            - config_source: str - Path to touchpad config file (default: resolved from package)
 
         Args:
             **kwargs: Configuration options
@@ -56,7 +60,9 @@ class TouchpadConfig(BaseHardwareConfig):
             True if all requested operations succeed
         """
         if kwargs.get("setup", False):
-            config_source = kwargs.get("config_source", "./configs/99-touchpad.conf")
+            config_source = kwargs.get(
+                "config_source", str(resolve_config_file("99-touchpad.conf"))
+            )
             return self.setup(config_source)
 
         return True

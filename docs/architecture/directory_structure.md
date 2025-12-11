@@ -63,10 +63,15 @@ auto-penguin-setup/
 │       ├── qtile.sh                # Qtile tiling WM
 │       └── hyprland.sh             # Hyprland compositor
 │
-├── configs/                         # System config templates
-├── config_examples/                 # User config examples
-│   ├── packages.ini               # Package lists & mappings
-│   └── variables.ini              # System variables
+├── src/aps/
+│   ├── configs/                    # System config templates and user examples
+│   │   ├── default_aps_configs/    # User config examples
+│   │   │   ├── packages.ini       # Package lists & mappings
+│   │   │   └── variables.ini      # System variables
+│   │   ├── borg/                   # Borgbackup configs
+│   │   ├── libvirt/                # Libvirt configs
+│   │   └── ...                     # Other system configs
+│   └── ...
 └── docs/                            # Documentation
     ├── ARCHITECTURE.md             # This file
     ├── DEVELOPER.md                # Developer guide

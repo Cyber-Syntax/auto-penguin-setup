@@ -38,8 +38,15 @@ auto-penguin-setup/
 │   ├── laptop.sh              # Laptop functions
 │   ├── general.sh             # General utilities
 │   └── display_manager.sh     # Display manager config
-├── configs/                    # System config templates
-├── config_examples/           # User config examples
+├── src/aps/
+│   ├── configs/               # System config templates and user examples
+│   │   ├── default_aps_configs/  # User config examples (packages.ini, etc.)
+│   │   ├── borg/              # Borgbackup configs
+│   │   ├── libvirt/           # Libvirt configs
+│   │   └── ...                # Other system configs
+│   ├── core/                  # Core modules
+│   ├── cli/                   # CLI commands
+│   └── ...
 ├── docs/                      # Documentation
 └── tests/                     # Test suite
 ```
@@ -479,7 +486,7 @@ enable_rpm_fusion_distro_agnostic() {
 readonly SCRIPT_DIR           # Source directory
 readonly PROJECT_ROOT         # Project root directory
 readonly CONFIG_DIR           # ~/.config/auto-penguin-setup
-readonly EXAMPLES_DIR         # config_examples/
+readonly EXAMPLES_DIR         # src/aps/configs/default_aps_configs/
 
 # Loaded configuration
 export user                   # Current user

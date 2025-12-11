@@ -4,6 +4,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class NfancurveInstaller(BaseInstaller):
 
         # Copy temp.sh script to /opt/nfancurve
         script_dest = Path("/opt/nfancurve/temp.sh")
-        script_src = Path("configs/nfancurve/temp.sh")
+        script_src = resolve_config_file("nfancurve/temp.sh")
 
         if not script_dest.exists():
             logger.debug("Copying temp.sh to /opt/nfancurve...")
@@ -60,7 +62,7 @@ class NfancurveInstaller(BaseInstaller):
 
         # Copy config file to /opt/nfancurve
         config_dest = Path("/opt/nfancurve/config")
-        config_src = Path("configs/nfancurve/config")
+        config_src = resolve_config_file("nfancurve/config")
 
         if not config_dest.exists():
             logger.debug("Copying config to /opt/nfancurve/config...")
@@ -83,7 +85,7 @@ class NfancurveInstaller(BaseInstaller):
 
         # Copy systemd service file
         service_dest = Path("/etc/systemd/system/nfancurve.service")
-        service_src = Path("configs/nfancurve/nfancurve.service")
+        service_src = resolve_config_file("nfancurve/nfancurve.service")
 
         if not service_src.exists():
             logger.error("Nfancurve service file not found at %s", service_src)

@@ -5,6 +5,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ class ThinkfanInstaller(BaseInstaller):
                 logger.warning("Failed to create backup of thinkfan configuration: %s", e)
 
         # Copy new configuration
-        source_conf = Path("configs/thinkfan.conf")
+        source_conf = resolve_config_file("thinkfan.conf")
         if not source_conf.exists():
             logger.error("thinkfan config file not found at %s", source_conf)
             return False
@@ -81,7 +83,7 @@ class ThinkfanInstaller(BaseInstaller):
         modprobe_conf = Path("/etc/modprobe.d/thinkfan.conf")
 
         try:
-            with modprobe_conf.open("w") as f:
+            with modprobe_conf.open("w", encoding="utf-8") as f:
                 f.write("options thinkpad_acpi fan_control=1 experimental=1\n")
         except OSError as e:
             logger.error("Failed to create thinkpad_acpi options file: %s", e)
@@ -137,7 +139,7 @@ WantedBy=sleep.target
 """
 
         try:
-            with sleep_hack_service.open("w") as f:
+            with sleep_hack_service.open("w", encoding="utf-8") as f:
                 f.write(service_content)
             logger.debug("Created thinkfan-sleep-hack service")
         except OSError as e:

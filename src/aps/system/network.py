@@ -5,6 +5,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from aps.utils.paths import resolve_config_file
+
 from .base import BaseSystemConfig
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,7 @@ class NetworkConfig(BaseSystemConfig):
         """Configure TCP BBR for improved network performance."""
         logger.info("Setting up TCP BBR configuration...")
 
-        source_file = Path("configs/99-tcp-bbr.conf")
+        source_file = resolve_config_file("99-tcp-bbr.conf")
         dest_file = Path("/etc/sysctl.d/99-tcp-bbr.conf")
 
         if not source_file.exists():

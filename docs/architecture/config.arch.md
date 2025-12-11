@@ -109,7 +109,7 @@ echo "${FLATPAK_PACKAGES[@]}"   # Flatpak packages
 
 # Configuration Architecture (INI)
 
-This document centralizes the configuration design for auto-penguin-setup. The project uses INI files parsed by the project's INI parser (src/core/ini_parser.sh). See `config_examples/` for canonical examples.
+This document centralizes the configuration design for auto-penguin-setup. The project uses INI files parsed by the APSConfigParser. See `src/aps/configs/default_aps_configs/` for canonical examples.
 
 ## Canonical Files
 
@@ -119,7 +119,7 @@ This document centralizes the configuration design for auto-penguin-setup. The p
 
 ## Loading Rules
 
-- Config files are looked up in the user's config directory (e.g., ~/.config/auto-penguin-setup/). If missing, examples from `config_examples/` are copied.
+- Config files are looked up in the user's config directory (e.g., ~/.config/auto-penguin-setup/). If missing, examples from `src/aps/configs/default_aps_configs/` are copied.
 - Use the core helper `init_config()` which:
     - ensures config directory exists
     - copies examples if needed
@@ -181,7 +181,7 @@ Mappings support:
 
 ## Migration Notes
 
-- If you previously used an older configuration format, migrate it to INI sections. Keep examples in `config_examples/` as ground truth.
+- If you previously used an older configuration format, migrate it to INI sections. Keep examples in `src/aps/configs/default_aps_configs/` as ground truth.
 - Tests and CI that relied on JSON should be updated to read from INI or use the project's parser mocks.
 - Comments in example files provide warnings, migration notes, and TODOs for users (e.g., gaming section, repo status).
 
@@ -553,11 +553,11 @@ xev=x11-utils
 
 Usage
 
-- `init_config()` locates the user's INI files (looks under XDG config dir, falls back to `config_examples/`) and calls `ini_parser` helpers to populate environment variables and arrays used by other modules.
-- If a file is missing, the project provides defaults in `config_examples/` which are copied on first-run or by the `create_config` helpers.
+- `ensure_config_files()` locates the user's INI files (looks under XDG config dir, falls back to `src/aps/configs/default_aps_configs/`) and copies examples if missing.
+- If a file is missing, the project provides defaults in `src/aps/configs/default_aps_configs/` which are copied on first-run.
 
 Migration
 
-- Config evolution is handled by `update_config_schema()` which merges new keys from the example INI into the user's file while preserving values and backing up the original.
+- Config evolution is handled by `ensure_config_files()` which copies new example files if they don't exist.
 
-Reference: `src/core/ini_parser.sh`, `src/core/config.sh`
+Reference: `src/aps/core/config.py`
