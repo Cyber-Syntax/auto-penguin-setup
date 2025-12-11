@@ -1,6 +1,8 @@
 """Distribution detection module for identifying Linux distributions."""
 
+import logging
 import re
+import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -119,7 +121,7 @@ class DistroInfo:
             Tuple of (PackageManagerType, DistroFamily)
         """
         # Fedora family (dnf-based)
-        fedora_distros = {"fedora", "nobara", "rhel", "centos", "rocky", "almalinux"}
+        fedora_distros = {"fedora", "nobara", "rhel", "rocky", "almalinux"}
         if distro_id in fedora_distros or any(parent in fedora_distros for parent in id_like):
             return PackageManagerType.DNF, DistroFamily.FEDORA
 
@@ -144,9 +146,39 @@ class DistroInfo:
         return PackageManagerType.UNKNOWN, DistroFamily.UNKNOWN
 
 
+def detect_package_manager() -> PackageManagerType:
+    """
+    Detect package manager by checking for executable binaries.
+
+    This function checks for the presence of package manager executables
+    on the system to determine which package manager is available.
+    This provides a more reliable detection method than relying solely
+    on distribution identification.
+
+    Returns:
+        PackageManagerType enum value for detected package manager
+    """
+    # Check for dnf (Fedora/RHEL family)
+    if shutil.which("dnf"):
+        return PackageManagerType.DNF
+
+    # Check for pacman (Arch family)
+    if shutil.which("pacman"):
+        return PackageManagerType.PACMAN
+
+    # Check for apt (Debian/Ubuntu family)
+    if shutil.which("apt"):
+        return PackageManagerType.APT
+
+    return PackageManagerType.UNKNOWN
+
+
 def detect_distro() -> DistroInfo:
     """
     Convenience function to detect current distribution.
+
+    Uses os-release file as primary detection method, with package manager
+    binary detection as validation and fallback.
 
     Returns:
         DistroInfo object for current system
@@ -155,12 +187,81 @@ def detect_distro() -> DistroInfo:
         FileNotFoundError: If /etc/os-release doesn't exist
         ValueError: If distribution cannot be determined
     """
-    distro = DistroInfo.from_os_release()
+    try:
+        distro = DistroInfo.from_os_release()
+    except FileNotFoundError as exc:
+        # Fallback to package manager detection if os-release doesn't exist
+        pm_type = detect_package_manager()
+        if pm_type == PackageManagerType.UNKNOWN:
+            raise ValueError(
+                "Could not detect distribution: /etc/os-release not found and "
+                "no supported package manager detected"
+            ) from exc
+
+        # Create a minimal DistroInfo based on package manager
+        family = {
+            PackageManagerType.DNF: DistroFamily.FEDORA,
+            PackageManagerType.PACMAN: DistroFamily.ARCH,
+            PackageManagerType.APT: DistroFamily.DEBIAN,
+        }.get(pm_type, DistroFamily.UNKNOWN)
+
+        return DistroInfo(
+            name=f"Unknown ({pm_type.value})",
+            version="unknown",
+            id="unknown",
+            id_like=[],
+            package_manager=pm_type,
+            family=family,
+        )
+
+    # Validate os-release detection with package manager detection
+    detected_pm = detect_package_manager()
 
     if distro.package_manager == PackageManagerType.UNKNOWN:
-        raise ValueError(
-            f"Unsupported distribution: {distro.id}. "
-            f"Supported families: Fedora (dnf), Arch (pacman), Debian (apt)"
+        # If os-release didn't give us a package manager, use binary detection
+        if detected_pm != PackageManagerType.UNKNOWN:
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                "Distribution family could not be determined from os-release (%s). "
+                "Using package manager detection (%s) instead.",
+                distro.id,
+                detected_pm.value,
+            )
+            distro.package_manager = detected_pm
+            distro.family = {
+                PackageManagerType.DNF: DistroFamily.FEDORA,
+                PackageManagerType.PACMAN: DistroFamily.ARCH,
+                PackageManagerType.APT: DistroFamily.DEBIAN,
+            }.get(detected_pm, DistroFamily.UNKNOWN)
+        else:
+            logger = logging.getLogger(__name__)
+            logger.error(
+                "Could not detect distribution: os-release shows unsupported "
+                "distribution '%s' and no supported package manager found. "
+                "Supported families: Fedora (dnf), Arch (pacman), Debian (apt)",
+                distro.id,
+            )
+            raise ValueError(
+                f"Unsupported distribution: {distro.id}. "
+                f"Supported families: Fedora (dnf), Arch (pacman), Debian (apt)"
+            )
+    elif detected_pm not in (PackageManagerType.UNKNOWN, distro.package_manager):
+        # If there's a mismatch between os-release and binary detection, prefer package manager
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            "Package manager mismatch detected: os-release indicates %s, "
+            "but %s binary was found. Preferring package manager detection (%s) "
+            "as most systems use a single package manager.",
+            distro.package_manager.value,
+            detected_pm.value,
+            detected_pm.value,
         )
+        # Update to use package manager detection
+        distro.package_manager = detected_pm
+        distro.family = {
+            PackageManagerType.DNF: DistroFamily.FEDORA,
+            PackageManagerType.PACMAN: DistroFamily.ARCH,
+            PackageManagerType.APT: DistroFamily.DEBIAN,
+        }.get(detected_pm, DistroFamily.UNKNOWN)
 
     return distro

@@ -363,10 +363,8 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.get_package_manager")
     @patch("aps.cli.commands.sync_repos.detect_distro")
     @patch("aps.cli.commands.sync_repos.PackageTracker")
-    @patch("aps.cli.commands.sync_repos.APSConfigParser")
-    def test_missing_config_file(
+    def test_missing_config_file_auto_creation(
         self,
-        mock_parser_class,
         mock_tracker_class,
         mock_detect_distro,
         mock_get_pm,
@@ -374,7 +372,7 @@ class TestCmdSyncRepos:
         tmp_path,
         caplog,
     ):
-        """Test error when configuration file is missing."""
+        """Test that config files are auto-created when missing."""
         # Setup - no config files
         mock_home.return_value = tmp_path
 
@@ -382,10 +380,17 @@ class TestCmdSyncRepos:
         mock_distro.name = "Fedora"
         mock_detect_distro.return_value = mock_distro
 
+        # Mock the tracker to return empty list (no tracked packages)
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = []
+        mock_tracker_class.return_value = mock_tracker
+
         # Execute
         args = Namespace()
         cmd_sync_repos(args)
 
-        # Verify
-        assert "Error: Configuration file not found" in caplog.text
-        assert "Please create configuration files" in caplog.text
+        # Verify that config files were created
+        config_dir = tmp_path / ".config" / "auto-penguin-setup"
+        assert (config_dir / "packages.ini").exists()
+        assert (config_dir / "pkgmap.ini").exists()
+        assert (config_dir / "variables.ini").exists()
