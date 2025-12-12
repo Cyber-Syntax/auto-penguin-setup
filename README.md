@@ -8,13 +8,13 @@
 # auto-penguin-setup 🐧
 
 > [!NOTE]
-> **Fully Python-based** command-line tool to automate installation and configuration of packages, services, and system settings for multiple Linux distributions. This project provides an automated setup to make it much easier to set up a new Linux system.
+> Command-line tool to automate installation and configuration of packages, services, and system settings for multiple Linux distributions. This project provides an automated setup to make it much easier to set up a new Linux system.
 
 - Optimizes package manager for faster downloads
 - Install packages from config file with cross-distro mappings
 - Configures hardware-specific features (TLP, NVIDIA, etc.)
 - Manages system services and configurations
-- **100% Python implementation** - No bash dependencies
+- Tracks installed packages and their sources
 
 ## 🎯 Features
 
@@ -35,49 +35,42 @@ cd auto-penguin-setup
 ```
 
 ### 2. Install the Python CLI
+>
+> [!NOTE]
+> Use uv to install the `aps` cli tool.
+
+- By default, tools are installed in a tools/ subdirectory of the persistent data directory, e.g., ~/.local/share/uv/tools.
 
 ```bash
-# Create virtual environment (recommended)
-uv venv
-source .venv/bin/activate  # On Linux/Mac
+# Install uv dependency
+sudo dnf install uv  # Fedora
+sudo pacman -S uv    # Arch
+sudo apt install uv  # Debian/Ubuntu
+# Install aps tool
+uv tool install .
+# If something goes wrong and you need to reinstall
+uv tool install . --force
+# Now you can run the tool with
+aps --help
+aps install --help
+aps setup --help
+# install core packages with dry-run to see what will be installed
+aps install @core --dry-run
+```
 
-# Install in development mode
-uv pip install -e .
+- Running without installation (for development/testing):
 
-# Or with pip
-pip install -e .
+```bash
+uv run aps --help
 ```
 
 ### 3. Configure Your System
-
-Copy example configuration files to your user config directory:
-
-```bash
-mkdir -p ~/.config/auto-penguin-setup
-cp config_examples/* ~/.config/auto-penguin-setup/
-```
 
 Edit the configuration files according to your needs:
 
 - `packages.ini`: Define package categories and lists
 - `pkgmap.ini`: Map package names across distributions and specify repositories
 - `variables.ini`: Set environment variables for the setup process
-
-### 4. Use the CLI
-
-```bash
-# Show help
-aps --help
-
-# Run system setup
-aps setup
-
-# Install packages
-aps install curl wget
-```
-
-> [!NOTE]
-> All functionality has been migrated to the Python-based `aps` CLI tool. Legacy bash scripts have been removed.
 
 ## ⚙️ Configuration
 
@@ -102,8 +95,6 @@ git
 python3
 ```
 
-Available categories include `@core`, `@apps`, `@dev`, `@flatpak`, and custom categories you define.
-
 ### pkgmap.ini
 
 Maps package names across distributions and specifies repositories:
@@ -123,95 +114,22 @@ Supports `official`, `COPR:user/repo`, `AUR:package`, `PPA:user/repo`, and `flat
 Environment variables for setup scripts:
 
 ```ini
-[vars]
-OLLAMA_GPU = nvidia
+[system]
+# Change this to your username
+user=developer
+# Which device this configuration is for (desktop/laptop/homeserver/etc.)
+# This used for ssh target selection
+current_device=desktop
+
+# Device-specific settings
+[desktop]
+hostname=arch
+
+[laptop]
+hostname=arch-laptop
+
+[ssh]
+# Service configuration
+enable_service=true         # Enable SSH server on this device
+port=22                     # SSH port (default: 22)
 ```
-
-## 🐍 Python CLI
-
-The `aps` (Auto Penguin Setup) command-line tool provides a modern, Python-based interface for all system configuration and package management operations.
-
-### Installation
-
-Installation is covered in the Quick Start section above. Here's a quick reference:
-
-```bash
-# Create virtual environment (recommended)
-uv venv
-source .venv/bin/activate
-
-# Install
-uv pip install -e .
-```
-
-### Usage Examples
-
-```bash
-# Show help
-aps --help
-
-# Install packages
-aps install curl wget
-
-# Install package categories
-aps install @core @apps @dev
-
-# Dry-run to preview changes
-aps install @core --dry-run
-
-# List tracked packages
-aps list
-
-# List packages by source
-aps list --source aur
-
-# Remove packages
-aps remove curl
-
-# Show system status
-aps status
-
-# Setup system components
-aps setup aur-helper  # Install paru AUR helper (Arch only)
-aps setup ollama      # Install/update Ollama AI runtime
-
-# Sync repository changes (migrate packages when sources change)
-aps sync-repos        # Interactive - prompts for confirmation
-aps sync-repos --auto # Automatic - no prompts
-```
-
-### Features
-
-- **Fast**: Built with Python and orjson for 5-10x faster performance
-- **Safe**: Dry-run mode for all operations
-- **Cross-platform**: Works on Fedora, Arch, and Debian/Ubuntu
-- **Modern**: Type-safe with comprehensive test coverage (>90%)
-- **Setup Tools**: Automated installation of system components, applications, and hardware configurations
-- **Repository Migration**: Automatically detect and migrate packages when COPR/AUR/PPA sources change
-- **Package Tracking**: Maintains detailed records of installed packages and their sources
-- **100% Python**: Fully migrated from bash - easier to maintain and extend
-
-## 🏗️ How It Works
-
-auto-penguin-setup abstracts package management across Linux distributions through a layered architecture:
-
-### Core Components
-
-- **Distribution Detection**: Automatically identifies Fedora, Arch, or Debian/Ubuntu
-- **Package Mapping**: Translates package names using `pkgmap.ini` (e.g., `fd-find` → `fd`)
-- **Repository Management**: Handles COPR, AUR, PPA, and Flatpak sources
-- **Package Tracking**: Records installations in `~/.local/share/auto-penguin-setup/package_tracking.ini`
-
-### Data Flow
-
-1. Parse configuration files (`packages.ini`, `pkgmap.ini`)
-2. Map package names to distribution-specific equivalents
-3. Execute package manager commands (dnf/pacman/apt/flatpak)
-4. Track successful installations with source metadata
-
-### Key Directories
-
-- **Configuration**: `~/.config/auto-penguin-setup/` (packages.ini, pkgmap.ini, variables.ini)
-- **Tracking Database**: `~/.local/share/auto-penguin-setup/package_tracking.ini`
-- **Logs**: `~/.local/state/auto-penguin-setup/logs/auto-penguin-setup.log`
-- **System Configs**: `configs/` (hardware-specific configurations like TLP, NVIDIA)
