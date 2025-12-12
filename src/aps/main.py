@@ -2,7 +2,6 @@
 
 import sys
 
-from aps.cli import create_parser
 from aps.cli.commands import (
     cmd_install,
     cmd_list,
@@ -11,6 +10,7 @@ from aps.cli.commands import (
     cmd_status,
     cmd_sync_repos,
 )
+from aps.cli.parser import create_parser
 from aps.core.logger import get_logger, setup_logging
 
 

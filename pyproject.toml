@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-aps = "aps.__main__:main"
+aps = "aps.main:main"
 
 [build-system]
 requires = ["setuptools>=79", "wheel"]

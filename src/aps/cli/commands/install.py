@@ -5,7 +5,7 @@ import subprocess
 from argparse import Namespace
 from pathlib import Path
 
-from aps.cli.commands._utils import get_tracking_db_path, load_category_packages
+from aps.cli.utils import get_tracking_db_path, load_category_packages
 from aps.core.distro import DistroFamily, detect_distro
 from aps.core.package_manager import PacmanManager, get_package_manager
 from aps.core.package_mapper import PackageMapper

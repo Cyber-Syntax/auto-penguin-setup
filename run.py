@@ -10,7 +10,7 @@ src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
 # Import and run the main function
-from aps.__main__ import main
+from aps.main import main
 
 if __name__ == "__main__":
     main()

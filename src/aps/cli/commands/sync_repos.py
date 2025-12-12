@@ -4,7 +4,7 @@ import logging
 from argparse import Namespace
 from pathlib import Path
 
-from aps.cli.commands._utils import get_tracking_db_path
+from aps.cli.utils import get_tracking_db_path
 from aps.core.config import APSConfigParser, ensure_config_files
 from aps.core.distro import detect_distro
 from aps.core.package_manager import PackageManagerError, get_package_manager

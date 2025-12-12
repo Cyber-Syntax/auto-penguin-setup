@@ -4,8 +4,8 @@ from argparse import Namespace
 
 import pytest
 
-from aps.cli import create_parser
 from aps.cli.commands import cmd_list, cmd_status
+from aps.cli.parser import create_parser
 
 
 class TestCLIParser:

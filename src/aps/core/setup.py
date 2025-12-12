@@ -68,7 +68,7 @@ class SetupManager:
             "installer": AutoCPUFreqInstaller,
         },
         "borgbackup": {
-            "description": "Install BorgBackup with Vorta GUI",
+            "description": "Install BorgBackup",
             "installer": BorgbackupInstaller,
         },
         "nfancurve": {

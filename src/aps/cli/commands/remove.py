@@ -3,7 +3,7 @@
 import logging
 from argparse import Namespace
 
-from aps.cli.commands._utils import get_tracking_db_path
+from aps.cli.utils import get_tracking_db_path
 from aps.core.distro import detect_distro
 from aps.core.package_manager import get_package_manager
 from aps.core.tracking import PackageTracker

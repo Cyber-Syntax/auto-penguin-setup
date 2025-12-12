@@ -1,4 +1,4 @@
-"""Tests for aps.__main__ module."""
+"""Tests for aps.main module."""
 
 import logging
 import sys
@@ -7,8 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from aps.__main__ import main
 from aps.core.logger import setup_logging
+from aps.main import main
 
 
 class TestSetupLogging:
@@ -51,7 +51,7 @@ class TestMain:
     def test_main_install_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with install command."""
         mock_cmd_install = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_install", mock_cmd_install)
+        monkeypatch.setattr("aps.main.cmd_install", mock_cmd_install)
         monkeypatch.setattr(sys, "argv", ["aps", "install", "package"])
 
         result = main()
@@ -62,7 +62,7 @@ class TestMain:
     def test_main_remove_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with remove command."""
         mock_cmd_remove = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_remove", mock_cmd_remove)
+        monkeypatch.setattr("aps.main.cmd_remove", mock_cmd_remove)
         monkeypatch.setattr(sys, "argv", ["aps", "remove", "package"])
 
         result = main()
@@ -73,7 +73,7 @@ class TestMain:
     def test_main_list_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with list command."""
         mock_cmd_list = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_list", mock_cmd_list)
+        monkeypatch.setattr("aps.main.cmd_list", mock_cmd_list)
         monkeypatch.setattr(sys, "argv", ["aps", "list"])
 
         result = main()
@@ -84,7 +84,7 @@ class TestMain:
     def test_main_sync_repos_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with sync-repos command."""
         mock_cmd_sync_repos = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_sync_repos", mock_cmd_sync_repos)
+        monkeypatch.setattr("aps.main.cmd_sync_repos", mock_cmd_sync_repos)
         monkeypatch.setattr(sys, "argv", ["aps", "sync-repos"])
 
         result = main()
@@ -95,7 +95,7 @@ class TestMain:
     def test_main_status_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with status command."""
         mock_cmd_status = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_status", mock_cmd_status)
+        monkeypatch.setattr("aps.main.cmd_status", mock_cmd_status)
         monkeypatch.setattr(sys, "argv", ["aps", "status"])
 
         result = main()
@@ -106,7 +106,7 @@ class TestMain:
     def test_main_setup_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test main with setup command."""
         mock_cmd_setup = Mock()
-        monkeypatch.setattr("aps.__main__.cmd_setup", mock_cmd_setup)
+        monkeypatch.setattr("aps.main.cmd_setup", mock_cmd_setup)
         monkeypatch.setattr(sys, "argv", ["aps", "setup", "aur-helper"])
 
         result = main()

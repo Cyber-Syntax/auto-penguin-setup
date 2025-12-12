@@ -3,7 +3,7 @@
 import logging
 from argparse import Namespace
 
-from aps.cli.commands._utils import get_tracking_db_path
+from aps.cli.utils import get_tracking_db_path
 from aps.core.tracking import PackageTracker
 
 logger = logging.getLogger(__name__)
