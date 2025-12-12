@@ -46,11 +46,13 @@ class AutoCPUFreqInstaller(BaseInstaller):
                         str(repo_path / "auto-cpufreq"),
                     ],
                     check=True,
-                    capture_output=True,
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to clone auto-cpufreq repository: %s", e.stderr)
+                logger.error(
+                    "Failed to clone auto-cpufreq repository (exit code %s). See output above.",
+                    e.returncode,
+                )
                 return False
 
             installer_dir = repo_path / "auto-cpufreq"
@@ -64,20 +66,22 @@ class AutoCPUFreqInstaller(BaseInstaller):
             logger.info("Running auto-cpufreq installer...")
             logger.info("NOTE: The installer will ask for confirmation during installation.")
             logger.info("Please respond to the prompts as needed (typically 'y' to proceed).")
+            logger.info("Installer output will be streamed directly from the script.")
 
             try:
                 # Pipe "I" into installer to automatically select Install option
-                result = subprocess.run(
+                subprocess.run(
                     ["sudo", str(installer_script)],
                     input="I\n",
                     cwd=installer_dir,
                     check=True,
-                    capture_output=True,
                     text=True,
                 )
-                logger.debug("Installer output: %s", result.stdout)
             except subprocess.CalledProcessError as e:
-                logger.error("auto-cpufreq installation failed: %s", e.stderr)
+                logger.error(
+                    "auto-cpufreq installation failed (exit code %s). See installer output above.",
+                    e.returncode,
+                )
                 return False
 
         logger.info("auto-cpufreq installation completed")
