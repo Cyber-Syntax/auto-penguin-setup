@@ -34,35 +34,72 @@ git clone https://github.com/Cyber-Syntax/auto-penguin-setup.git
 cd auto-penguin-setup
 ```
 
-### 2. Install the Python CLI
->
-> [!NOTE]
-> Use uv to install the `aps` cli tool.
+### 2. Installation
 
-- By default, tools are installed in a tools/ subdirectory of the persistent data directory, e.g., ~/.local/share/uv/tools.
+The easiest way to install `aps` is using the included setup script:
 
 ```bash
-# Install uv dependency
-sudo dnf install uv  # Fedora
-sudo pacman -S uv    # Arch
-sudo apt install uv  # Debian/Ubuntu
+./setup.sh install
+```
+
+This will:
+
+1. Install UV if not already present
+2. Install the `aps` CLI tool using `uv tool install .`
+3. Setup shell autocomplete for bash and zsh
+
+#### Alternative: Manual installation with UV
+
+If you prefer to install manually:
+
+```bash
+# Install UV if not present
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Install aps tool
 uv tool install .
-# If something goes wrong and you need to reinstall
-uv tool install . --force
-# Now you can run the tool with
+
+# Setup autocomplete (optional)
+./setup.sh autocomplete
+```
+
+#### For development/testing
+
+```bash
+# Run without installation
+uv run aps --help
+```
+
+### 3. Verify Installation
+
+```bash
+aps --version
 aps --help
 aps install --help
 aps setup --help
-# install core packages with dry-run to see what will be installed
-aps install @core --dry-run
 ```
 
-- Running without installation (for development/testing):
+### 4. Updating
+
+To update to the latest version:
 
 ```bash
-uv run aps --help
+./setup.sh update
 ```
+
+Or manually:
+
+```bash
+uv tool install . --force
+```
+
+### 5. Uninstallation
+
+```bash
+uv tool uninstall auto-penguin-setup
+```
+
+Note: This will remove the CLI tool but preserve your configuration files and autocomplete setup.
 
 ### 3. Configure Your System
 

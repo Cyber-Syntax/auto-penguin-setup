@@ -35,6 +35,11 @@ def main() -> int:
         "setup": cmd_setup,
     }
 
+    # Check if command was provided
+    if not args.command:
+        parser.print_help()
+        return 1
+
     handler = command_handlers.get(args.command)
     if handler:
         logger.debug("Executing command: %s", args.command)

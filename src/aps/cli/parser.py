@@ -3,6 +3,7 @@
 import argparse
 
 from aps.core.setup import SetupManager
+from aps.utils.version import get_version
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -11,12 +12,21 @@ def create_parser() -> argparse.ArgumentParser:
         prog="aps", description="Auto Penguin Setup - Cross-distro package management"
     )
 
-    # Add global verbose flag
+    # Add version flag
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {get_version()}",
+        help="Show version and exit",
     )
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    # Add global verbose flag
+    parser.add_argument(
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+    )
+
+    subparsers = parser.add_subparsers(dest="command")
 
     # aps install
     install_parser = subparsers.add_parser(
@@ -35,34 +45,34 @@ Examples:
     install_parser.add_argument("packages", nargs="+", help="Package names or @category")
     install_parser.add_argument("--dry-run", action="store_true")
     install_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     # aps remove
     remove_parser = subparsers.add_parser("remove", help="Remove packages")
     remove_parser.add_argument("packages", nargs="+")
     remove_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     # aps list
     list_parser = subparsers.add_parser("list", help="List tracked packages")
     list_parser.add_argument("--source", choices=["official", "copr", "aur", "ppa", "flatpak"])
     list_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     # aps sync-repos
     sync_parser = subparsers.add_parser("sync-repos", help="Migrate repository changes")
     sync_parser.add_argument("--auto", action="store_true", help="Auto-approve migrations")
     sync_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     # aps status
     status_parser = subparsers.add_parser("status", help="Show installation status")
     status_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     # aps setup - dynamically build component list
@@ -90,7 +100,7 @@ Examples:
         "component", choices=list(available_components.keys()), help="Component to setup"
     )
     setup_parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
+        "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
     return parser
