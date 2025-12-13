@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from pathlib import Path
 
 from ..core.distro import DistroInfo, detect_distro
@@ -32,6 +33,38 @@ class BaseInstaller(ABC):
             bool: True if installation was successful, False otherwise.
         """
         pass
+
+    def try_official_first(self, official_name: str, fallback_install: Callable[[], bool]) -> bool:
+        """
+        Try installing from official repos first, fall back to custom method.
+
+        This method checks if a package is available in official repositories
+        before falling back to a custom installation method (e.g., AUR, third-party repos).
+        This ensures we prefer official sources when available.
+
+        Args:
+            official_name: Package name to check in official repos
+            fallback_install: Function to call if not in official repos
+
+        Returns:
+            True if installation succeeded (from either source)
+        """
+        if self.pm.is_available_in_official_repos(official_name):
+            logger.info(
+                "Package '%s' found in official repositories, installing from official",
+                official_name,
+            )
+            success, error = self.pm.install([official_name])
+            if success:
+                return True
+            logger.warning(
+                "Failed to install from official repos: %s. Trying fallback method.",
+                error,
+            )
+
+        # Not in official repos or official install failed
+        logger.debug("Using custom installation method for %s", official_name)
+        return fallback_install()
 
     def add_repository(self, repo_url: str, repo_name: str, gpg_key_url: str | None = None) -> bool:
         """Add a repository for the application.

@@ -61,6 +61,11 @@ def cmd_install(args: Namespace) -> None:
     mapped_system = []
     for pkg in system_packages:
         mapping = mapper.map_package(pkg, package_categories.get(pkg))
+
+        # Check official repos BEFORE we enable COPR/AUR
+        # This is the critical timing fix - check before repo enablement
+        mapping = repo_mgr.check_official_before_enabling(pkg, mapping)
+
         mapped_system.append(mapping)
         logger.debug("Mapped %s -> %s (source: %s)", pkg, mapping.mapped_name, mapping.source)
 

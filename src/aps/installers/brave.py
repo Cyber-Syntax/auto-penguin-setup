@@ -137,11 +137,13 @@ class BraveInstaller(BaseInstaller):
         Returns:
             Path: Path to the system desktop file.
         """
+        standard_path = Path("/usr/share/applications/brave-browser.desktop")
+
         if self.distro in ("fedora", "debian", "ubuntu"):
-            return Path("/usr/share/applications/brave-browser.desktop")
-        elif self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
+            return standard_path
+
+        if self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
             # Try different locations for Arch-based distros
-            standard_path = Path("/usr/share/applications/brave-browser.desktop")
             if standard_path.exists():
                 return standard_path
 

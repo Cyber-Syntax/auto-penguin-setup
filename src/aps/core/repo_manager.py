@@ -3,9 +3,13 @@
 import logging
 import shutil
 import subprocess
+from typing import TYPE_CHECKING
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.core.package_manager import PackageManager, PackageManagerError, PacmanManager
+
+if TYPE_CHECKING:
+    from aps.core.package_mapper import PackageMapping
 
 
 class RepositoryManager:
@@ -90,6 +94,52 @@ class RepositoryManager:
         # Convert "user/repo" to "copr:copr.fedorainfracloud.org:user:repo"
         repo_id = f"copr:copr.fedorainfracloud.org:{repo.replace('/', ':')}"
         return repo_id in result.stdout
+
+    def check_official_before_enabling(
+        self, package: str, mapping: "PackageMapping"
+    ) -> "PackageMapping":
+        """
+        Check if package is in official repos BEFORE enabling COPR/AUR.
+
+        This is the critical timing fix - we check before repo enablement,
+        not during installation. If the package is available in official repos,
+        we warn the user and return a modified mapping with source="official".
+
+        Args:
+            package: Original package name
+            mapping: Mapping from pkgmap.ini
+
+        Returns:
+            Updated mapping with resolved source (either original or "official")
+        """
+        # Import here to avoid circular dependency
+        from aps.core.package_mapper import PackageMapping
+
+        # Only check third-party mappings (COPR, AUR, PPA)
+        if not (mapping.is_copr or mapping.is_aur or mapping.is_ppa):
+            return mapping
+
+        # Check if available in official repos (BEFORE enabling COPR/AUR)
+        if self.pm.is_available_in_official_repos(mapping.mapped_name):
+            source_type = mapping.source.split(":")[0]  # Extract COPR/AUR/PPA
+            self.logger.warning(
+                "Package '%s' is mapped to %s in pkgmap.ini but is available "
+                "in official repositories. Installing from official repos instead. "
+                "Consider updating pkgmap.ini to remove the %s mapping.",
+                package,
+                source_type,
+                source_type,
+            )
+
+            # Return new mapping with official source
+            return PackageMapping(
+                original_name=mapping.original_name,
+                mapped_name=mapping.mapped_name,
+                source="official",
+                category=mapping.category,
+            )
+
+        return mapping
 
     def install_aur_package(self, package: str) -> bool:
         """

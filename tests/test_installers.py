@@ -71,6 +71,7 @@ class TestVSCodeInstaller:
         mock_pm = MagicMock()
         mock_pm.install.return_value = (True, "")
         mock_pm.update_cache.return_value = True
+        mock_pm.is_available_in_official_repos.return_value = False  # Not in official repos
         mock_get_pm.return_value = mock_pm
 
         installer = VSCodeInstaller()
@@ -82,6 +83,7 @@ class TestVSCodeInstaller:
             result = installer.install()
 
         assert result is True
+        mock_pm.is_available_in_official_repos.assert_called_once_with("code")
         mock_pm.update_cache.assert_called_once()
         mock_pm.install.assert_called_once_with(["code"])
 
@@ -101,12 +103,14 @@ class TestVSCodeInstaller:
 
         mock_pm = MagicMock()
         mock_pm.install.return_value = (True, "")
+        mock_pm.is_available_in_official_repos.return_value = False  # Not in official repos
         mock_get_pm.return_value = mock_pm
 
         installer = VSCodeInstaller()
         result = installer.install()
 
         assert result is True
+        mock_pm.is_available_in_official_repos.assert_called_once_with("code")
         mock_pm.install.assert_called_once_with(["visual-studio-code-bin"])
 
     @patch("aps.installers.base.detect_distro")

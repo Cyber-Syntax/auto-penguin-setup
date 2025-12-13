@@ -36,26 +36,32 @@ class VSCodeInstaller(BaseInstaller):
         Returns:
             bool: True if installation was successful, False otherwise.
         """
-        logger.info("Adding Visual Studio Code repository for Fedora...")
 
-        if not self._import_microsoft_gpg_rpm():
-            logger.error("Failed to import Microsoft GPG key")
-            return False
+        def install_with_repo() -> bool:
+            """Fallback: Add Microsoft repo and install."""
+            logger.info("Adding Visual Studio Code repository for Fedora...")
 
-        if not self._create_fedora_repo():
-            logger.error("Failed to create VS Code repository file")
-            return False
+            if not self._import_microsoft_gpg_rpm():
+                logger.error("Failed to import Microsoft GPG key")
+                return False
 
-        if not self.pm.update_cache():
-            logger.warning("Repository update had warnings, continuing...")
+            if not self._create_fedora_repo():
+                logger.error("Failed to create VS Code repository file")
+                return False
 
-        success, error = self.pm.install(["code"])
-        if not success:
-            logger.error("Failed to install Visual Studio Code: %s", error)
-            return False
+            if not self.pm.update_cache():
+                logger.warning("Repository update had warnings, continuing...")
 
-        logger.info("Visual Studio Code installation completed.")
-        return True
+            success, error = self.pm.install(["code"])
+            if not success:
+                logger.error("Failed to install Visual Studio Code: %s", error)
+                return False
+
+            logger.info("Visual Studio Code installation completed.")
+            return True
+
+        # Try official repos first (Nobara might have it)
+        return self.try_official_first("code", install_with_repo)
 
     def _install_arch(self) -> bool:
         """Install VS Code on Arch-based distributions.
@@ -63,16 +69,19 @@ class VSCodeInstaller(BaseInstaller):
         Returns:
             bool: True if installation was successful, False otherwise.
         """
-        logger.info("Installing Visual Studio Code from AUR...")
 
-        success, error = self.pm.install(["visual-studio-code-bin"])
+        def install_from_aur() -> bool:
+            """Fallback: Install from AUR."""
+            logger.info("Installing Visual Studio Code from AUR...")
+            success, error = self.pm.install(["visual-studio-code-bin"])
+            if not success:
+                logger.error("Failed to install Visual Studio Code: %s", error)
+                return False
+            logger.info("Visual Studio Code installation completed.")
+            return True
 
-        if not success:
-            logger.error("Failed to install Visual Studio Code: %s", error)
-            return False
-
-        logger.info("Visual Studio Code installation completed.")
-        return True
+        # Try official repos first (package might be 'code' in extra repo)
+        return self.try_official_first("code", install_from_aur)
 
     def _install_debian(self) -> bool:
         """Install VS Code on Debian-based distributions.

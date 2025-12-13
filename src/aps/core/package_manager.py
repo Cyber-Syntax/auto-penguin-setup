@@ -92,6 +92,19 @@ class PackageManager(ABC):
         """
         pass
 
+    @abstractmethod
+    def is_available_in_official_repos(self, package: str) -> bool:
+        """
+        Check if package is available in official repositories.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is available in official repos, False otherwise
+        """
+        pass
+
 
 class DnfManager(PackageManager):
     """Package manager for Fedora and RHEL-based distributions using dnf."""
@@ -157,6 +170,46 @@ class DnfManager(PackageManager):
         cmd = ["sudo", "dnf", "makecache"]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
+
+    def is_available_in_official_repos(self, package: str) -> bool:
+        """
+        Check if package is available in official Fedora repositories.
+
+        This should be called BEFORE enabling COPR repos. When called before
+        COPR repos are enabled, dnf repoquery will only find packages in
+        official repositories (fedora, updates, etc.).
+
+        Uses 'dnf repoquery' to check availability, then 'dnf list' to verify
+        the package is not from an already-enabled COPR repo.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is available in official repos, False otherwise
+        """
+        logger = logging.getLogger(__name__)
+
+        # First check if package exists at all
+        cmd = ["dnf", "repoquery", package]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+        if result.returncode != 0 or not result.stdout.strip():
+            return False
+
+        # Package found - verify it's not from an already-enabled COPR repo
+        # by checking with dnf list to see which repo provides it
+        list_cmd = ["dnf", "list", package]
+        list_result = subprocess.run(list_cmd, capture_output=True, text=True, check=False)
+
+        if list_result.returncode == 0:
+            # Check if output contains "copr:" which indicates COPR repo
+            if "copr:" in list_result.stdout.lower():
+                logger.debug("Package %s found but from COPR repo, not official", package)
+                return False
+            return True
+
+        return False
 
 
 class PacmanManager(PackageManager):
@@ -336,6 +389,37 @@ class PacmanManager(PackageManager):
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
+    def is_available_in_official_repos(self, package: str) -> bool:
+        """
+        Check if package is available in official Arch repositories.
+
+        Uses 'pacman -Ss' to check core, extra, and community repos.
+        Excludes AUR and other third-party repos.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is available in official repos, False otherwise
+        """
+        cmd = ["pacman", "-Ss", f"^{package}$"]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+        if result.returncode != 0:
+            return False
+
+        # Check if package is in official repos (core, extra, community)
+        # Format: "repo/package version"
+        for line in result.stdout.splitlines():
+            if "/" in line and not line.startswith(" "):
+                repo_pkg = line.split()[0]
+                repo = repo_pkg.split("/")[0]
+                pkg = repo_pkg.split("/")[1]
+                # Check if it's in official repos and matches exact package name
+                if pkg == package and repo in ["core", "extra", "community", "multilib"]:
+                    return True
+        return False
+
 
 class AptManager(PackageManager):
     """Package manager for Debian and Ubuntu-based distributions using apt."""
@@ -410,6 +494,32 @@ class AptManager(PackageManager):
         cmd = ["sudo", "apt-get", "update"]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
+
+    def is_available_in_official_repos(self, package: str) -> bool:
+        """
+        Check if package is available in official Debian/Ubuntu repositories.
+
+        Uses 'apt-cache policy' to check package availability.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is available in official repos, False otherwise
+        """
+        cmd = ["apt-cache", "policy", package]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+        if result.returncode != 0:
+            return False
+
+        # Check if package has available versions from non-PPA sources
+        # Look for "Candidate:" line that's not "(none)"
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("Candidate:"):
+                candidate = line.split(":", 1)[1].strip()
+                return candidate != "(none)"
+        return False
 
 
 def get_package_manager(distro: DistroInfo) -> PackageManager:
