@@ -20,7 +20,7 @@ class VSCodeInstaller(BaseInstaller):
         """
         logger.info("Installing Visual Studio Code...")
 
-        if self.distro in ("fedora", "rhel", "centos", "nobara"):
+        if self.distro in ("fedora", "rhel", "nobara"):
             return self._install_fedora()
         elif self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
             return self._install_arch()
@@ -52,7 +52,7 @@ class VSCodeInstaller(BaseInstaller):
             if not self.pm.update_cache():
                 logger.warning("Repository update had warnings, continuing...")
 
-            success, error = self.pm.install(["code"])
+            success, error = self.pm.install(["vscode"])
             if not success:
                 logger.error("Failed to install Visual Studio Code: %s", error)
                 return False
@@ -61,7 +61,7 @@ class VSCodeInstaller(BaseInstaller):
             return True
 
         # Try official repos first (Nobara might have it)
-        return self.try_official_first("code", install_with_repo)
+        return self.try_official_first("vscode", install_with_repo)
 
     def _install_arch(self) -> bool:
         """Install VS Code on Arch-based distributions.
@@ -80,8 +80,8 @@ class VSCodeInstaller(BaseInstaller):
             logger.info("Visual Studio Code installation completed.")
             return True
 
-        # Try official repos first (package might be 'code' in extra repo)
-        return self.try_official_first("code", install_from_aur)
+        # Try official repos first (package might be 'vscode' in extra repo)
+        return self.try_official_first("vscode", install_from_aur)
 
     def _install_debian(self) -> bool:
         """Install VS Code on Debian-based distributions.
@@ -107,7 +107,7 @@ class VSCodeInstaller(BaseInstaller):
             logger.error("Failed to update package lists")
             return False
 
-        success, error = self.pm.install(["code"])
+        success, error = self.pm.install(["vscode"])
         if not success:
             logger.error("Failed to install Visual Studio Code: %s", error)
             return False
