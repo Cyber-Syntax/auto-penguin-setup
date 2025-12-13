@@ -1,8 +1,10 @@
 """Tests for distribution detection module."""
 
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
+from pytest import LogCaptureFixture
 
 from aps.core.distro import (
     DistroFamily,
@@ -16,7 +18,7 @@ from aps.core.distro import (
 class TestDistroInfo:
     """Test DistroInfo class and detection."""
 
-    def test_from_os_release_fedora(self, sample_os_release_fedora):
+    def test_from_os_release_fedora(self, sample_os_release_fedora: Path) -> None:
         """Test parsing Fedora os-release."""
         distro = DistroInfo.from_os_release(sample_os_release_fedora)
 
@@ -26,7 +28,7 @@ class TestDistroInfo:
         assert distro.package_manager == PackageManagerType.DNF
         assert distro.family == DistroFamily.FEDORA
 
-    def test_from_os_release_arch(self, sample_os_release_arch):
+    def test_from_os_release_arch(self, sample_os_release_arch: Path) -> None:
         """Test parsing Arch os-release."""
         distro = DistroInfo.from_os_release(sample_os_release_arch)
 
@@ -35,7 +37,7 @@ class TestDistroInfo:
         assert distro.package_manager == PackageManagerType.PACMAN
         assert distro.family == DistroFamily.ARCH
 
-    def test_from_os_release_debian(self, sample_os_release_debian):
+    def test_from_os_release_debian(self, sample_os_release_debian: Path) -> None:
         """Test parsing Debian os-release."""
         distro = DistroInfo.from_os_release(sample_os_release_debian)
 
@@ -45,12 +47,12 @@ class TestDistroInfo:
         assert distro.package_manager == PackageManagerType.APT
         assert distro.family == DistroFamily.DEBIAN
 
-    def test_from_os_release_missing_file(self, tmp_path):
+    def test_from_os_release_missing_file(self, tmp_path: Path) -> None:
         """Test handling of missing os-release file."""
         with pytest.raises(FileNotFoundError):
             DistroInfo.from_os_release(tmp_path / "nonexistent")
 
-    def test_derivative_distro_nobara(self, tmp_path):
+    def test_derivative_distro_nobara(self, tmp_path: Path) -> None:
         """Test detection of Nobara (Fedora derivative)."""
         content = """
 NAME="Nobara Linux"
@@ -65,7 +67,7 @@ VERSION_ID=39
         assert distro.family == DistroFamily.FEDORA
         assert distro.package_manager == PackageManagerType.DNF
 
-    def test_derivative_distro_cachyos(self, tmp_path):
+    def test_derivative_distro_cachyos(self, tmp_path: Path) -> None:
         """Test detection of CachyOS (Arch derivative)."""
         content = """
 NAME="CachyOS"
@@ -79,7 +81,7 @@ ID_LIKE=arch
         assert distro.family == DistroFamily.ARCH
         assert distro.package_manager == PackageManagerType.PACMAN
 
-    def test_derivative_distro_ubuntu(self, tmp_path):
+    def test_derivative_distro_ubuntu(self, tmp_path: Path) -> None:
         """Test detection of Ubuntu (Debian derivative)."""
         content = """
 NAME="Ubuntu"
@@ -94,7 +96,7 @@ VERSION_ID=22.04
         assert distro.family == DistroFamily.DEBIAN
         assert distro.package_manager == PackageManagerType.APT
 
-    def test_rolling_version_default(self, tmp_path):
+    def test_rolling_version_default(self, tmp_path: Path) -> None:
         """Test default version for rolling release."""
         content = """
 NAME="Arch Linux"
@@ -106,7 +108,7 @@ ID=arch
         distro = DistroInfo.from_os_release(os_release)
         assert distro.version == "rolling"
 
-    def test_parse_os_release_quoted_values(self, tmp_path):
+    def test_parse_os_release_quoted_values(self, tmp_path: Path) -> None:
         """Test parsing os-release with quoted values."""
         content = """
 NAME="Test Distribution"
@@ -121,7 +123,7 @@ VERSION="1.0"
         assert data["ID"] == "test"
         assert data["VERSION"] == "1.0"
 
-    def test_parse_os_release_unquoted_values(self, tmp_path):
+    def test_parse_os_release_unquoted_values(self, tmp_path: Path) -> None:
         """Test parsing os-release with unquoted values."""
         content = """
 NAME=TestDistro
@@ -139,35 +141,35 @@ class TestPackageManagerDetection:
     """Test package manager binary detection."""
 
     @patch("shutil.which")
-    def test_detect_package_manager_dnf(self, mock_which):
+    def test_detect_package_manager_dnf(self, mock_which: Mock) -> None:
         """Test detection of dnf package manager."""
         mock_which.side_effect = lambda cmd: cmd == "dnf"
         result = detect_package_manager()
         assert result == PackageManagerType.DNF
 
     @patch("shutil.which")
-    def test_detect_package_manager_pacman(self, mock_which):
+    def test_detect_package_manager_pacman(self, mock_which: Mock) -> None:
         """Test detection of pacman package manager."""
         mock_which.side_effect = lambda cmd: cmd == "pacman"
         result = detect_package_manager()
         assert result == PackageManagerType.PACMAN
 
     @patch("shutil.which")
-    def test_detect_package_manager_apt(self, mock_which):
+    def test_detect_package_manager_apt(self, mock_which: Mock) -> None:
         """Test detection of apt package manager."""
         mock_which.side_effect = lambda cmd: cmd == "apt"
         result = detect_package_manager()
         assert result == PackageManagerType.APT
 
     @patch("shutil.which")
-    def test_detect_package_manager_unknown(self, mock_which):
+    def test_detect_package_manager_unknown(self, mock_which: Mock) -> None:
         """Test detection when no supported package manager is found."""
         mock_which.return_value = None
         result = detect_package_manager()
         assert result == PackageManagerType.UNKNOWN
 
     @patch("shutil.which")
-    def test_detect_package_manager_priority(self, mock_which):
+    def test_detect_package_manager_priority(self, mock_which: Mock) -> None:
         """Test that dnf is detected first when multiple are available."""
         mock_which.side_effect = lambda cmd: cmd in ["dnf", "pacman", "apt"]
         result = detect_package_manager()
@@ -178,7 +180,9 @@ class TestDetectDistro:
     """Test detect_distro() function with various scenarios."""
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_normal_fedora(self, mock_pm_detect, sample_os_release_fedora):
+    def test_detect_distro_normal_fedora(
+        self, mock_pm_detect: Mock, sample_os_release_fedora: Path
+    ) -> None:
         """Test normal detection with matching os-release and package manager."""
         mock_pm_detect.return_value = PackageManagerType.DNF
 
@@ -198,7 +202,9 @@ class TestDetectDistro:
             assert distro.family == DistroFamily.FEDORA
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_mismatch_prefers_pm(self, mock_pm_detect, caplog):
+    def test_detect_distro_mismatch_prefers_pm(
+        self, mock_pm_detect: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test mismatch detection prefers package manager over os-release."""
         mock_pm_detect.return_value = PackageManagerType.PACMAN
 
@@ -224,7 +230,9 @@ class TestDetectDistro:
             assert "Preferring package manager detection (pacman)" in caplog.text
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_unknown_os_release_fallback_to_pm(self, mock_pm_detect, caplog):
+    def test_detect_distro_unknown_os_release_fallback_to_pm(
+        self, mock_pm_detect: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test fallback to package manager when os-release shows unknown."""
         mock_pm_detect.return_value = PackageManagerType.DNF
 
@@ -250,7 +258,9 @@ class TestDetectDistro:
             assert "Using package manager detection (dnf) instead" in caplog.text
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_both_unknown_raises_error(self, mock_pm_detect, caplog):
+    def test_detect_distro_both_unknown_raises_error(
+        self, mock_pm_detect: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test error when both os-release and package manager detection fail."""
         mock_pm_detect.return_value = PackageManagerType.UNKNOWN
 
@@ -273,7 +283,7 @@ class TestDetectDistro:
             assert "no supported package manager found" in caplog.text
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_os_release_missing_uses_pm(self, mock_pm_detect):
+    def test_detect_distro_os_release_missing_uses_pm(self, mock_pm_detect: Mock) -> None:
         """Test fallback to package manager when os-release file is missing."""
         mock_pm_detect.return_value = PackageManagerType.PACMAN
 
@@ -288,7 +298,7 @@ class TestDetectDistro:
             assert distro.name == "Unknown (pacman)"
 
     @patch("aps.core.distro.detect_package_manager")
-    def test_detect_distro_os_release_missing_no_pm_raises(self, mock_pm_detect):
+    def test_detect_distro_os_release_missing_no_pm_raises(self, mock_pm_detect: Mock) -> None:
         """Test error when os-release is missing and no package manager found."""
         mock_pm_detect.return_value = PackageManagerType.UNKNOWN
 

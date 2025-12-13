@@ -1,12 +1,14 @@
 """Test fixtures for pytest."""
 
+from pathlib import Path
+
 import pytest
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
 
 
 @pytest.fixture
-def tmp_config_dir(tmp_path):
+def tmp_config_dir(tmp_path: Path) -> Path:
     """Create temporary config directory."""
     config_dir = tmp_path / "config"
     config_dir.mkdir()
@@ -14,7 +16,7 @@ def tmp_config_dir(tmp_path):
 
 
 @pytest.fixture
-def fedora_distro():
+def fedora_distro() -> DistroInfo:
     """Fedora distribution fixture."""
     return DistroInfo(
         name="Fedora Linux",
@@ -27,7 +29,7 @@ def fedora_distro():
 
 
 @pytest.fixture
-def arch_distro():
+def arch_distro() -> DistroInfo:
     """Arch Linux distribution fixture."""
     return DistroInfo(
         name="Arch Linux",
@@ -40,7 +42,7 @@ def arch_distro():
 
 
 @pytest.fixture
-def debian_distro():
+def debian_distro() -> DistroInfo:
     """Debian distribution fixture."""
     return DistroInfo(
         name="Debian GNU/Linux",
@@ -53,7 +55,7 @@ def debian_distro():
 
 
 @pytest.fixture
-def sample_os_release_fedora(tmp_path):
+def sample_os_release_fedora(tmp_path: Path) -> Path:
     """Sample /etc/os-release for Fedora."""
     content = """
 NAME="Fedora Linux"
@@ -69,7 +71,7 @@ ID_LIKE=""
 
 
 @pytest.fixture
-def sample_os_release_arch(tmp_path):
+def sample_os_release_arch(tmp_path: Path) -> Path:
     """Sample /etc/os-release for Arch."""
     content = """
 NAME="Arch Linux"
@@ -83,7 +85,7 @@ PRETTY_NAME="Arch Linux"
 
 
 @pytest.fixture
-def sample_os_release_debian(tmp_path):
+def sample_os_release_debian(tmp_path: Path) -> Path:
     """Sample /etc/os-release for Debian."""
     content = """
 NAME="Debian GNU/Linux"
@@ -98,7 +100,7 @@ PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 
 
 @pytest.fixture
-def sample_packages_ini(tmp_path):
+def sample_packages_ini(tmp_path: Path) -> Path:
     """Sample packages.ini configuration."""
     content = """
 [development]
@@ -117,7 +119,7 @@ gimp
 
 
 @pytest.fixture
-def sample_pkgmap_ini(tmp_path):
+def sample_pkgmap_ini(tmp_path: Path) -> Path:
     """Sample pkgmap.ini configuration."""
     content = """
 [pkgmap.fedora]

@@ -1,6 +1,7 @@
 """Tests for setup manager module."""
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -132,7 +133,7 @@ class TestSetupManagerAURHelper:
             mock_exists.return_value = True
             mock_which.side_effect = [None, None]
 
-            def run_side_effect(cmd, **kwargs) -> Mock:
+            def run_side_effect(cmd: list[str], **kwargs: Any) -> Mock:
                 # Success for pacman, failure for git clone
                 if "git" in cmd and "clone" in cmd:
                     return Mock(returncode=1, stdout="", stderr="Clone failed")
@@ -201,7 +202,7 @@ class TestSetupManagerOllama:
             mock_which.side_effect = which_side_effect
 
             # Mock lspci output for AMD GPU
-            def run_side_effect(cmd, **kwargs) -> Mock:
+            def run_side_effect(cmd: str, **kwargs: Any) -> Mock:
                 if "lspci" in cmd:
                     return Mock(returncode=0, stdout="VGA compatible: AMD/ATI Device", stderr="")
                 return Mock(returncode=0, stdout="", stderr="")

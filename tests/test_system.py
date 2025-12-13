@@ -20,7 +20,7 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_fedora(self, mock_get_pm, mock_detect_distro):
+    def test_configure_fedora(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test optimization for Fedora."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -42,7 +42,7 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_arch(self, mock_get_pm, mock_detect_distro):
+    def test_configure_arch(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test optimization for Arch."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -64,7 +64,7 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_unsupported(self, mock_get_pm, mock_detect_distro):
+    def test_configure_unsupported(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test optimization for unsupported distro."""
         unsupported_distro = DistroInfo(
             name="Unknown",
@@ -85,7 +85,9 @@ class TestPackageManagerOptimizer:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.pm_optimizer.subprocess.run")
-    def test_create_backup_success(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_create_backup_success(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test successful backup creation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -113,7 +115,7 @@ class TestUFWConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_success(self, mock_get_pm, mock_detect_distro):
+    def test_configure_success(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test successful UFW configuration."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -143,7 +145,9 @@ class TestUFWConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.firewall.subprocess.run")
-    def test_disable_ufw_success(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_disable_ufw_success(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test successful UFW disabling."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -166,7 +170,9 @@ class TestUFWConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.firewall.subprocess.run")
-    def test_enable_ufw_success(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_enable_ufw_success(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test successful UFW enabling."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -196,8 +202,13 @@ class TestNetworkConfig:
     @patch("aps.system.network.shutil.copy2")
     @patch("aps.system.network.subprocess.run")
     def test_configure_success(
-        self, mock_run, mock_copy, mock_exists, mock_get_pm, mock_detect_distro
-    ):
+        self,
+        mock_run: Mock,
+        mock_copy: Mock,
+        mock_exists: Mock,
+        mock_get_pm: Mock,
+        mock_detect_distro: Mock,
+    ) -> None:
         """Test successful TCP BBR configuration."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -224,7 +235,7 @@ class TestMultimediaConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_non_fedora(self, mock_get_pm, mock_detect_distro):
+    def test_configure_non_fedora(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test multimedia config on non-Fedora (should skip)."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -245,7 +256,9 @@ class TestMultimediaConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.multimedia.subprocess.run")
-    def test_configure_fedora_no_ffmpeg_free(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_configure_fedora_no_ffmpeg_free(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test multimedia config when ffmpeg-free not installed."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -271,7 +284,9 @@ class TestRepositoryConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.repositories.subprocess.run")
-    def test_configure_fedora(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_configure_fedora(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test RPM Fusion repository setup on Fedora."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -292,7 +307,7 @@ class TestRepositoryConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_arch(self, mock_get_pm, mock_detect_distro):
+    def test_configure_arch(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test repository config on Arch (should return True)."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -322,13 +337,13 @@ class TestBootloaderConfig:
     @patch("builtins.open", create=True)
     def test_set_timeout(
         self,
-        mock_open,
-        mock_popen,
-        mock_run,
-        mock_exists,
-        mock_get_pm,
-        mock_detect_distro,
-    ):
+        mock_open: Mock,
+        mock_popen: Mock,
+        mock_run: Mock,
+        mock_exists: Mock,
+        mock_get_pm: Mock,
+        mock_detect_distro: Mock,
+    ) -> None:
         """Test GRUB timeout configuration."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -366,8 +381,13 @@ class TestSudoersConfig:
     @patch("aps.system.sudoers.subprocess.run")
     @patch("aps.system.sudoers.subprocess.Popen")
     def test_configure_borgbackup(
-        self, mock_popen, mock_run, mock_read, mock_get_pm, mock_detect_distro
-    ):
+        self,
+        mock_popen: Mock,
+        mock_run: Mock,
+        mock_read: Mock,
+        mock_get_pm: Mock,
+        mock_detect_distro: Mock,
+    ) -> None:
         """Test borgbackup sudoers configuration."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -400,7 +420,7 @@ class TestDefaultAppsConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure(self, mock_get_pm, mock_detect_distro):
+    def test_configure(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test default apps configuration (placeholder)."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -422,7 +442,9 @@ class TestDefaultAppsConfig:
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.defaults.Path.write_text")
     @patch("aps.system.defaults.Path.exists", return_value=False)
-    def test_set_defaults(self, mock_exists, mock_write, mock_get_pm, mock_detect_distro):
+    def test_set_defaults(
+        self, mock_exists: Mock, mock_write: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test setting default applications."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -447,7 +469,7 @@ class TestSSHConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_get_ssh_service_name_fedora(self, mock_get_pm, mock_detect_distro):
+    def test_get_ssh_service_name_fedora(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test SSH service name detection for Fedora."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -467,7 +489,7 @@ class TestSSHConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_get_ssh_service_name_debian(self, mock_get_pm, mock_detect_distro):
+    def test_get_ssh_service_name_debian(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test SSH service name detection for Debian."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -487,7 +509,7 @@ class TestSSHConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_parse_remote_host(self, mock_get_pm, mock_detect_distro):
+    def test_parse_remote_host(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test parsing remote host string."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -509,7 +531,7 @@ class TestSSHConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_parse_remote_host_invalid(self, mock_get_pm, mock_detect_distro):
+    def test_parse_remote_host_invalid(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test parsing invalid remote host string."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -526,7 +548,7 @@ class TestSSHConfig:
 
         try:
             ssh._parse_remote_host("invalid-format")
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "Invalid host format" in str(e)
 
@@ -536,8 +558,13 @@ class TestSSHConfig:
     @patch("aps.system.ssh.Path.mkdir")
     @patch("aps.system.ssh.Path.exists", return_value=False)
     def test_create_ssh_keys(
-        self, mock_exists, mock_mkdir, mock_run, mock_get_pm, mock_detect_distro
-    ):
+        self,
+        mock_exists: Mock,
+        mock_mkdir: Mock,
+        mock_run: Mock,
+        mock_get_pm: Mock,
+        mock_detect_distro: Mock,
+    ) -> None:
         """Test SSH key creation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -563,7 +590,9 @@ class TestSSHConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.ssh.subprocess.run")
-    def test_configure_sshd_security(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_configure_sshd_security(
+        self, mock_run: MagicMock, mock_get_pm: MagicMock, mock_detect_distro: MagicMock
+    ) -> None:
         """Test SSH daemon security configuration."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -586,7 +615,9 @@ class TestSSHConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.ssh.Path.write_text")
-    def test_generate_ssh_config(self, mock_write, mock_get_pm, mock_detect_distro):
+    def test_generate_ssh_config(
+        self, mock_write: MagicMock, mock_get_pm: MagicMock, mock_detect_distro: MagicMock
+    ) -> None:
         """Test SSH client config generation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -621,7 +652,9 @@ class TestSSHConfig:
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
     @patch("aps.system.ssh.subprocess.run")
-    def test_test_ssh_connection(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_test_ssh_connection(
+        self, mock_run: MagicMock, mock_get_pm: MagicMock, mock_detect_distro: MagicMock
+    ) -> None:
         """Test SSH connection testing."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",

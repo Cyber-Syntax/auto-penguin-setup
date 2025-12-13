@@ -9,7 +9,7 @@ from aps.core.package_manager import AptManager, DnfManager, PacmanManager
 class TestOfficialReposPriority:
     """Test that package managers can check official repository availability."""
 
-    def test_dnf_is_available_in_official_repos_found(self):
+    def test_dnf_is_available_in_official_repos_found(self) -> None:
         """Test DnfManager finds package in official repos."""
         distro = DistroInfo(
             name="Fedora",
@@ -39,7 +39,7 @@ class TestOfficialReposPriority:
         cmd2 = mock_run.call_args_list[1][0][0]
         assert cmd2 == ["dnf", "list", "git"]
 
-    def test_dnf_is_available_in_official_repos_not_found(self):
+    def test_dnf_is_available_in_official_repos_not_found(self) -> None:
         """Test DnfManager doesn't find package in official repos."""
         distro = DistroInfo(
             name="Fedora",
@@ -60,7 +60,7 @@ class TestOfficialReposPriority:
         # Only one call should be made (repoquery fails, so list is not called)
         assert mock_run.call_count == 1
 
-    def test_dnf_is_available_in_official_repos_copr_package(self):
+    def test_dnf_is_available_in_official_repos_copr_package(self) -> None:
         """Test DnfManager rejects packages from COPR repos."""
         distro = DistroInfo(
             name="Fedora",
@@ -87,7 +87,7 @@ class TestOfficialReposPriority:
         assert result is False
         assert mock_run.call_count == 2
 
-    def test_pacman_is_available_in_official_repos_found(self):
+    def test_pacman_is_available_in_official_repos_found(self) -> None:
         """Test PacmanManager finds package in official repos."""
         distro = DistroInfo(
             name="Arch",
@@ -112,7 +112,7 @@ class TestOfficialReposPriority:
         assert "pacman" in cmd
         assert "-Ss" in cmd
 
-    def test_pacman_is_available_in_official_repos_aur_only(self):
+    def test_pacman_is_available_in_official_repos_aur_only(self) -> None:
         """Test PacmanManager rejects AUR-only packages."""
         distro = DistroInfo(
             name="Arch",
@@ -133,7 +133,7 @@ class TestOfficialReposPriority:
 
         assert result is False
 
-    def test_pacman_is_available_in_official_repos_core(self):
+    def test_pacman_is_available_in_official_repos_core(self) -> None:
         """Test PacmanManager finds package in core repo."""
         distro = DistroInfo(
             name="Arch",
@@ -153,7 +153,7 @@ class TestOfficialReposPriority:
 
         assert result is True
 
-    def test_apt_is_available_in_official_repos_found(self):
+    def test_apt_is_available_in_official_repos_found(self) -> None:
         """Test AptManager finds package in official repos."""
         distro = DistroInfo(
             name="Ubuntu",
@@ -179,7 +179,7 @@ class TestOfficialReposPriority:
         assert "policy" in cmd
         assert "git" in cmd
 
-    def test_apt_is_available_in_official_repos_not_found(self):
+    def test_apt_is_available_in_official_repos_not_found(self) -> None:
         """Test AptManager doesn't find package."""
         distro = DistroInfo(
             name="Ubuntu",
@@ -199,7 +199,7 @@ class TestOfficialReposPriority:
 
         assert result is False
 
-    def test_apt_is_available_in_official_repos_error(self):
+    def test_apt_is_available_in_official_repos_error(self) -> None:
         """Test AptManager handles errors gracefully."""
         distro = DistroInfo(
             name="Ubuntu",

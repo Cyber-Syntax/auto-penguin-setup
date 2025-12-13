@@ -15,7 +15,7 @@ class TestQtileConfig:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_install_success(self, mock_get_pm, mock_detect_distro):
+    def test_install_success(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test successful Qtile installation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -39,7 +39,9 @@ class TestQtileConfig:
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
     @patch("aps.wm.qtile.subprocess.run")
-    def test_setup_backlight_rules(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_setup_backlight_rules(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test backlight rules setup."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -62,7 +64,7 @@ class TestQtileConfig:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_configure(self, mock_get_pm, mock_detect_distro):
+    def test_configure(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test Qtile configuration."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -86,7 +88,7 @@ class TestI3Config:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_install_success(self, mock_get_pm, mock_detect_distro):
+    def test_install_success(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test successful i3 installation."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -109,7 +111,7 @@ class TestI3Config:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_configure(self, mock_get_pm, mock_detect_distro):
+    def test_configure(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test i3 configuration."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -134,7 +136,9 @@ class TestSDDMConfig:
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
     @patch("aps.display.sddm.subprocess.run")
-    def test_install_already_installed(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_install_already_installed(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test SDDM installation when already installed."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -156,7 +160,9 @@ class TestSDDMConfig:
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
     @patch("aps.display.sddm.subprocess.run")
-    def test_switch_to_sddm(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_switch_to_sddm(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test switching to SDDM."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -189,7 +195,9 @@ class TestSDDMConfig:
     @patch("aps.display.base.get_package_manager")
     @patch("aps.display.sddm.subprocess.run")
     @patch("aps.display.sddm.Path.exists", return_value=False)
-    def test_configure_autologin(self, mock_exists, mock_run, mock_get_pm, mock_detect_distro):
+    def test_configure_autologin(
+        self, mock_exists: Mock, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test SDDM autologin configuration."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -214,7 +222,7 @@ class TestLightDMConfig:
 
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
-    def test_install_success(self, mock_get_pm, mock_detect_distro):
+    def test_install_success(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
         """Test successful LightDM installation."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -238,7 +246,9 @@ class TestLightDMConfig:
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
     @patch("aps.display.lightdm.subprocess.run")
-    def test_switch_to_lightdm(self, mock_run, mock_get_pm, mock_detect_distro):
+    def test_switch_to_lightdm(
+        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test switching to LightDM."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",
@@ -263,7 +273,9 @@ class TestLightDMConfig:
     @patch("aps.display.base.get_package_manager")
     @patch("aps.display.lightdm.subprocess.run")
     @patch("aps.display.lightdm.Path.exists", return_value=True)
-    def test_configure_autologin(self, mock_exists, mock_run, mock_get_pm, mock_detect_distro):
+    def test_configure_autologin(
+        self, mock_exists: Mock, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test LightDM autologin configuration."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",

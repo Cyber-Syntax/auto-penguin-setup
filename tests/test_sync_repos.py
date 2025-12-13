@@ -1,9 +1,12 @@
 """Tests for sync-repos command functionality."""
 
+import logging
 from argparse import Namespace
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest import LogCaptureFixture
 
 from aps.cli.commands import _extract_package_name, _parse_package_source, cmd_sync_repos
 from aps.core.tracking import PackageRecord
@@ -12,22 +15,22 @@ from aps.core.tracking import PackageRecord
 class TestParsePackageSource:
     """Test _parse_package_source helper function."""
 
-    def test_official_package(self):
+    def test_official_package(self) -> None:
         """Test parsing official package (no prefix)."""
         assert _parse_package_source("vim") == "official"
         assert _parse_package_source("neovim") == "official"
 
-    def test_aur_package(self):
+    def test_aur_package(self) -> None:
         """Test parsing AUR package."""
         assert _parse_package_source("AUR:lazygit") == "AUR:lazygit"
         assert _parse_package_source("AUR:paru-bin") == "AUR:paru-bin"
 
-    def test_copr_package(self):
+    def test_copr_package(self) -> None:
         """Test parsing COPR package."""
         assert _parse_package_source("COPR:user/repo") == "COPR:user/repo"
         assert _parse_package_source("COPR:user/repo:package") == "COPR:user/repo"
 
-    def test_ppa_package(self):
+    def test_ppa_package(self) -> None:
         """Test parsing PPA package."""
         assert _parse_package_source("PPA:user/repo") == "PPA:user/repo"
         assert _parse_package_source("PPA:user/repo:package") == "PPA:user/repo"
@@ -36,26 +39,26 @@ class TestParsePackageSource:
 class TestExtractPackageName:
     """Test _extract_package_name helper function."""
 
-    def test_official_package(self):
+    def test_official_package(self) -> None:
         """Test extracting name from official package."""
         assert _extract_package_name("vim") == "vim"
         assert _extract_package_name("neovim") == "neovim"
 
-    def test_aur_package(self):
+    def test_aur_package(self) -> None:
         """Test extracting name from AUR package."""
         assert _extract_package_name("AUR:lazygit") == "lazygit"
         assert _extract_package_name("AUR:paru-bin") == "paru-bin"
 
-    def test_copr_with_explicit_name(self):
+    def test_copr_with_explicit_name(self) -> None:
         """Test extracting name from COPR with explicit package name."""
         assert _extract_package_name("COPR:user/repo:mypackage") == "mypackage"
 
-    def test_copr_without_explicit_name(self):
+    def test_copr_without_explicit_name(self) -> None:
         """Test COPR without explicit name returns full value."""
         result = _extract_package_name("COPR:user/repo")
         assert result == "COPR:user/repo"  # Caller should handle this
 
-    def test_ppa_with_explicit_name(self):
+    def test_ppa_with_explicit_name(self) -> None:
         """Test extracting name from PPA with explicit package name."""
         assert _extract_package_name("PPA:user/repo:mypackage") == "mypackage"
 
@@ -64,7 +67,7 @@ class TestCmdSyncRepos:
     """Test cmd_sync_repos command."""
 
     @pytest.fixture
-    def mock_config_files(self, tmp_path):
+    def mock_config_files(self, tmp_path: Path) -> Path:
         """Create mock configuration files."""
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
         config_dir.mkdir(parents=True)
@@ -85,16 +88,17 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.APSConfigParser")
     def test_no_changes_detected(
         self,
-        mock_parser_class,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        mock_ensure_config,
-        tmp_path,
-        caplog,
-    ):
+        mock_parser_class: Mock,
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        mock_ensure_config: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test when no repository changes are detected."""
+        caplog.set_level(logging.INFO)
         # Setup mocks
         mock_home.return_value = tmp_path
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
@@ -132,16 +136,17 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.APSConfigParser")
     def test_flatpak_packages_skipped(
         self,
-        mock_parser_class,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        mock_ensure_config,
-        tmp_path,
-        caplog,
-    ):
+        mock_parser_class: Mock,
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        mock_ensure_config: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test that Flatpak packages are skipped from migration."""
+        caplog.set_level(logging.INFO)
         # Setup mocks
         mock_home.return_value = tmp_path
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
@@ -179,16 +184,17 @@ class TestCmdSyncRepos:
     @patch("builtins.input")
     def test_changes_detected_user_cancels(
         self,
-        mock_input,
-        mock_parser_class,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        tmp_path,
-        caplog,
-    ):
+        mock_input: Mock,
+        mock_parser_class: Mock,
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test when changes are detected but user cancels."""
+        caplog.set_level(logging.INFO)
         # Setup mocks
         mock_home.return_value = tmp_path
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
@@ -234,16 +240,17 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.logging")
     def test_successful_migration_with_auto_flag(
         self,
-        mock_logging,
-        mock_parser_class,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        tmp_path,
-        caplog,
-    ):
+        mock_logging: Mock,
+        mock_parser_class: Mock,
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test successful migration with --auto flag."""
+        caplog.set_level(logging.INFO)
         # Setup mocks
         mock_home.return_value = tmp_path
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
@@ -302,16 +309,17 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.logging")
     def test_migration_failure_with_rollback(
         self,
-        mock_logging,
-        mock_parser_class,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        tmp_path,
-        caplog,
-    ):
+        mock_logging: Mock,
+        mock_parser_class: Mock,
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test migration failure with successful rollback."""
+        caplog.set_level(logging.INFO)
         # Setup mocks
         mock_home.return_value = tmp_path
         config_dir = tmp_path / ".config" / "auto-penguin-setup"
@@ -365,13 +373,13 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.PackageTracker")
     def test_missing_config_file_auto_creation(
         self,
-        mock_tracker_class,
-        mock_detect_distro,
-        mock_get_pm,
-        mock_home,
-        tmp_path,
-        caplog,
-    ):
+        mock_tracker_class: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_home: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
+    ) -> None:
         """Test that config files are auto-created when missing."""
         # Setup - no config files
         mock_home.return_value = tmp_path

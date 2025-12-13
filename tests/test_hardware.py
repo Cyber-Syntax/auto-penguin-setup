@@ -1,6 +1,6 @@
 """Tests for hardware configuration modules."""
 
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from aps.hardware.amd import AMDConfig
 from aps.hardware.hostname import HostnameConfig
@@ -13,21 +13,21 @@ class TestNvidiaConfig:
     """Tests for NvidiaConfig class."""
 
     @patch("subprocess.run")
-    def test_has_nvidia_gpu_detected(self, mock_run):
+    def test_has_nvidia_gpu_detected(self, mock_run: Mock) -> None:
         """Test NVIDIA GPU detection when GPU is present."""
         mock_run.return_value = MagicMock(stdout="NVIDIA Corporation GPU", returncode=0)
         config = NvidiaConfig("fedora")
         assert config._has_nvidia_gpu() is True
 
     @patch("subprocess.run")
-    def test_has_nvidia_gpu_not_detected(self, mock_run):
+    def test_has_nvidia_gpu_not_detected(self, mock_run: Mock) -> None:
         """Test NVIDIA GPU detection when GPU is absent."""
         mock_run.return_value = MagicMock(stdout="Intel GPU", returncode=0)
         config = NvidiaConfig("fedora")
         assert config._has_nvidia_gpu() is False
 
     @patch("subprocess.run")
-    def test_setup_cuda_no_gpu(self, mock_run):
+    def test_setup_cuda_no_gpu(self, mock_run: Mock) -> None:
         """Test CUDA setup fails when no GPU detected."""
         mock_run.return_value = MagicMock(stdout="Intel GPU", returncode=0)
         config = NvidiaConfig("fedora")
@@ -35,7 +35,7 @@ class TestNvidiaConfig:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="Fedora release 39")
-    def test_setup_cuda_fedora_success(self, mock_file, mock_run):
+    def test_setup_cuda_fedora_success(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test CUDA setup on Fedora."""
         # Mock GPU detection
         mock_run.side_effect = [
@@ -52,7 +52,7 @@ class TestNvidiaConfig:
         assert config.setup_cuda() is True
 
     @patch("subprocess.run")
-    def test_setup_cuda_arch_success(self, mock_run):
+    def test_setup_cuda_arch_success(self, mock_run: Mock) -> None:
         """Test CUDA setup on Arch."""
         mock_run.side_effect = [
             MagicMock(stdout="NVIDIA Corporation", returncode=0),  # GPU detection
@@ -65,7 +65,7 @@ class TestNvidiaConfig:
 
     @patch("subprocess.run")
     @patch("os.path.exists")
-    def test_setup_cuda_debian_success(self, mock_exists, mock_run):
+    def test_setup_cuda_debian_success(self, mock_exists: Mock, mock_run: Mock) -> None:
         """Test CUDA setup on Debian."""
         mock_exists.return_value = True  # Keyring already exists
 
@@ -80,7 +80,7 @@ class TestNvidiaConfig:
 
     @patch("subprocess.run")
     @patch("os.geteuid")
-    def test_switch_to_open_driver_no_root(self, mock_geteuid, mock_run):
+    def test_switch_to_open_driver_no_root(self, mock_geteuid: Mock, mock_run: Mock) -> None:
         """Test switching to open driver fails without root."""
         mock_run.return_value = MagicMock(stdout="NVIDIA Corporation", returncode=0)
         mock_geteuid.return_value = 1000  # Non-root user
@@ -92,7 +92,9 @@ class TestNvidiaConfig:
     @patch("os.geteuid")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.uname")
-    def test_switch_to_open_driver_fedora(self, mock_uname, mock_file, mock_geteuid, mock_run):
+    def test_switch_to_open_driver_fedora(
+        self, mock_uname: Mock, mock_file: Mock, mock_geteuid: Mock, mock_run: Mock
+    ) -> None:
         """Test switching to open driver on Fedora."""
         mock_run.return_value = MagicMock(stdout="NVIDIA Corporation", returncode=0)
         mock_geteuid.return_value = 0  # Root user
@@ -110,7 +112,7 @@ class TestNvidiaConfig:
 
     @patch("subprocess.run")
     @patch("os.path.exists")
-    def test_setup_vaapi_fedora_success(self, mock_exists, mock_run):
+    def test_setup_vaapi_fedora_success(self, mock_exists: Mock, mock_run: Mock) -> None:
         """Test VA-API setup on Fedora."""
         mock_exists.return_value = False  # env file doesn't exist
 
@@ -124,14 +126,14 @@ class TestNvidiaConfig:
             assert config.setup_vaapi() is True
 
     @patch("subprocess.run")
-    def test_setup_vaapi_non_fedora(self, mock_run):
+    def test_setup_vaapi_non_fedora(self, mock_run: Mock) -> None:
         """Test VA-API setup fails on non-Fedora."""
         mock_run.return_value = MagicMock(stdout="NVIDIA Corporation", returncode=0)
         config = NvidiaConfig("arch")
         assert config.setup_vaapi() is False
 
     @patch("subprocess.run")
-    def test_configure_cuda_option(self, mock_run):
+    def test_configure_cuda_option(self, mock_run: Mock) -> None:
         """Test configure method with cuda option."""
         mock_run.side_effect = [
             MagicMock(stdout="NVIDIA Corporation", returncode=0),  # GPU detection
@@ -147,40 +149,40 @@ class TestAMDConfig:
     """Tests for AMDConfig class."""
 
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen 5 5600X")
-    def test_is_amd_cpu_detected(self, mock_file):
+    def test_is_amd_cpu_detected(self, mock_file: Mock) -> None:
         """Test AMD CPU detection when CPU is present."""
         config = AMDConfig("fedora")
         assert config._is_amd_cpu() is True
 
     @patch("builtins.open", new_callable=mock_open, read_data="Intel Core i7")
-    def test_is_amd_cpu_not_detected(self, mock_file):
+    def test_is_amd_cpu_not_detected(self, mock_file: Mock) -> None:
         """Test AMD CPU detection when CPU is absent."""
         config = AMDConfig("fedora")
         assert config._is_amd_cpu() is False
 
     @patch("subprocess.run")
-    def test_is_k10temp_loaded_true(self, mock_run):
+    def test_is_k10temp_loaded_true(self, mock_run: Mock) -> None:
         """Test k10temp module detection when loaded."""
         mock_run.return_value = MagicMock(stdout="k10temp 16384 0", returncode=0)
         config = AMDConfig("fedora")
         assert config._is_k10temp_loaded() is True
 
     @patch("subprocess.run")
-    def test_is_k10temp_loaded_false(self, mock_run):
+    def test_is_k10temp_loaded_false(self, mock_run: Mock) -> None:
         """Test k10temp module detection when not loaded."""
         mock_run.return_value = MagicMock(stdout="", returncode=0)
         config = AMDConfig("fedora")
         assert config._is_k10temp_loaded() is False
 
     @patch("builtins.open", new_callable=mock_open, read_data="Intel Core")
-    def test_setup_zenpower_no_amd_cpu(self, mock_file):
+    def test_setup_zenpower_no_amd_cpu(self, mock_file: Mock) -> None:
         """Test zenpower setup fails on non-AMD CPU."""
         config = AMDConfig("fedora")
         assert config.setup_zenpower() is False
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen")
-    def test_setup_zenpower_fedora_success(self, mock_file, mock_run):
+    def test_setup_zenpower_fedora_success(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test zenpower setup on Fedora."""
         mock_run.side_effect = [
             MagicMock(stdout="", returncode=0),  # lsmod (k10temp not loaded)
@@ -194,7 +196,7 @@ class TestAMDConfig:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen")
-    def test_setup_zenpower_arch_success(self, mock_file, mock_run):
+    def test_setup_zenpower_arch_success(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test zenpower setup on Arch."""
         mock_run.side_effect = [
             MagicMock(stdout="", returncode=0),  # lsmod
@@ -209,7 +211,7 @@ class TestAMDConfig:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen")
-    def test_setup_zenpower_arch_no_aur_helper(self, mock_file, mock_run):
+    def test_setup_zenpower_arch_no_aur_helper(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test zenpower setup fails on Arch without AUR helper."""
         mock_run.side_effect = [
             MagicMock(stdout="", returncode=0),  # lsmod
@@ -222,7 +224,7 @@ class TestAMDConfig:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen")
-    def test_setup_zenpower_debian_unsupported(self, mock_file, mock_run):
+    def test_setup_zenpower_debian_unsupported(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test zenpower setup fails on Debian (unsupported)."""
         mock_run.return_value = MagicMock(stdout="", returncode=0)  # lsmod
 
@@ -231,7 +233,7 @@ class TestAMDConfig:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open, read_data="AMD Ryzen")
-    def test_configure_zenpower_option(self, mock_file, mock_run):
+    def test_configure_zenpower_option(self, mock_file: Mock, mock_run: Mock) -> None:
         """Test configure method with zenpower option."""
         mock_run.side_effect = [
             MagicMock(stdout="", returncode=0),  # lsmod
@@ -249,7 +251,7 @@ class TestIntelConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_setup_xorg_success(self, mock_copy, mock_exists):
+    def test_setup_xorg_success(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test Xorg setup succeeds."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -258,7 +260,7 @@ class TestIntelConfig:
         assert config.setup_xorg() is True
 
     @patch("os.path.exists")
-    def test_setup_xorg_file_not_found(self, mock_exists):
+    def test_setup_xorg_file_not_found(self, mock_exists: Mock) -> None:
         """Test Xorg setup fails when config file not found."""
         mock_exists.return_value = False
 
@@ -267,7 +269,7 @@ class TestIntelConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_setup_xorg_custom_source(self, mock_copy, mock_exists):
+    def test_setup_xorg_custom_source(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test Xorg setup with custom config source."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -277,7 +279,7 @@ class TestIntelConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_configure_xorg_option(self, mock_copy, mock_exists):
+    def test_configure_xorg_option(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test configure method with xorg option."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -291,7 +293,7 @@ class TestTouchpadConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_setup_success(self, mock_copy, mock_exists):
+    def test_setup_success(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test touchpad setup succeeds."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -300,7 +302,7 @@ class TestTouchpadConfig:
         assert config.setup() is True
 
     @patch("os.path.exists")
-    def test_setup_file_not_found(self, mock_exists):
+    def test_setup_file_not_found(self, mock_exists: Mock) -> None:
         """Test touchpad setup fails when config file not found."""
         mock_exists.return_value = False
 
@@ -309,7 +311,7 @@ class TestTouchpadConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_setup_custom_source(self, mock_copy, mock_exists):
+    def test_setup_custom_source(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test touchpad setup with custom config source."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -319,7 +321,7 @@ class TestTouchpadConfig:
 
     @patch("os.path.exists")
     @patch("aps.hardware.base.BaseHardwareConfig._copy_config_file")
-    def test_configure_setup_option(self, mock_copy, mock_exists):
+    def test_configure_setup_option(self, mock_copy: Mock, mock_exists: Mock) -> None:
         """Test configure method with setup option."""
         mock_exists.return_value = True
         mock_copy.return_value = True
@@ -332,7 +334,7 @@ class TestHostnameConfig:
     """Tests for HostnameConfig class."""
 
     @patch("subprocess.run")
-    def test_set_hostname_success(self, mock_run):
+    def test_set_hostname_success(self, mock_run: Mock) -> None:
         """Test hostname setting succeeds."""
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -340,27 +342,27 @@ class TestHostnameConfig:
         assert config.set_hostname("myhost") is True
 
     @patch("subprocess.run")
-    def test_set_hostname_failure(self, mock_run):
+    def test_set_hostname_failure(self, mock_run: Mock) -> None:
         """Test hostname setting fails."""
         mock_run.return_value = MagicMock(returncode=1)
 
         config = HostnameConfig("fedora")
         assert config.set_hostname("myhost") is False
 
-    def test_set_hostname_empty(self):
+    def test_set_hostname_empty(self) -> None:
         """Test hostname setting fails with empty string."""
         config = HostnameConfig("fedora")
         assert config.set_hostname("") is False
 
     @patch("subprocess.run")
-    def test_configure_hostname_option(self, mock_run):
+    def test_configure_hostname_option(self, mock_run: Mock) -> None:
         """Test configure method with hostname option."""
         mock_run.return_value = MagicMock(returncode=0)
 
         config = HostnameConfig("fedora")
         assert config.configure(hostname="myhost") is True
 
-    def test_configure_no_hostname(self):
+    def test_configure_no_hostname(self) -> None:
         """Test configure fails when no hostname provided."""
         config = HostnameConfig("fedora")
         assert config.configure() is False

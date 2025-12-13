@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from pytest import MonkeyPatch
 
 from aps.core.config import APSConfigParser, ensure_config_files
 
@@ -280,7 +281,7 @@ items2=item4
 class TestEnsureConfigFiles:
     """Test ensure_config_files functionality."""
 
-    def test_create_config_files(self, tmp_path: Path, monkeypatch) -> None:
+    def test_create_config_files(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Test creating config files from examples."""
         config_dir = tmp_path / "config"
 
@@ -308,7 +309,7 @@ class TestEnsureConfigFiles:
         assert (config_dir / "pkgmap.ini").exists()
         assert (config_dir / "variables.ini").exists()
 
-    def test_skip_existing_files(self, tmp_path: Path, monkeypatch) -> None:
+    def test_skip_existing_files(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Test that existing files are not overwritten."""
         config_dir = tmp_path / "config"
         config_dir.mkdir()
@@ -340,7 +341,7 @@ class TestEnsureConfigFiles:
         # Existing file should not be overwritten
         assert (config_dir / "packages.ini").read_text() == existing_content
 
-    def test_missing_examples_directory(self, tmp_path: Path, monkeypatch) -> None:
+    def test_missing_examples_directory(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Test error when examples directory is missing."""
         config_dir = tmp_path / "config"
 

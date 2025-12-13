@@ -1,6 +1,7 @@
 """Tests for package tracking module."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from aps.core.tracking import PackageRecord, PackageTracker
 
@@ -8,7 +9,7 @@ from aps.core.tracking import PackageRecord, PackageTracker
 class TestPackageRecord:
     """Test PackageRecord dataclass."""
 
-    def test_create_record(self):
+    def test_create_record(self) -> None:
         """Test creating package record with current timestamp."""
         record = PackageRecord.create("git", source="official")
 
@@ -23,7 +24,7 @@ class TestPackageRecord:
         delta = (now - timestamp).total_seconds()
         assert delta < 60
 
-    def test_create_record_with_all_fields(self):
+    def test_create_record_with_all_fields(self) -> None:
         """Test creating record with all fields."""
         record = PackageRecord.create(
             name="lazygit",
@@ -37,7 +38,7 @@ class TestPackageRecord:
         assert record.category == "development"
         assert record.mapped_name == "lazygit"
 
-    def test_to_dict(self):
+    def test_to_dict(self) -> None:
         """Test converting record to dictionary."""
         record = PackageRecord.create("git", source="official", category="dev")
         data = record.to_dict()
@@ -47,7 +48,7 @@ class TestPackageRecord:
         assert data["category"] == "dev"
         assert "installed_at" in data
 
-    def test_from_dict(self):
+    def test_from_dict(self) -> None:
         """Test creating record from dictionary."""
         data = {
             "name": "vim",
@@ -66,19 +67,19 @@ class TestPackageRecord:
 class TestPackageTracker:
     """Test PackageTracker functionality."""
 
-    def test_create_tracker_default_path(self):
+    def test_create_tracker_default_path(self) -> None:
         """Test creating tracker with default path."""
         tracker = PackageTracker()
         assert tracker.db_path.name == "metadata.jsonl"
         assert "auto-penguin-setup" in str(tracker.db_path)
 
-    def test_create_tracker_custom_path(self, tmp_path):
+    def test_create_tracker_custom_path(self, tmp_path: Path) -> None:
         """Test creating tracker with custom path."""
         db_path = tmp_path / "custom.jsonl"
         tracker = PackageTracker(db_path)
         assert tracker.db_path == db_path
 
-    def test_track_install(self, tmp_path):
+    def test_track_install(self, tmp_path: Path) -> None:
         """Test tracking package installation."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -90,7 +91,7 @@ class TestPackageTracker:
         assert db_path.exists()
         assert db_path.stat().st_size > 0
 
-    def test_get_tracked_packages(self, tmp_path):
+    def test_get_tracked_packages(self, tmp_path: Path) -> None:
         """Test retrieving tracked packages."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -107,7 +108,7 @@ class TestPackageTracker:
         assert packages[1].name == "vim"
         assert packages[2].name == "lazygit"
 
-    def test_get_package(self, tmp_path):
+    def test_get_package(self, tmp_path: Path) -> None:
         """Test getting specific package."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -122,7 +123,7 @@ class TestPackageTracker:
         nonexistent = tracker.get_package("nonexistent")
         assert nonexistent is None
 
-    def test_is_tracked(self, tmp_path):
+    def test_is_tracked(self, tmp_path: Path) -> None:
         """Test checking if package is tracked."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -132,7 +133,7 @@ class TestPackageTracker:
         assert tracker.is_tracked("git")
         assert not tracker.is_tracked("nonexistent")
 
-    def test_remove_package(self, tmp_path):
+    def test_remove_package(self, tmp_path: Path) -> None:
         """Test removing package from tracking."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -149,7 +150,7 @@ class TestPackageTracker:
         assert len(packages) == 1
         assert packages[0].name == "vim"
 
-    def test_remove_nonexistent_package(self, tmp_path):
+    def test_remove_nonexistent_package(self, tmp_path: Path) -> None:
         """Test removing package that doesn't exist."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -157,7 +158,7 @@ class TestPackageTracker:
         success = tracker.remove_package("nonexistent")
         assert not success
 
-    def test_remove_multiple(self, tmp_path):
+    def test_remove_multiple(self, tmp_path: Path) -> None:
         """Test removing multiple packages."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -173,7 +174,7 @@ class TestPackageTracker:
         assert len(packages) == 1
         assert packages[0].name == "vim"
 
-    def test_get_packages_by_category(self, tmp_path):
+    def test_get_packages_by_category(self, tmp_path: Path) -> None:
         """Test filtering packages by category."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -186,7 +187,7 @@ class TestPackageTracker:
         assert len(dev_packages) == 2
         assert all(p.category == "dev" for p in dev_packages)
 
-    def test_get_packages_by_source(self, tmp_path):
+    def test_get_packages_by_source(self, tmp_path: Path) -> None:
         """Test filtering packages by source."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -201,7 +202,7 @@ class TestPackageTracker:
         official_packages = tracker.get_packages_by_source("official")
         assert len(official_packages) == 1
 
-    def test_get_categories(self, tmp_path):
+    def test_get_categories(self, tmp_path: Path) -> None:
         """Test getting unique categories."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -215,7 +216,7 @@ class TestPackageTracker:
         assert "dev" in categories
         assert "editor" in categories
 
-    def test_count_packages(self, tmp_path):
+    def test_count_packages(self, tmp_path: Path) -> None:
         """Test counting tracked packages."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -227,7 +228,7 @@ class TestPackageTracker:
 
         assert tracker.count_packages() == 2
 
-    def test_clear_all(self, tmp_path):
+    def test_clear_all(self, tmp_path: Path) -> None:
         """Test clearing all tracked packages."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -240,7 +241,7 @@ class TestPackageTracker:
         assert tracker.count_packages() == 0
         assert db_path.stat().st_size == 0
 
-    def test_backup_database(self, tmp_path):
+    def test_backup_database(self, tmp_path: Path) -> None:
         """Test backing up tracking database."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -253,7 +254,7 @@ class TestPackageTracker:
         assert "backup" in backup_path.name
         assert backup_path.stat().st_size == db_path.stat().st_size
 
-    def test_track_multiple(self, tmp_path):
+    def test_track_multiple(self, tmp_path: Path) -> None:
         """Test tracking multiple packages at once."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -268,7 +269,7 @@ class TestPackageTracker:
 
         assert tracker.count_packages() == 3
 
-    def test_track_install_prevents_duplicates(self, tmp_path):
+    def test_track_install_prevents_duplicates(self, tmp_path: Path) -> None:
         """Test that tracking same package twice doesn't create duplicates."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -286,7 +287,7 @@ class TestPackageTracker:
         assert len(packages) == 1
         assert packages[0].name == "git"
 
-    def test_track_install_updates_existing_package(self, tmp_path):
+    def test_track_install_updates_existing_package(self, tmp_path: Path) -> None:
         """Test that tracking existing package updates the record."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -306,7 +307,7 @@ class TestPackageTracker:
         assert packages[0].source == "COPR:test/git"
         assert packages[0].category == "tools"
 
-    def test_track_multiple_prevents_duplicates(self, tmp_path):
+    def test_track_multiple_prevents_duplicates(self, tmp_path: Path) -> None:
         """Test that tracking multiple packages prevents duplicates."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -332,7 +333,7 @@ class TestPackageTracker:
         names = {p.name for p in packages}
         assert names == {"git", "vim", "emacs"}
 
-    def test_track_multiple_with_all_duplicates(self, tmp_path):
+    def test_track_multiple_with_all_duplicates(self, tmp_path: Path) -> None:
         """Test tracking multiple packages that are all duplicates."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -355,7 +356,7 @@ class TestPackageTracker:
         packages = tracker.get_tracked_packages()
         assert len(packages) == 2
 
-    def test_field_order_consistency(self, tmp_path):
+    def test_field_order_consistency(self, tmp_path: Path) -> None:
         """Test that JSONL field order is consistent."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
@@ -380,7 +381,7 @@ class TestPackageTracker:
         assert keys[3] == "category"
         assert keys[4] == "installed_at"
 
-    def test_track_by_mapped_name_prevents_duplicates(self, tmp_path):
+    def test_track_by_mapped_name_prevents_duplicates(self, tmp_path: Path) -> None:
         """Test that tracking by mapped_name also prevents duplicates."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
