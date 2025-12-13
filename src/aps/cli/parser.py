@@ -26,7 +26,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
     # aps install
     install_parser = subparsers.add_parser(

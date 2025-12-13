@@ -8,7 +8,7 @@ from pathlib import Path
 from aps.cli.utils import get_tracking_db_path, load_category_packages
 from aps.core.distro import DistroFamily, detect_distro
 from aps.core.package_manager import PacmanManager, get_package_manager
-from aps.core.package_mapper import PackageMapper
+from aps.core.package_mapper import PackageMapper, PackageMapping
 from aps.core.repo_manager import RepositoryManager
 from aps.core.tracking import PackageRecord, PackageTracker
 
@@ -32,9 +32,9 @@ def cmd_install(args: Namespace) -> None:
     logger.debug("Mapper has %s mappings", len(mapper.mappings))
 
     # Collect all packages to install
-    system_packages = []
-    flatpak_packages = []
-    package_categories = {}  # pkg -> category
+    system_packages: list[str] = []
+    flatpak_packages: list[str] = []
+    package_categories: dict[str, str | None] = {}  # pkg -> category
 
     for pkg in args.packages:
         if pkg.startswith("@"):
@@ -58,7 +58,7 @@ def cmd_install(args: Namespace) -> None:
     logger.debug("Flatpak packages to install: %s", flatpak_packages)
 
     # Map system packages
-    mapped_system = []
+    mapped_system: list[PackageMapping] = []
     for pkg in system_packages:
         mapping = mapper.map_package(pkg, package_categories.get(pkg))
 
@@ -70,17 +70,17 @@ def cmd_install(args: Namespace) -> None:
         logger.debug("Mapped %s -> %s (source: %s)", pkg, mapping.mapped_name, mapping.source)
 
     # Separate by source (only for relevant distro families)
-    official_pkgs = [m for m in mapped_system if m.is_official]
-    copr_pkgs = (
+    official_pkgs: list[PackageMapping] = [m for m in mapped_system if m.is_official]
+    copr_pkgs: list[PackageMapping] = (
         [m for m in mapped_system if m.is_copr] if distro_info.family == DistroFamily.FEDORA else []
     )
-    aur_pkgs = (
+    aur_pkgs: list[PackageMapping] = (
         [m for m in mapped_system if m.is_aur] if distro_info.family == DistroFamily.ARCH else []
     )
-    ppa_pkgs = (
+    ppa_pkgs: list[PackageMapping] = (
         [m for m in mapped_system if m.is_ppa] if distro_info.family == DistroFamily.DEBIAN else []
     )
-    flatpak_mapped = [m for m in mapped_system if m.is_flatpak]
+    flatpak_mapped: list[PackageMapping] = [m for m in mapped_system if m.is_flatpak]
 
     logger.debug("Official packages: %s", [m.mapped_name for m in official_pkgs])
     if distro_info.family == DistroFamily.FEDORA:
@@ -125,7 +125,7 @@ def cmd_install(args: Namespace) -> None:
                     logger.error("Failed to add PPA %s", repo)
                     return
 
-    all_packages = [m.original_name for m in mapped_system] + flatpak_packages
+    all_packages: list[str] = [m.original_name for m in mapped_system] + flatpak_packages
 
     if args.dry_run:
         for p in all_packages:
@@ -133,7 +133,7 @@ def cmd_install(args: Namespace) -> None:
         logger.debug("Dry run completed")
     else:
         # Install system packages
-        system_to_install = [m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs]
+        system_to_install: list[str] = [m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs]
         logger.debug("Installing system packages: %s", system_to_install)
         if system_to_install:
             success, error = pm.install(system_to_install, assume_yes=True)
@@ -143,7 +143,7 @@ def cmd_install(args: Namespace) -> None:
 
         # Install AUR packages (Arch only)
         if aur_pkgs:
-            aur_to_install = [m.mapped_name for m in aur_pkgs]
+            aur_to_install: list[str] = [m.mapped_name for m in aur_pkgs]
             logger.debug("Installing AUR packages: %s", aur_to_install)
             if isinstance(pm, PacmanManager):
                 success = pm.install_aur(aur_to_install, assume_yes=True)

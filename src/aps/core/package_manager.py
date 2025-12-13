@@ -113,7 +113,7 @@ class DnfManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
-        cmd = ["sudo", "dnf", "install"]
+        cmd: list[str] = ["sudo", "dnf", "install"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
@@ -131,7 +131,7 @@ class DnfManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
-        cmd = ["sudo", "dnf", "remove"]
+        cmd: list[str] = ["sudo", "dnf", "remove"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
@@ -146,13 +146,13 @@ class DnfManager(PackageManager):
             return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
-        cmd = ["dnf", "search", "--quiet", query]
+        cmd: list[str] = ["dnf", "search", "--quiet", query]
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             return []
 
-        packages = []
+        packages: list[str] = []
         for line in result.stdout.splitlines():
             if "." in line and ":" in line:
                 # Format: "package.arch : description"
