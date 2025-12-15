@@ -46,9 +46,8 @@ def main() -> int:
         handler(args)
         logger.debug("Command %s completed successfully", args.command)
         return 0
-    else:
-        parser.print_help()
-        return 1
+    parser.print_help()
+    return 1
 
 
 if __name__ == "__main__":

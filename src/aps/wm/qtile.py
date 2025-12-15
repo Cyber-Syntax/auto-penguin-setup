@@ -1,9 +1,9 @@
 """Qtile window manager configuration."""
 
 import logging
-import subprocess
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
 from aps.wm.base import BaseWMConfig
 
 logger = logging.getLogger(__name__)
@@ -62,8 +62,8 @@ class QtileConfig(BaseWMConfig):
         for dest in [qtile_rules_dest.parent, backlight_dest.parent]:
             if not dest.exists():
                 logger.info("%s does not exist, creating...", dest)
-                result = subprocess.run(
-                    ["sudo", "mkdir", "-p", str(dest)],
+                result = run_privileged(
+                    ["mkdir", "-p", str(dest)],
                     capture_output=True,
                     text=True,
                     check=False,
@@ -73,8 +73,8 @@ class QtileConfig(BaseWMConfig):
                     return False
 
         # Copy qtile udev rules
-        result = subprocess.run(
-            ["sudo", "cp", str(qtile_rules_src), str(qtile_rules_dest)],
+        result = run_privileged(
+            ["cp", str(qtile_rules_src), str(qtile_rules_dest)],
             capture_output=True,
             text=True,
             check=False,
@@ -87,8 +87,8 @@ class QtileConfig(BaseWMConfig):
         logger.info("Udev rule for Qtile setup completed.")
 
         # Copy backlight configuration
-        result = subprocess.run(
-            ["sudo", "cp", str(backlight_src), str(backlight_dest)],
+        result = run_privileged(
+            ["cp", str(backlight_src), str(backlight_dest)],
             capture_output=True,
             text=True,
             check=False,
@@ -101,8 +101,8 @@ class QtileConfig(BaseWMConfig):
         logger.info("Backlight configuration completed.")
 
         # Reload udev rules
-        result = subprocess.run(
-            ["sudo", "udevadm", "control", "--reload-rules"],
+        result = run_privileged(
+            ["udevadm", "control", "--reload-rules"],
             capture_output=True,
             text=True,
             check=False,
@@ -112,8 +112,8 @@ class QtileConfig(BaseWMConfig):
             logger.error("Failed to reload udev rules: %s", result.stderr)
             return False
 
-        result = subprocess.run(
-            ["sudo", "udevadm", "trigger"],
+        result = run_privileged(
+            ["udevadm", "trigger"],
             capture_output=True,
             text=True,
             check=False,

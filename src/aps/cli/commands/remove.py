@@ -7,12 +7,16 @@ from aps.cli.utils import get_tracking_db_path
 from aps.core.distro import detect_distro
 from aps.core.package_manager import get_package_manager
 from aps.core.tracking import PackageTracker
+from aps.utils.privilege import ensure_sudo
 
 logger = logging.getLogger(__name__)
 
 
 def cmd_remove(args: Namespace) -> None:
     """Handle 'aps remove' command."""
+    # Pre-authenticate sudo for privileged operations
+    ensure_sudo()
+
     distro_info = detect_distro()
     pm = get_package_manager(distro_info)
     tracker = PackageTracker(get_tracking_db_path())

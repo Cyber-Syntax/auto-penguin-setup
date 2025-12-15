@@ -2,10 +2,10 @@
 
 import logging
 import shutil
-import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
@@ -32,8 +32,8 @@ class NetworkConfig(BaseSystemConfig):
             logger.info("TCP BBR configuration copied to %s", dest_file)
 
             # Reload sysctl settings
-            result = subprocess.run(
-                ["sudo", "sysctl", "--system"],
+            result = run_privileged(
+                ["sysctl", "--system"],
                 capture_output=True,
                 text=True,
                 check=False,

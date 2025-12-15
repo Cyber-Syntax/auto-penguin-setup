@@ -22,6 +22,7 @@ from aps.installers import (
     VirtManagerInstaller,
     VSCodeInstaller,
 )
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -237,8 +238,8 @@ class SetupManager:
     def _install_build_deps(self) -> None:
         """Install build dependencies for AUR helper."""
         logger.info("Installing build dependencies...")
-        result = subprocess.run(
-            ["sudo", "pacman", "-S", "--needed", "--noconfirm", "base-devel", "git"],
+        result = run_privileged(
+            ["pacman", "-S", "--needed", "--noconfirm", "base-devel", "git"],
             capture_output=True,
             text=True,
             check=False,
@@ -256,12 +257,12 @@ class SetupManager:
             # Clean up previous attempts
             if build_dir.exists():
                 logger.info("Cleaning up previous build directory...")
-                subprocess.run(["sudo", "rm", "-rf", str(build_dir)], check=True)
+                run_privileged(["rm", "-rf", str(build_dir)], check=True)
 
             # Clone paru-bin repository
             logger.info("Cloning paru-bin repository...")
-            result = subprocess.run(
-                ["sudo", "git", "clone", "https://aur.archlinux.org/paru-bin.git", str(build_dir)],
+            result = run_privileged(
+                ["git", "clone", "https://aur.archlinux.org/paru-bin.git", str(build_dir)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -273,8 +274,8 @@ class SetupManager:
             # Set ownership for makepkg (cannot run as root)
             logger.info("Setting directory permissions...")
             user = Path.home().name
-            result = subprocess.run(
-                ["sudo", "chown", "-R", f"{user}:{user}", str(build_dir)],
+            result = run_privileged(
+                ["chown", "-R", f"{user}:{user}", str(build_dir)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -300,11 +301,10 @@ class SetupManager:
             # Clean up build directory
             if build_dir.exists():
                 logger.info("Cleaning up build directory...")
-                subprocess.run(
-                    ["sudo", "rm", "-rf", str(build_dir)],
+                run_privileged(
+                    ["rm", "-rf", str(build_dir)],
                     check=False,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    capture_output=False,
                 )
 
     def _setup_ollama_arch(self) -> None:
@@ -322,8 +322,8 @@ class SetupManager:
         logger.info("Installing Ollama package: %s", pkg)
 
         # Try package manager installation
-        result = subprocess.run(
-            ["sudo", "pacman", "-S", "--needed", "--noconfirm", pkg],
+        result = run_privileged(
+            ["pacman", "-S", "--needed", "--noconfirm", pkg],
             capture_output=True,
             text=True,
             check=False,

@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -24,13 +26,12 @@ class ProtonVPNInstaller(BaseInstaller):
 
         if self.distro == "fedora":
             return self._install_fedora()
-        elif self.distro == "arch":
+        if self.distro == "arch":
             return self._install_arch()
-        elif self.distro == "debian":
+        if self.distro == "debian":
             return self._install_debian()
-        else:
-            logger.error("Unsupported distribution: %s", self.distro)
-            return False
+        logger.error("Unsupported distribution: %s", self.distro)
+        return False
 
     def _install_fedora(self) -> bool:
         """Install ProtonVPN on Fedora."""
@@ -51,8 +52,8 @@ class ProtonVPNInstaller(BaseInstaller):
         # Import GPG key
         logger.info("Importing ProtonVPN GPG key...")
         try:
-            subprocess.run(
-                ["sudo", "rpm", "--import", key_url],
+            run_privileged(
+                ["rpm", "--import", key_url],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -79,8 +80,8 @@ class ProtonVPNInstaller(BaseInstaller):
                 )
 
                 # Install repository package
-                subprocess.run(
-                    ["sudo", "dnf", "install", "--setopt=assumeyes=1", str(tmp_path)],
+                run_privileged(
+                    ["dnf", "install", "--setopt=assumeyes=1", str(tmp_path)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -96,8 +97,8 @@ class ProtonVPNInstaller(BaseInstaller):
 
         # Refresh repositories
         logger.info("Refreshing package repositories...")
-        subprocess.run(
-            ["sudo", "dnf", "check-update", "--refresh", "--setopt=assumeyes=1"],
+        run_privileged(
+            ["dnf", "check-update", "--refresh", "--setopt=assumeyes=1"],
             check=False,
             capture_output=True,
             text=True,
@@ -176,8 +177,8 @@ class ProtonVPNInstaller(BaseInstaller):
             # Install repository package
             logger.info("Installing ProtonVPN repository...")
             try:
-                subprocess.run(
-                    ["sudo", "dpkg", "-i", str(deb_file)],
+                run_privileged(
+                    ["dpkg", "-i", str(deb_file)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -208,6 +209,6 @@ class ProtonVPNInstaller(BaseInstaller):
         """
         if self.distro == "fedora" or self.distro == "debian":
             return self.pm.is_installed("proton-vpn-gnome-desktop")
-        elif self.distro == "arch":
+        if self.distro == "arch":
             return self.pm.is_installed("proton-vpn-gtk-app")
         return False

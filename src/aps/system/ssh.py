@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from aps.system.base import BaseSystemConfig
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class SSHConfig(BaseSystemConfig):
 
         if distro in ["fedora", "arch"]:
             return "sshd"
-        elif distro == "debian":
+        if distro == "debian":
             return "ssh"
 
         # Fallback detection
@@ -56,7 +57,7 @@ class SSHConfig(BaseSystemConfig):
 
         if "sshd.service" in result.stdout:
             return "sshd"
-        elif "ssh.service" in result.stdout:
+        if "ssh.service" in result.stdout:
             return "ssh"
 
         raise RuntimeError("Could not detect SSH service name")
@@ -182,8 +183,8 @@ class SSHConfig(BaseSystemConfig):
         # Create directory if it doesn't exist
         if not sshd_config_dir.exists():
             logger.debug("Creating SSH drop-in config directory: %s", sshd_config_dir)
-            result = subprocess.run(
-                ["sudo", "mkdir", "-p", str(sshd_config_dir)],
+            result = run_privileged(
+                ["mkdir", "-p", str(sshd_config_dir)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -214,9 +215,9 @@ AcceptEnv LANG LC_*
 Subsystem sftp /usr/lib/openssh/sftp-server
 """
 
-        result = subprocess.run(
-            ["sudo", "tee", str(config_file)],
-            input=config_content,
+        result = run_privileged(
+            ["tee", str(config_file)],
+            stdin_input=config_content,
             capture_output=True,
             text=True,
             check=False,
@@ -239,8 +240,8 @@ Subsystem sftp /usr/lib/openssh/sftp-server
             service_name = self._get_ssh_service_name()
             logger.info("Ensuring SSH service (%s) is running...", service_name)
 
-            result = subprocess.run(
-                ["sudo", "systemctl", "enable", "--now", service_name],
+            result = run_privileged(
+                ["systemctl", "enable", "--now", service_name],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -268,8 +269,8 @@ Subsystem sftp /usr/lib/openssh/sftp-server
             logger.info("Reloading SSH service to apply configuration...")
 
             # Try reload first
-            result = subprocess.run(
-                ["sudo", "systemctl", "reload", service_name],
+            result = run_privileged(
+                ["systemctl", "reload", service_name],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -277,8 +278,8 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
             if result.returncode != 0:
                 logger.warning("Reload failed, attempting restart...")
-                result = subprocess.run(
-                    ["sudo", "systemctl", "restart", service_name],
+                result = run_privileged(
+                    ["systemctl", "restart", service_name],
                     capture_output=True,
                     text=True,
                     check=False,

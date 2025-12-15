@@ -4,6 +4,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -22,13 +24,13 @@ class UeberzugppInstaller(BaseInstaller):
 
         if self.distro == "fedora":
             return self._install_fedora()
-        elif self.distro == "arch":
+        if self.distro == "arch":
             return self._install_arch()
-        elif self.distro == "debian":
+        if self.distro == "debian":
             return self._install_debian()
-        else:
-            logger.error("Unsupported distribution: %s", self.distro)
-            return False
+
+        logger.error("Unsupported distribution: %s", self.distro)
+        return False
 
     def _install_fedora(self) -> bool:
         """Install ueberzugpp on Fedora with OpenSUSE repository."""
@@ -51,8 +53,8 @@ class UeberzugppInstaller(BaseInstaller):
         logger.info("Adding repository from: %s", repo_url)
 
         try:
-            subprocess.run(
-                ["sudo", "dnf", "config-manager", "addrepo", f"--from-repofile={repo_url}"],
+            run_privileged(
+                ["dnf", "config-manager", "addrepo", f"--from-repofile={repo_url}"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -125,9 +127,9 @@ class UeberzugppInstaller(BaseInstaller):
         # Add repository to sources list
         sources_list = Path("/etc/apt/sources.list.d/home:justkidding.list")
         try:
-            subprocess.run(
-                ["sudo", "tee", str(sources_list)],
-                input=f"deb {repo_url} /\n",
+            run_privileged(
+                ["tee", str(sources_list)],
+                stdin_input=f"deb {repo_url} /\n",
                 check=True,
                 capture_output=True,
                 text=True,
@@ -156,11 +158,12 @@ class UeberzugppInstaller(BaseInstaller):
                 stdout=subprocess.PIPE,
             )
 
-            subprocess.run(
-                ["sudo", "tee", "/etc/apt/trusted.gpg.d/home_justkidding.gpg"],
-                input=key_result.stdout.encode(),
+            run_privileged(
+                ["tee", "/etc/apt/trusted.gpg.d/home_justkidding.gpg"],
+                stdin_input=key_result.stdout,
                 check=True,
                 capture_output=True,
+                text=True,
             )
         except subprocess.CalledProcessError as e:
             logger.error("Failed to add repository GPG key: %s", e.stderr)

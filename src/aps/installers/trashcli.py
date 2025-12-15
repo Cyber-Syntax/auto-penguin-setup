@@ -1,11 +1,11 @@
 """Trash-cli installer and systemd timer setup."""
 
 import logging
-import shutil
 import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
@@ -29,30 +29,26 @@ class TrashCLIInstaller(BaseInstaller):
         service_src = resolve_config_file("trash-cli/trash-cli.service")
         timer_src = resolve_config_file("trash-cli/trash-cli.timer")
 
+        def copy_with_privilege(src: str, dest: str, desc: str) -> bool:
+            try:
+                run_privileged(["cp", str(src), str(dest)])
+                logger.debug("Copied %s file to %s (privileged)", desc, dest)
+                return True
+            except subprocess.CalledProcessError as e:
+                logger.error("Failed to copy %s file: %s", desc, e.stderr or e)
+                return False
+
         # Copy service file
-        try:
-            shutil.copy2(service_src, service_dest)
-            logger.debug("Copied service file to %s", service_dest)
-        except (OSError, shutil.Error) as e:
-            logger.error("Failed to copy trash-cli service file: %s", e)
+        if not copy_with_privilege(str(service_src), str(service_dest), "service"):
             return False
 
         # Copy timer file
-        try:
-            shutil.copy2(timer_src, timer_dest)
-            logger.debug("Copied timer file to %s", timer_dest)
-        except (OSError, shutil.Error) as e:
-            logger.error("Failed to copy trash-cli timer file: %s", e)
+        if not copy_with_privilege(str(timer_src), str(timer_dest), "timer"):
             return False
 
         # Reload systemd daemon
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "daemon-reload"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+            run_privileged(["systemctl", "daemon-reload"])
         except subprocess.CalledProcessError as e:
             logger.error("Failed to reload systemd daemon: %s", e.stderr)
             return False
@@ -60,12 +56,7 @@ class TrashCLIInstaller(BaseInstaller):
         # Enable and start timer
         logger.info("Enabling trash-cli timer...")
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "enable", "--now", "trash-cli.timer"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+            run_privileged(["systemctl", "enable", "--now", "trash-cli.timer"])
         except subprocess.CalledProcessError as e:
             logger.error("Failed to enable trash-cli timer: %s", e.stderr)
             return False

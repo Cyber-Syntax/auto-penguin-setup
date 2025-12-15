@@ -3,6 +3,8 @@
 import logging
 import subprocess
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -21,13 +23,12 @@ class VirtManagerInstaller(BaseInstaller):
 
         if self.distro == "fedora":
             return self._install_fedora()
-        elif self.distro == "arch":
+        if self.distro == "arch":
             return self._install_arch()
-        elif self.distro == "debian":
+        if self.distro == "debian":
             return self._install_debian()
-        else:
-            logger.error("Unsupported distribution: %s", self.distro)
-            return False
+        logger.error("Unsupported distribution: %s", self.distro)
+        return False
 
     def _install_fedora(self) -> bool:
         """Install virtualization packages on Fedora."""
@@ -35,8 +36,8 @@ class VirtManagerInstaller(BaseInstaller):
 
         # Fedora uses dnf groups for virtualization
         try:
-            subprocess.run(
-                ["sudo", "dnf", "install", "-y", "@virtualization"],
+            run_privileged(
+                ["dnf", "install", "-y", "@virtualization"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -47,8 +48,8 @@ class VirtManagerInstaller(BaseInstaller):
 
         # Install optional packages
         try:
-            subprocess.run(
-                ["sudo", "dnf", "group", "install", "-y", "--with-optional", "virtualization"],
+            run_privileged(
+                ["dnf", "group", "install", "-y", "--with-optional", "virtualization"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -119,8 +120,8 @@ class VirtManagerInstaller(BaseInstaller):
 
             if result.returncode != 0:
                 logger.info("Creating libvirt group")
-                subprocess.run(
-                    ["sudo", "groupadd", "libvirt"],
+                run_privileged(
+                    ["groupadd", "libvirt"],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -134,8 +135,8 @@ class VirtManagerInstaller(BaseInstaller):
             import getpass
 
             username = getpass.getuser()
-            subprocess.run(
-                ["sudo", "usermod", "-aG", "libvirt", username],
+            run_privileged(
+                ["usermod", "-aG", "libvirt", username],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -148,8 +149,8 @@ class VirtManagerInstaller(BaseInstaller):
         # Enable and start libvirtd service
         logger.info("Enabling libvirtd service...")
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "enable", "--now", "libvirtd"],
+            run_privileged(
+                ["systemctl", "enable", "--now", "libvirtd"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -163,8 +164,8 @@ class VirtManagerInstaller(BaseInstaller):
         logger.info("Configuring default libvirt network...")
         try:
             # Check if default network exists
-            result = subprocess.run(
-                ["sudo", "virsh", "net-list", "--all"],
+            result = run_privileged(
+                ["virsh", "net-list", "--all"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -172,14 +173,14 @@ class VirtManagerInstaller(BaseInstaller):
 
             if "default" in result.stdout:
                 # Start and autostart default network
-                subprocess.run(
-                    ["sudo", "virsh", "net-start", "default"],
+                run_privileged(
+                    ["virsh", "net-start", "default"],
                     check=False,
                     capture_output=True,
                     text=True,
                 )
-                subprocess.run(
-                    ["sudo", "virsh", "net-autostart", "default"],
+                run_privileged(
+                    ["virsh", "net-autostart", "default"],
                     check=True,
                     capture_output=True,
                     text=True,

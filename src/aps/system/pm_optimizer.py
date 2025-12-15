@@ -1,8 +1,9 @@
 """Package manager optimization module."""
 
 import logging
-import subprocess
 from pathlib import Path
+
+from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
@@ -103,9 +104,9 @@ Acquire::https::Timeout "15";
 """
 
         try:
-            result = subprocess.run(
-                ["sudo", "tee", str(apt_conf)],
-                input=apt_config,
+            result = run_privileged(
+                ["tee", str(apt_conf)],
+                stdin_input=apt_config,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -138,8 +139,8 @@ Acquire::https::Timeout "15";
             return True
 
         try:
-            result = subprocess.run(
-                ["sudo", "cp", str(config_file), str(backup_file)],
+            result = run_privileged(
+                ["cp", str(config_file), str(backup_file)],
                 capture_output=True,
                 check=False,
             )
@@ -188,9 +189,9 @@ Acquire::https::Timeout "15";
                 logger.debug("Updating %s from %s to %s", key, current_value, value)
                 new_content = re.sub(pattern, setting_line, content, flags=re.MULTILINE)
 
-                result = subprocess.run(
-                    ["sudo", "tee", str(config_file)],
-                    input=new_content,
+                result = run_privileged(
+                    ["tee", str(config_file)],
+                    stdin_input=new_content,
                     capture_output=True,
                     text=True,
                     check=False,
@@ -205,9 +206,9 @@ Acquire::https::Timeout "15";
 
             # Add new setting
             logger.debug("Adding setting: %s", setting_line)
-            result = subprocess.run(
-                ["sudo", "tee", "-a", str(config_file)],
-                input=f"\n{setting_line}\n",
+            result = run_privileged(
+                ["tee", "-a", str(config_file)],
+                stdin_input=f"\n{setting_line}\n",
                 capture_output=True,
                 text=True,
                 check=False,
@@ -247,9 +248,9 @@ Acquire::https::Timeout "15";
                 logger.debug("Adding Color option to pacman")
                 new_content = content + "\nColor\n"
 
-            result = subprocess.run(
-                ["sudo", "tee", str(pacman_conf)],
-                input=new_content,
+            result = run_privileged(
+                ["tee", str(pacman_conf)],
+                stdin_input=new_content,
                 capture_output=True,
                 text=True,
                 check=False,

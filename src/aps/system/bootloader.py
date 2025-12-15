@@ -5,6 +5,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseSystemConfig
 
 logger = logging.getLogger(__name__)
@@ -77,13 +79,13 @@ class BootloaderConfig(BaseSystemConfig):
                     new_content = content + f"\nGRUB_TIMEOUT={timeout}\n"
 
             # Write updated content
-            with subprocess.Popen(
-                ["sudo", "tee", str(self.grub_file)],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
+            run_privileged(
+                ["tee", str(self.grub_file)],
+                stdin_input=new_content,
+                capture_output=True,
                 text=True,
-            ) as proc:
-                proc.communicate(input=new_content)
+                check=False,
+            )
 
             # Verify the change
             updated_content = self.grub_file.read_text()
@@ -124,8 +126,8 @@ class BootloaderConfig(BaseSystemConfig):
             logger.error("GRUB configuration file not found: %s", self.grub_file)
             return False
 
-        result = subprocess.run(
-            ["sudo", "cp", "-p", str(self.grub_file), str(backup_file)],
+        result = run_privileged(
+            ["cp", "-p", str(self.grub_file), str(backup_file)],
             capture_output=True,
             text=True,
             check=False,
@@ -148,11 +150,11 @@ class BootloaderConfig(BaseSystemConfig):
 
         if self.distro == "fedora":
             # Fedora uses grub2-mkconfig and /boot/grub2/grub.cfg
-            cmd = ["sudo", "grub2-mkconfig", "-o", "/boot/grub2/grub.cfg"]
+            cmd = ["grub2-mkconfig", "-o", "/boot/grub2/grub.cfg"]
             check_cmd = "grub2-mkconfig"
         elif self.distro == "arch":
             # Arch uses grub-mkconfig and /boot/grub/grub.cfg
-            cmd = ["sudo", "grub-mkconfig", "-o", "/boot/grub/grub.cfg"]
+            cmd = ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"]
             check_cmd = "grub-mkconfig"
         elif self.distro == "debian":
             # Debian/Ubuntu uses update-grub (wrapper for grub-mkconfig)
@@ -161,13 +163,13 @@ class BootloaderConfig(BaseSystemConfig):
                 ["which", "update-grub"], capture_output=True, check=False
             )
             if check_result.returncode == 0:
-                cmd = ["sudo", "update-grub"]
+                cmd = ["update-grub"]
             else:
                 check_result = subprocess.run(
                     ["which", "grub-mkconfig"], capture_output=True, check=False
                 )
                 if check_result.returncode == 0:
-                    cmd = ["sudo", "grub-mkconfig", "-o", "/boot/grub/grub.cfg"]
+                    cmd = ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"]
                 else:
                     logger.error("Neither update-grub nor grub-mkconfig found")
                     return False
@@ -184,7 +186,7 @@ class BootloaderConfig(BaseSystemConfig):
                 return False
 
         # Run the GRUB config regeneration command
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = run_privileged(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             logger.error("Failed to regenerate GRUB configuration")

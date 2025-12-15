@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
@@ -67,8 +68,8 @@ class ThinkfanInstaller(BaseInstaller):
             return False
 
         try:
-            subprocess.run(
-                ["sudo", "cp", str(source_conf), str(conf_file)],
+            run_privileged(
+                ["cp", str(source_conf), str(conf_file)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -91,14 +92,14 @@ class ThinkfanInstaller(BaseInstaller):
 
         # Reload thinkpad_acpi module
         try:
-            subprocess.run(
-                ["sudo", "modprobe", "-rv", "thinkpad_acpi"],
+            run_privileged(
+                ["modprobe", "-rv", "thinkpad_acpi"],
                 check=False,
                 capture_output=True,
                 text=True,
             )
-            subprocess.run(
-                ["sudo", "modprobe", "-v", "thinkpad_acpi"],
+            run_privileged(
+                ["modprobe", "-v", "thinkpad_acpi"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -112,8 +113,8 @@ class ThinkfanInstaller(BaseInstaller):
 
         for service in services:
             try:
-                subprocess.run(
-                    ["sudo", "systemctl", "enable", "--now", service],
+                run_privileged(
+                    ["systemctl", "enable", "--now", service],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -148,8 +149,8 @@ WantedBy=sleep.target
 
         # Enable sleep hack service
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "enable", "thinkfan-sleep-hack"],
+            run_privileged(
+                ["systemctl", "enable", "thinkfan-sleep-hack"],
                 check=True,
                 capture_output=True,
                 text=True,

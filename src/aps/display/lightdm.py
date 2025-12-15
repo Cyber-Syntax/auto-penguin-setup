@@ -2,10 +2,10 @@
 
 import logging
 import re
-import subprocess
 from pathlib import Path
 
 from aps.display.base import BaseDisplayManager
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,8 @@ class LightDMConfig(BaseDisplayManager):
             return False
 
         # Disable GDM if active
-        result = subprocess.run(
-            ["sudo", "systemctl", "disable", "--now", "gdm"],
+        result = run_privileged(
+            ["systemctl", "disable", "--now", "gdm"],
             capture_output=True,
             text=True,
             check=False,
@@ -53,8 +53,8 @@ class LightDMConfig(BaseDisplayManager):
             logger.warning("Failed to disable GDM (it might not be installed)")
 
         # Enable LightDM
-        result = subprocess.run(
-            ["sudo", "systemctl", "enable", "--now", "lightdm"],
+        result = run_privileged(
+            ["systemctl", "enable", "--now", "lightdm"],
             capture_output=True,
             text=True,
             check=False,
@@ -92,8 +92,8 @@ class LightDMConfig(BaseDisplayManager):
         # Create backup
         backup_file = Path(str(config_file) + ".bak")
         if not backup_file.exists():
-            result = subprocess.run(
-                ["sudo", "cp", str(config_file), str(backup_file)],
+            result = run_privileged(
+                ["cp", str(config_file), str(backup_file)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -103,8 +103,8 @@ class LightDMConfig(BaseDisplayManager):
                 return False
 
         # Read current config
-        result = subprocess.run(
-            ["sudo", "cat", str(config_file)],
+        result = run_privileged(
+            ["cat", str(config_file)],
             capture_output=True,
             text=True,
             check=False,
@@ -129,9 +129,9 @@ class LightDMConfig(BaseDisplayManager):
             )
 
         # Write new configuration
-        result = subprocess.run(
-            ["sudo", "tee", str(config_file)],
-            input=new_content,
+        result = run_privileged(
+            ["tee", str(config_file)],
+            stdin_input=new_content,
             capture_output=True,
             text=True,
             check=False,
@@ -181,7 +181,7 @@ class LightDMConfig(BaseDisplayManager):
                     new_lines.append(f"autologin-user={username}")
                     autologin_user_modified = True
                     continue
-                elif re.match(r"^#?autologin-session=", line):
+                if re.match(r"^#?autologin-session=", line):
                     new_lines.append(f"autologin-session={session}")
                     autologin_session_modified = True
                     continue

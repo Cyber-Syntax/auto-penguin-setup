@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseInstaller
 
 logger = logging.getLogger(__name__)
@@ -70,10 +72,9 @@ class AutoCPUFreqInstaller(BaseInstaller):
 
             try:
                 # Pipe "I" into installer to automatically select Install option
-                subprocess.run(
-                    ["sudo", str(installer_script)],
-                    input="I\n",
-                    cwd=installer_dir,
+                run_privileged(
+                    [str(installer_script)],
+                    stdin_input="I\n",
                     check=True,
                     text=True,
                 )

@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
@@ -35,8 +36,8 @@ class TLPInstaller(BaseInstaller):
         tlp_dir = Path("/etc/tlp.d")
         if not tlp_dir.exists():
             try:
-                subprocess.run(
-                    ["sudo", "mkdir", "-p", str(tlp_dir)],
+                run_privileged(
+                    ["mkdir", "-p", str(tlp_dir)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -51,8 +52,8 @@ class TLPInstaller(BaseInstaller):
 
         if conf_dest.exists() and not backup_file.exists():
             try:
-                subprocess.run(
-                    ["sudo", "cp", str(conf_dest), str(backup_file)],
+                run_privileged(
+                    ["cp", str(conf_dest), str(backup_file)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -68,8 +69,8 @@ class TLPInstaller(BaseInstaller):
             return False
 
         try:
-            subprocess.run(
-                ["sudo", "cp", str(conf_src), str(conf_dest)],
+            run_privileged(
+                ["cp", str(conf_src), str(conf_dest)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -90,8 +91,8 @@ class TLPInstaller(BaseInstaller):
             service_file = Path(f"/usr/lib/systemd/system/{service}.service")
             if service_file.exists():
                 try:
-                    subprocess.run(
-                        ["sudo", "systemctl", "enable", "--now", service],
+                    run_privileged(
+                        ["systemctl", "enable", "--now", service],
                         check=True,
                         capture_output=True,
                         text=True,
@@ -106,8 +107,8 @@ class TLPInstaller(BaseInstaller):
         # Mask rfkill services to allow TLP to handle radios
         for rfkill_service in ["systemd-rfkill.service", "systemd-rfkill.socket"]:
             try:
-                subprocess.run(
-                    ["sudo", "systemctl", "mask", rfkill_service],
+                run_privileged(
+                    ["systemctl", "mask", rfkill_service],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -128,8 +129,8 @@ class TLPInstaller(BaseInstaller):
         # Enable TLP radio device handling if available
         if shutil.which("tlp-rdw"):
             try:
-                subprocess.run(
-                    ["sudo", "tlp-rdw", "enable"],
+                run_privileged(
+                    ["tlp-rdw", "enable"],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -173,8 +174,8 @@ class TLPInstaller(BaseInstaller):
             logger.info("Disabling conflicting services: %s", ", ".join(services_to_disable))
             for service in services_to_disable:
                 try:
-                    subprocess.run(
-                        ["sudo", "systemctl", "disable", "--now", service],
+                    run_privileged(
+                        ["systemctl", "disable", "--now", service],
                         check=False,
                         capture_output=True,
                         text=True,

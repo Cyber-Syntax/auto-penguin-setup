@@ -53,7 +53,8 @@ class PackageMapping:
             # Format: COPR:user/repo or PPA:user/repo
             match = re.match(r"^(?:COPR|PPA):([^:]+)", self.source)
             return match.group(1) if match else None
-        elif self.is_flatpak:
+
+        if self.is_flatpak:
             # Format: flatpak:remote_name
             match = re.match(r"^flatpak:(.+)", self.source)
             return match.group(1) if match else None

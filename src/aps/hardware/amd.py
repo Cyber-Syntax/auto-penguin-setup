@@ -4,6 +4,7 @@ import logging
 import subprocess
 
 from aps.hardware.base import BaseHardwareConfig
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,8 @@ class AMDConfig(BaseHardwareConfig):
         # Unload k10temp if loaded
         if self._is_k10temp_loaded():
             self.logger.info("k10temp module is currently loaded, unloading...")
-            result = subprocess.run(
-                ["sudo", "modprobe", "-r", "k10temp"],
+            result = run_privileged(
+                ["modprobe", "-r", "k10temp"],
                 check=False,
             )
             if result.returncode != 0:
@@ -82,13 +83,12 @@ class AMDConfig(BaseHardwareConfig):
         try:
             if self.distro == "fedora":
                 return self._setup_zenpower_fedora()
-            elif self.distro == "arch":
+            if self.distro == "arch":
                 return self._setup_zenpower_arch()
-            elif self.distro == "debian":
+            if self.distro == "debian":
                 return self._setup_zenpower_debian()
-            else:
-                self.logger.error("Unsupported distribution: %s", self.distro)
-                return False
+            self.logger.error("Unsupported distribution: %s", self.distro)
+            return False
         except Exception as e:
             self.logger.error("Failed to setup zenpower: %s", e)
             return False
@@ -100,8 +100,8 @@ class AMDConfig(BaseHardwareConfig):
             True if successful
         """
         self.logger.debug("Enabling zenpower3 COPR repository...")
-        result = subprocess.run(
-            ["sudo", "dnf", "copr", "enable", "shdwchn10/zenpower3", "-y"],
+        result = run_privileged(
+            ["dnf", "copr", "enable", "shdwchn10/zenpower3", "-y"],
             check=False,
         )
         if result.returncode != 0:
@@ -109,8 +109,8 @@ class AMDConfig(BaseHardwareConfig):
             return False
 
         self.logger.debug("Installing zenpower3 and zenmonitor3...")
-        result = subprocess.run(
-            ["sudo", "dnf", "install", "-y", "zenpower3", "zenmonitor3"],
+        result = run_privileged(
+            ["dnf", "install", "-y", "zenpower3", "zenmonitor3"],
             check=False,
         )
         if result.returncode != 0:
@@ -175,8 +175,8 @@ class AMDConfig(BaseHardwareConfig):
             True if module loads successfully
         """
         self.logger.debug("Loading zenpower module...")
-        result = subprocess.run(
-            ["sudo", "modprobe", "zenpower3"],
+        result = run_privileged(
+            ["modprobe", "zenpower3"],
             check=False,
         )
         if result.returncode != 0:

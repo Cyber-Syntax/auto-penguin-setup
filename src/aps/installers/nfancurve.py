@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
@@ -27,8 +28,8 @@ class NfancurveInstaller(BaseInstaller):
         if not opt_nfancurve.exists():
             logger.debug("Creating /opt/nfancurve directory...")
             try:
-                subprocess.run(
-                    ["sudo", "mkdir", "-p", str(opt_nfancurve)],
+                run_privileged(
+                    ["mkdir", "-p", str(opt_nfancurve)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -48,8 +49,8 @@ class NfancurveInstaller(BaseInstaller):
                 return False
 
             try:
-                subprocess.run(
-                    ["sudo", "cp", str(script_src), str(script_dest)],
+                run_privileged(
+                    ["cp", str(script_src), str(script_dest)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -71,8 +72,8 @@ class NfancurveInstaller(BaseInstaller):
                 return False
 
             try:
-                subprocess.run(
-                    ["sudo", "cp", str(config_src), str(config_dest)],
+                run_privileged(
+                    ["cp", str(config_src), str(config_dest)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -92,8 +93,8 @@ class NfancurveInstaller(BaseInstaller):
             return False
 
         try:
-            subprocess.run(
-                ["sudo", "cp", str(service_src), str(service_dest)],
+            run_privileged(
+                ["cp", str(service_src), str(service_dest)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -106,14 +107,14 @@ class NfancurveInstaller(BaseInstaller):
         # Enable and start service
         logger.debug("Enabling nfancurve service...")
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "daemon-reload"],
+            run_privileged(
+                ["systemctl", "daemon-reload"],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-            subprocess.run(
-                ["sudo", "systemctl", "enable", "--now", "nfancurve.service"],
+            run_privileged(
+                ["systemctl", "enable", "--now", "nfancurve.service"],
                 check=True,
                 capture_output=True,
                 text=True,

@@ -3,13 +3,10 @@
 import logging
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
-
-if TYPE_CHECKING:
-    pass
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +24,12 @@ class VSCodeInstaller(BaseInstaller):
 
         if self.distro in ("fedora", "rhel", "nobara"):
             return self._install_fedora()
-        elif self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
+        if self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
             return self._install_arch()
-        elif self.distro in ("debian", "ubuntu", "linuxmint", "pop"):
+        if self.distro in ("debian", "ubuntu", "linuxmint", "pop"):
             return self._install_debian()
-        else:
-            logger.error("Unsupported distribution: %s", self.distro)
-            return False
+        logger.error("Unsupported distribution: %s", self.distro)
+        return False
 
     def _install_fedora(self) -> bool:
         """Install VS Code on Fedora-based distributions.
@@ -139,8 +135,8 @@ class VSCodeInstaller(BaseInstaller):
             bool: True if successful, False otherwise.
         """
         try:
-            result = subprocess.run(
-                ["sudo", "rpm", "--import", "https://packages.microsoft.com/keys/microsoft.asc"],
+            result = run_privileged(
+                ["rpm", "--import", "https://packages.microsoft.com/keys/microsoft.asc"],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -170,9 +166,9 @@ gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
 
         try:
-            result = subprocess.run(
-                ["sudo", "tee", str(repo_file)],
-                input=repo_content,
+            result = run_privileged(
+                ["tee", str(repo_file)],
+                stdin_input=repo_content,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -222,9 +218,9 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
             if gpg_process.returncode != 0:
                 return False
 
-            result = subprocess.run(
-                ["sudo", "tee", "/usr/share/keyrings/packages.microsoft.gpg"],
-                input=gpg_output,
+            result = run_privileged(
+                ["tee", "/usr/share/keyrings/packages.microsoft.gpg"],
+                stdin_input=gpg_output.decode() if isinstance(gpg_output, bytes) else gpg_output,
                 capture_output=True,
                 check=False,
             )
@@ -232,9 +228,8 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
             if result.returncode != 0:
                 return False
 
-            result = subprocess.run(
+            result = run_privileged(
                 [
-                    "sudo",
                     "install",
                     "-D",
                     "-o",
@@ -268,9 +263,9 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
         )
 
         try:
-            result = subprocess.run(
-                ["sudo", "tee", "/etc/apt/sources.list.d/vscode.list"],
-                input=repo_content,
+            result = run_privileged(
+                ["tee", "/etc/apt/sources.list.d/vscode.list"],
+                stdin_input=repo_content,
                 capture_output=True,
                 text=True,
                 check=False,

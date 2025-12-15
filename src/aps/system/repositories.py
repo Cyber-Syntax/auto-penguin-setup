@@ -3,6 +3,8 @@
 import logging
 import subprocess
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseSystemConfig
 
 logger = logging.getLogger(__name__)
@@ -17,13 +19,12 @@ class RepositoryConfig(BaseSystemConfig):
 
         if self.distro == "fedora":
             return self._enable_rpm_fusion()
-        elif self.distro == "arch":
+        if self.distro == "arch":
             return self._enable_arch_extras()
-        elif self.distro == "debian":
+        if self.distro == "debian":
             return self._enable_debian_nonfree()
-        else:
-            logger.warning("Unsupported distribution: %s", self.distro)
-            return False
+        logger.warning("Unsupported distribution: %s", self.distro)
+        return False
 
     def _enable_rpm_fusion(self) -> bool:
         """Enable RPM Fusion repositories on Fedora."""
@@ -44,8 +45,8 @@ class RepositoryConfig(BaseSystemConfig):
         free_repo = f"https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{fedora_version}.noarch.rpm"
         nonfree_repo = f"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{fedora_version}.noarch.rpm"
 
-        result = subprocess.run(
-            ["sudo", "dnf", "install", "-y", free_repo, nonfree_repo],
+        result = run_privileged(
+            ["dnf", "install", "-y", free_repo, nonfree_repo],
             capture_output=True,
             text=True,
             check=False,
@@ -71,8 +72,8 @@ class RepositoryConfig(BaseSystemConfig):
         success = True
 
         # Add contrib repository
-        result = subprocess.run(
-            ["sudo", "add-apt-repository", "-y", "contrib"],
+        result = run_privileged(
+            ["add-apt-repository", "-y", "contrib"],
             capture_output=True,
             text=True,
             check=False,
@@ -82,8 +83,8 @@ class RepositoryConfig(BaseSystemConfig):
             success = False
 
         # Add non-free repository
-        result = subprocess.run(
-            ["sudo", "add-apt-repository", "-y", "non-free"],
+        result = run_privileged(
+            ["add-apt-repository", "-y", "non-free"],
             capture_output=True,
             text=True,
             check=False,
@@ -93,8 +94,8 @@ class RepositoryConfig(BaseSystemConfig):
             success = False
 
         # Update package lists
-        result = subprocess.run(
-            ["sudo", "apt-get", "update"],
+        result = run_privileged(
+            ["apt-get", "update"],
             capture_output=True,
             text=True,
             check=False,

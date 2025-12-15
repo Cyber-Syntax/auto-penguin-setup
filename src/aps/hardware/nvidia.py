@@ -5,6 +5,7 @@ import os
 import subprocess
 
 from aps.hardware.base import BaseHardwareConfig
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +51,12 @@ class NvidiaConfig(BaseHardwareConfig):
 
             if self.distro == "fedora":
                 return self._setup_cuda_fedora(arch)
-            elif self.distro == "arch":
+            if self.distro == "arch":
                 return self._setup_cuda_arch()
-            elif self.distro == "debian":
+            if self.distro == "debian":
                 return self._setup_cuda_debian()
-            else:
-                self.logger.error("Unsupported distribution: %s", self.distro)
-                return False
+            self.logger.error("Unsupported distribution: %s", self.distro)
+            return False
         except Exception as e:
             self.logger.error("Failed to setup CUDA: %s", e)
             return False
@@ -84,21 +84,23 @@ class NvidiaConfig(BaseHardwareConfig):
         )
 
         self.logger.debug("Adding CUDA repository for Fedora %s...", version)
-        result = subprocess.run(
-            ["sudo", "dnf", "config-manager", "addrepo", f"--from-repofile={cuda_repo}"],
+        result = run_privileged(
+            ["dnf", "config-manager", "addrepo", f"--from-repofile={cuda_repo}"],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to add CUDA repository")
             return False
 
         self.logger.debug("Cleaning DNF cache...")
-        subprocess.run(["sudo", "dnf", "clean", "all"], check=False)
+        run_privileged(["dnf", "clean", "all"], check=False, capture_output=False)
 
         self.logger.debug("Disabling nvidia-driver module...")
-        subprocess.run(
-            ["sudo", "dnf", "module", "disable", "-y", "nvidia-driver"],
+        run_privileged(
+            ["dnf", "module", "disable", "-y", "nvidia-driver"],
             check=False,
+            capture_output=False,
         )
 
         self.logger.debug("Setting package exclusions...")
@@ -106,21 +108,22 @@ class NvidiaConfig(BaseHardwareConfig):
             "nvidia-driver,nvidia-modprobe,nvidia-persistenced,"
             "nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig"
         )
-        subprocess.run(
+        run_privileged(
             [
-                "sudo",
                 "dnf",
                 "config-manager",
                 "setopt",
                 f"cuda-fedora{version}-{arch}.exclude={exclude_pkgs}",
             ],
             check=False,
+            capture_output=False,
         )
 
         self.logger.debug("Installing CUDA toolkit...")
-        result = subprocess.run(
-            ["sudo", "dnf", "install", "-y", "cuda-toolkit"],
+        result = run_privileged(
+            ["dnf", "install", "-y", "cuda-toolkit"],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install CUDA toolkit")
@@ -135,9 +138,10 @@ class NvidiaConfig(BaseHardwareConfig):
             True if successful
         """
         self.logger.debug("Installing CUDA from official repositories...")
-        result = subprocess.run(
-            ["sudo", "pacman", "-S", "--noconfirm", "cuda", "cuda-tools"],
+        result = run_privileged(
+            ["pacman", "-S", "--noconfirm", "cuda", "cuda-tools"],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install CUDA toolkit")
@@ -169,9 +173,10 @@ class NvidiaConfig(BaseHardwareConfig):
                 return False
 
             # Install keyring
-            result = subprocess.run(
-                ["sudo", "dpkg", "-i", "cuda-keyring_1.1-1_all.deb"],
+            result = run_privileged(
+                ["dpkg", "-i", "cuda-keyring_1.1-1_all.deb"],
                 check=False,
+                capture_output=False,
             )
             subprocess.run(["rm", "-f", "cuda-keyring_1.1-1_all.deb"], check=False)
 
@@ -179,12 +184,13 @@ class NvidiaConfig(BaseHardwareConfig):
                 self.logger.error("Failed to install CUDA keyring")
                 return False
 
-            subprocess.run(["sudo", "apt-get", "update"], check=False)
+            run_privileged(["apt-get", "update"], check=False, capture_output=False)
 
         self.logger.debug("Installing CUDA toolkit...")
-        result = subprocess.run(
-            ["sudo", "apt-get", "install", "-y", "cuda-toolkit"],
+        result = run_privileged(
+            ["apt-get", "install", "-y", "cuda-toolkit"],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install CUDA toolkit")
@@ -228,13 +234,12 @@ class NvidiaConfig(BaseHardwareConfig):
         try:
             if self.distro == "fedora":
                 return self._switch_to_open_fedora()
-            elif self.distro == "arch":
+            if self.distro == "arch":
                 return self._switch_to_open_arch()
-            elif self.distro == "debian":
+            if self.distro == "debian":
                 return self._switch_to_open_debian()
-            else:
-                self.logger.error("Unsupported distribution: %s", self.distro)
-                return False
+            self.logger.error("Unsupported distribution: %s", self.distro)
+            return False
         except Exception as e:
             self.logger.error("Failed to switch to open driver: %s", e)
             return False
@@ -269,9 +274,10 @@ class NvidiaConfig(BaseHardwareConfig):
                 return False
 
         self.logger.debug("Disabling RPMFusion non-free NVIDIA driver repository...")
-        subprocess.run(
-            ["sudo", "dnf", "--disablerepo", "rpmfusion-nonfree-nvidia-driver"],
+        run_privileged(
+            ["dnf", "--disablerepo", "rpmfusion-nonfree-nvidia-driver"],
             check=False,
+            capture_output=False,
         )
 
         self._log_open_driver_success_fedora()
@@ -284,9 +290,10 @@ class NvidiaConfig(BaseHardwareConfig):
             True if successful
         """
         self.logger.info("Installing NVIDIA open source drivers for Arch...")
-        result = subprocess.run(
-            ["sudo", "pacman", "-S", "--noconfirm", "nvidia-open-dkms", "nvidia-utils"],
+        result = run_privileged(
+            ["pacman", "-S", "--noconfirm", "nvidia-open-dkms", "nvidia-utils"],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install NVIDIA open drivers")
@@ -309,21 +316,22 @@ class NvidiaConfig(BaseHardwareConfig):
                 sources = f.read()
                 if "contrib" not in sources:
                     self.logger.warning("Enabling contrib and non-free repositories...")
-                    subprocess.run(
-                        ["sudo", "add-apt-repository", "-y", "contrib"],
+                    run_privileged(
+                        ["add-apt-repository", "-y", "contrib"],
                         check=False,
+                        capture_output=False,
                     )
-                    subprocess.run(
-                        ["sudo", "add-apt-repository", "-y", "non-free"],
+                    run_privileged(
+                        ["add-apt-repository", "-y", "non-free"],
                         check=False,
+                        capture_output=False,
                     )
-                    subprocess.run(["sudo", "apt-get", "update"], check=False)
+                    run_privileged(["apt-get", "update"], check=False, capture_output=False)
         except FileNotFoundError:
             pass
 
-        result = subprocess.run(
+        result = run_privileged(
             [
-                "sudo",
                 "apt-get",
                 "install",
                 "-y",
@@ -380,9 +388,10 @@ class NvidiaConfig(BaseHardwareConfig):
         ]
 
         self.logger.debug("Installing VA-API related packages...")
-        result = subprocess.run(
-            ["sudo", "dnf", "install", "-y", *packages],
+        result = run_privileged(
+            ["dnf", "install", "-y", *packages],
             check=False,
+            capture_output=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install VA-API packages")

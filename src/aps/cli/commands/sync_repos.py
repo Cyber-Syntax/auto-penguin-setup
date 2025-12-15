@@ -9,6 +9,7 @@ from aps.core.config import APSConfigParser, ensure_config_files
 from aps.core.distro import detect_distro
 from aps.core.package_manager import PackageManagerError, get_package_manager
 from aps.core.tracking import PackageRecord, PackageTracker
+from aps.utils.privilege import ensure_sudo
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,9 @@ def _extract_package_name(config_value: str) -> str:
 
 def cmd_sync_repos(args: Namespace) -> None:
     """Handle 'aps sync-repos' command."""
+    # Pre-authenticate sudo for privileged operations (may need to reinstall packages)
+    ensure_sudo()
+
     distro_info = detect_distro()
     pm = get_package_manager(distro_info)
     tracker = PackageTracker(get_tracking_db_path())

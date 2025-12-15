@@ -1,7 +1,8 @@
 """Multimedia package configuration."""
 
 import logging
-import subprocess
+
+from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
@@ -20,8 +21,8 @@ class MultimediaConfig(BaseSystemConfig):
         logger.info("Checking for ffmpeg-free package...")
 
         # Check if ffmpeg-free is installed
-        check_result = subprocess.run(
-            ["sudo", "dnf", "list", "installed", "ffmpeg-free"],
+        check_result = run_privileged(
+            ["dnf", "list", "installed", "ffmpeg-free"],
             capture_output=True,
             text=True,
             check=False,
@@ -33,8 +34,8 @@ class MultimediaConfig(BaseSystemConfig):
 
         logger.info("Swapping ffmpeg-free with ffmpeg...")
 
-        result = subprocess.run(
-            ["sudo", "dnf", "swap", "ffmpeg-free", "ffmpeg", "--allowerasing", "-y"],
+        result = run_privileged(
+            ["dnf", "swap", "ffmpeg-free", "ffmpeg", "--allowerasing", "-y"],
             capture_output=True,
             text=True,
             check=False,

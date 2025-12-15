@@ -5,6 +5,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseSystemConfig
 
 logger = logging.getLogger(__name__)
@@ -41,9 +43,8 @@ class SudoersConfig(BaseSystemConfig):
         if errors == 0:
             logger.info("All sudoers configurations completed successfully")
             return True
-        else:
-            logger.warning("Sudoers setup completed with %d error(s)", errors)
-            return False
+        logger.warning("Sudoers setup completed with %d error(s)", errors)
+        return False
 
     def configure_borgbackup(self) -> bool:
         """Configure borgbackup to run without password prompt.
@@ -138,14 +139,13 @@ Defaults env_reset,timestamp_timeout=20
             new_content = content.rstrip() + "\n" + config
 
             # Write updated content
-            with subprocess.Popen(
-                ["sudo", "tee", str(self.sudoers_file)],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+            run_privileged(
+                ["tee", str(self.sudoers_file)],
+                stdin_input=new_content,
+                capture_output=True,
                 text=True,
-            ) as proc:
-                proc.communicate(input=new_content)
+                check=False,
+            )
 
             # Validate sudoers file syntax
             if not self._validate_sudoers():
@@ -171,8 +171,8 @@ Defaults env_reset,timestamp_timeout=20
 
         logger.info("Creating backup of sudoers file...")
 
-        result = subprocess.run(
-            ["sudo", "cp", "-p", str(self.sudoers_file), str(backup_file)],
+        result = run_privileged(
+            ["cp", "-p", str(self.sudoers_file), str(backup_file)],
             capture_output=True,
             text=True,
             check=False,
@@ -191,8 +191,8 @@ Defaults env_reset,timestamp_timeout=20
         Returns:
             bool: True if validation passed, False otherwise.
         """
-        result = subprocess.run(
-            ["sudo", "visudo", "-c", "-f", str(self.sudoers_file)],
+        result = run_privileged(
+            ["visudo", "-c", "-f", str(self.sudoers_file)],
             capture_output=True,
             text=True,
             check=False,
@@ -207,8 +207,8 @@ Defaults env_reset,timestamp_timeout=20
             bool: True if restore was successful, False otherwise.
         """
         # Find latest backup
-        result = subprocess.run(
-            ["sudo", "ls", "-t", f"{self.sudoers_file}.bak.*"],
+        result = run_privileged(
+            ["ls", "-t", f"{self.sudoers_file}.bak.*"],
             capture_output=True,
             text=True,
             check=False,
@@ -221,8 +221,8 @@ Defaults env_reset,timestamp_timeout=20
         latest_backup = result.stdout.strip().split("\n")[0]
 
         # Restore backup
-        restore_result = subprocess.run(
-            ["sudo", "cp", latest_backup, str(self.sudoers_file)],
+        restore_result = run_privileged(
+            ["cp", latest_backup, str(self.sudoers_file)],
             capture_output=True,
             text=True,
             check=False,

@@ -6,6 +6,7 @@ import subprocess
 from abc import ABC, abstractmethod
 
 from aps.core.distro import DistroFamily, DistroInfo
+from aps.utils.privilege import run_privileged
 
 
 class PackageManagerError(Exception):
@@ -113,14 +114,14 @@ class DnfManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
-        cmd: list[str] = ["sudo", "dnf", "install"]
+        cmd: list[str] = ["dnf", "install"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
         logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
@@ -131,14 +132,14 @@ class DnfManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
-        cmd: list[str] = ["sudo", "dnf", "remove"]
+        cmd: list[str] = ["dnf", "remove"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
 
         logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
         if result.returncode == 0:
             logger.info("Successfully removed packages")
             return True, ""
@@ -167,8 +168,8 @@ class DnfManager(PackageManager):
         return result.returncode == 0
 
     def update_cache(self) -> bool:
-        cmd = ["sudo", "dnf", "makecache"]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["dnf", "makecache"]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:
@@ -255,12 +256,12 @@ class PacmanManager(PackageManager):
 
         # Install base-devel first
         logger.info("Installing base-devel...")
-        cmd = ["sudo", "pacman", "-S", "--needed"]
+        cmd = ["pacman", "-S", "--needed"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.append("base-devel")
 
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
         if result.returncode != 0:
             logger.error("Failed to install base-devel")
             return False
@@ -299,14 +300,14 @@ class PacmanManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
-        cmd = ["sudo", "pacman", "-S", "--needed"]
+        cmd = ["pacman", "-S", "--needed"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
         logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
@@ -365,14 +366,14 @@ class PacmanManager(PackageManager):
             Tuple of (success: bool, error_message: str)
             error_message is empty string if success
         """
-        cmd = ["sudo", "pacman", "-R"]
+        cmd = ["pacman", "-R"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
         logger = logging.getLogger(__name__)
         logger.debug("Executing command: %s", " ".join(cmd))
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = run_privileged(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True, ""
         logging.error("Failed to remove packages %s: %s", packages, result.stderr)
@@ -400,8 +401,8 @@ class PacmanManager(PackageManager):
         return result.returncode == 0
 
     def update_cache(self) -> bool:
-        cmd = ["sudo", "pacman", "-Sy"]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["pacman", "-Sy"]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:
@@ -443,7 +444,7 @@ class AptManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
-        cmd = ["sudo", "apt-get", "install"]
+        cmd = ["apt-get", "install"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
@@ -455,7 +456,7 @@ class AptManager(PackageManager):
 
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = subprocess.run(cmd, env=env, check=False)
+        result = run_privileged(cmd, env=env, check=False, capture_output=False)
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
@@ -466,7 +467,7 @@ class AptManager(PackageManager):
         logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
-        cmd = ["sudo", "apt-get", "remove"]
+        cmd = ["apt-get", "remove"]
         if assume_yes:
             cmd.append("-y")
         cmd.extend(packages)
@@ -477,7 +478,7 @@ class AptManager(PackageManager):
 
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = subprocess.run(cmd, env=env, check=False)
+        result = run_privileged(cmd, env=env, check=False, capture_output=False)
         if result.returncode == 0:
             logger.info("Successfully removed packages")
             return True, ""
@@ -506,8 +507,8 @@ class AptManager(PackageManager):
         return result.returncode == 0
 
     def update_cache(self) -> bool:
-        cmd = ["sudo", "apt-get", "update"]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["apt-get", "update"]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:

@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from aps.display.base import BaseDisplayManager
+from aps.utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +73,8 @@ class SDDMConfig(BaseDisplayManager):
             for dm in ["gdm", "lightdm", "lxdm", "xdm"]:
                 if f"{dm}.service" in result.stdout:
                     logger.info("Disabling current display manager: %s", dm)
-                    subprocess.run(
-                        ["sudo", "systemctl", "disable", "--now", f"{dm}.service"],
+                    run_privileged(
+                        ["systemctl", "disable", "--now", f"{dm}.service"],
                         capture_output=True,
                         text=True,
                         check=False,
@@ -81,8 +82,8 @@ class SDDMConfig(BaseDisplayManager):
 
         # Enable SDDM
         logger.info("Enabling SDDM service...")
-        result = subprocess.run(
-            ["sudo", "systemctl", "enable", "--now", "sddm.service"],
+        result = run_privileged(
+            ["systemctl", "enable", "--now", "sddm.service"],
             capture_output=True,
             text=True,
             check=False,
@@ -115,8 +116,8 @@ class SDDMConfig(BaseDisplayManager):
         # Create SDDM config if it doesn't exist
         if not config_file.exists() and not config_dir.exists():
             logger.info("Creating SDDM configuration directory...")
-            result = subprocess.run(
-                ["sudo", "mkdir", "-p", str(config_dir)],
+            result = run_privileged(
+                ["mkdir", "-p", str(config_dir)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -132,9 +133,9 @@ User={username}
 Session={session}
 """
 
-        result = subprocess.run(
-            ["sudo", "tee", str(autologin_conf)],
-            input=autologin_content,
+        result = run_privileged(
+            ["tee", str(autologin_conf)],
+            stdin_input=autologin_content,
             capture_output=True,
             text=True,
             check=False,

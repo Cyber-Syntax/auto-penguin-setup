@@ -11,6 +11,7 @@ from aps.core.package_manager import PacmanManager, get_package_manager
 from aps.core.package_mapper import PackageMapper, PackageMapping
 from aps.core.repo_manager import RepositoryManager
 from aps.core.tracking import PackageRecord, PackageTracker
+from aps.utils.privilege import ensure_sudo
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,9 @@ logger = logging.getLogger(__name__)
 def cmd_install(args: Namespace) -> None:
     """Handle 'aps install' command."""
     logger.debug("Starting aps install command")
+
+    # Pre-authenticate sudo for privileged operations
+    ensure_sudo()
 
     distro_info = detect_distro()
     logger.debug("Detected distro: %s %s", distro_info.name, distro_info.version)

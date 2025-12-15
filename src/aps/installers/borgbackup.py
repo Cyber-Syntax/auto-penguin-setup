@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from aps.utils.paths import resolve_config_file
+from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
@@ -27,8 +28,8 @@ class BorgbackupInstaller(BaseInstaller):
         if not opt_borg.exists():
             logger.debug("Creating /opt/borg directory...")
             try:
-                subprocess.run(
-                    ["sudo", "mkdir", "-p", str(opt_borg)],
+                run_privileged(
+                    ["mkdir", "-p", str(opt_borg)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -48,8 +49,8 @@ class BorgbackupInstaller(BaseInstaller):
                 return False
 
             try:
-                subprocess.run(
-                    ["sudo", "cp", str(script_src), str(script_dest)],
+                run_privileged(
+                    ["cp", str(script_src), str(script_dest)],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -81,14 +82,14 @@ class BorgbackupInstaller(BaseInstaller):
             return False
 
         try:
-            subprocess.run(
-                ["sudo", "cp", str(service_src), str(service_dest)],
+            run_privileged(
+                ["cp", str(service_src), str(service_dest)],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-            subprocess.run(
-                ["sudo", "cp", str(timer_src), str(timer_dest)],
+            run_privileged(
+                ["cp", str(timer_src), str(timer_dest)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -101,14 +102,14 @@ class BorgbackupInstaller(BaseInstaller):
         # Enable and start timer
         logger.debug("Enabling and starting borgbackup timer...")
         try:
-            subprocess.run(
-                ["sudo", "systemctl", "daemon-reload"],
+            run_privileged(
+                ["systemctl", "daemon-reload"],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-            subprocess.run(
-                ["sudo", "systemctl", "enable", "--now", "borgbackup-home.timer"],
+            run_privileged(
+                ["systemctl", "enable", "--now", "borgbackup-home.timer"],
                 check=True,
                 capture_output=True,
                 text=True,

@@ -3,6 +3,8 @@
 import logging
 import subprocess
 
+from aps.utils.privilege import run_privileged
+
 from .base import BaseSystemConfig
 
 logger = logging.getLogger(__name__)
@@ -62,9 +64,8 @@ class UFWConfig(BaseSystemConfig):
 
             if result.returncode == 0:
                 logger.info("Found firewalld, disabling it...")
-                subprocess.run(
-                    ["sudo", "systemctl", "disable", "--now", "firewalld"],
-                    capture_output=True,
+                run_privileged(
+                    ["systemctl", "disable", "--now", "firewalld"],
                     check=False,
                 )
 
@@ -83,8 +84,9 @@ class UFWConfig(BaseSystemConfig):
         logger.info("Disabling UFW if it's already enabled...")
 
         try:
-            result = subprocess.run(
-                ["sudo", "ufw", "disable"], capture_output=True, text=True, check=False
+            result = run_privileged(
+                ["ufw", "disable"],
+                check=False,
             )
 
             return result.returncode == 0
@@ -102,9 +104,8 @@ class UFWConfig(BaseSystemConfig):
         logger.info("Configuring SSH rules...")
 
         commands = [
-            ["sudo", "ufw", "limit", "22/tcp"],
+            ["ufw", "limit", "22/tcp"],
             [
-                "sudo",
                 "ufw",
                 "allow",
                 "from",
@@ -116,12 +117,12 @@ class UFWConfig(BaseSystemConfig):
                 "proto",
                 "tcp",
             ],
-            ["sudo", "ufw", "deny", "ssh"],
+            ["ufw", "deny", "ssh"],
         ]
 
         for cmd in commands:
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                result = run_privileged(cmd, check=False)
 
                 if result.returncode != 0:
                     logger.error("Failed to execute: %s", " ".join(cmd))
@@ -143,13 +144,13 @@ class UFWConfig(BaseSystemConfig):
         logger.info("Configuring UFW policies...")
 
         commands = [
-            ["sudo", "ufw", "default", "deny", "incoming"],
-            ["sudo", "ufw", "default", "allow", "outgoing"],
+            ["ufw", "default", "deny", "incoming"],
+            ["ufw", "default", "allow", "outgoing"],
         ]
 
         for cmd in commands:
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                result = run_privileged(cmd, check=False)
 
                 if result.returncode != 0:
                     logger.error("Failed to execute: %s", " ".join(cmd))
@@ -170,13 +171,13 @@ class UFWConfig(BaseSystemConfig):
         logger.info("Configuring Syncthing rules...")
 
         commands = [
-            ["sudo", "ufw", "allow", "22000/tcp", "comment", "Syncthing"],
-            ["sudo", "ufw", "allow", "21027/udp", "comment", "Syncthing"],
+            ["ufw", "allow", "22000/tcp", "comment", "Syncthing"],
+            ["ufw", "allow", "21027/udp", "comment", "Syncthing"],
         ]
 
         for cmd in commands:
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                result = run_privileged(cmd, check=False)
 
                 if result.returncode != 0:
                     logger.error("Failed to execute: %s", " ".join(cmd))
@@ -197,8 +198,9 @@ class UFWConfig(BaseSystemConfig):
         logger.info("Enabling UFW...")
 
         try:
-            result = subprocess.run(
-                ["sudo", "ufw", "enable"], capture_output=True, text=True, check=False
+            result = run_privileged(
+                ["ufw", "enable"],
+                check=False,
             )
 
             return result.returncode == 0

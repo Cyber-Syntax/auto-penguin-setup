@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.core.package_manager import PackageManager, PackageManagerError, PacmanManager
+from aps.utils.privilege import run_privileged
 
 if TYPE_CHECKING:
     from aps.core.package_mapper import PackageMapping
@@ -44,9 +45,9 @@ class RepositoryManager:
             raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
 
         self.logger.debug("Enabling COPR repository: %s", repo)
-        cmd = ["sudo", "dnf", "copr", "enable", "-y", repo]
+        cmd = ["dnf", "copr", "enable", "-y", repo]
         # Don't capture output - let it display to user
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
         if result.returncode == 0:
             self.logger.debug("Successfully enabled COPR repository: %s", repo)
         else:
@@ -66,8 +67,8 @@ class RepositoryManager:
         if self.distro.family != DistroFamily.FEDORA:
             raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
 
-        cmd = ["sudo", "dnf", "copr", "disable", "-y", repo]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["dnf", "copr", "disable", "-y", repo]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_copr_enabled(self, repo: str) -> bool:
@@ -181,9 +182,9 @@ class RepositoryManager:
             )
 
         self.logger.info("Adding PPA repository: %s", ppa)
-        cmd = ["sudo", "add-apt-repository", "-y", f"ppa:{ppa}"]
+        cmd = ["add-apt-repository", "-y", f"ppa:{ppa}"]
         # Don't capture output - let it display to user
-        result = subprocess.run(cmd, check=False)
+        result = run_privileged(cmd, check=False, capture_output=False)
 
         if result.returncode == 0:
             self.logger.info("Successfully added PPA repository: %s", ppa)
@@ -209,8 +210,8 @@ class RepositoryManager:
                 f"PPA is only available on Debian/Ubuntu, not {self.distro.name}"
             )
 
-        cmd = ["sudo", "add-apt-repository", "-y", "--remove", f"ppa:{ppa}"]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["add-apt-repository", "-y", "--remove", f"ppa:{ppa}"]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_flatpak_installed(self) -> bool:
@@ -272,8 +273,8 @@ class RepositoryManager:
         if remote_url is None:
             raise ValueError(f"remote_url is required for remote: {remote_name}")
 
-        cmd = ["sudo", "flatpak", "remote-add", "--if-not-exists", remote_name, remote_url]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["flatpak", "remote-add", "--if-not-exists", remote_name, remote_url]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def is_flatpak_remote_enabled(self, remote_name: str) -> bool:
@@ -315,8 +316,8 @@ class RepositoryManager:
         self.ensure_flatpak_installed()
 
         # Don't use -y flag - let user see and approve permissions interactively
-        cmd = ["sudo", "flatpak", "install", remote, package]
-        result = subprocess.run(cmd, check=False)
+        cmd = ["flatpak", "install", remote, package]
+        result = run_privileged(cmd, check=False, capture_output=False)
         return result.returncode == 0
 
     def remove_flatpak(self, package: str) -> bool:
@@ -329,6 +330,6 @@ class RepositoryManager:
         Returns:
             True if package was removed successfully
         """
-        cmd = ["sudo", "flatpak", "uninstall", "-y", package]
-        result = subprocess.run(cmd, capture_output=True, check=False)
+        cmd = ["flatpak", "uninstall", "-y", package]
+        result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0

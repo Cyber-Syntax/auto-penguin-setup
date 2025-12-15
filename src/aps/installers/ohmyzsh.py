@@ -149,13 +149,13 @@ class OhMyZshInstaller(BaseInstaller):
 
         if config_zshrc.exists():
             return config_zshrc
-        elif home_zshrc.exists():
+        if home_zshrc.exists():
             return home_zshrc
-        else:
-            # Create preferred location
-            config_zshrc.parent.mkdir(parents=True, exist_ok=True)
-            config_zshrc.touch()
-            return config_zshrc
+
+        # Create preferred location
+        config_zshrc.parent.mkdir(parents=True, exist_ok=True)
+        config_zshrc.touch()
+        return config_zshrc
 
     def _install_plugin(self, name: str, url: str, plugins_dir: Path) -> None:
         """Install a zsh plugin.

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ..core.distro import DistroInfo, detect_distro
 from ..core.package_manager import get_package_manager
+from ..utils.privilege import run_privileged
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +102,8 @@ class BaseInstaller(ABC):
 
         try:
             if self.distro in ("fedora", "rhel", "centos"):
-                result = subprocess.run(
-                    ["sudo", "rpm", "--import", key_url],
+                result = run_privileged(
+                    ["rpm", "--import", key_url],
                     capture_output=True,
                     text=True,
                     check=False,
@@ -116,9 +117,9 @@ class BaseInstaller(ABC):
                     return False
 
                 key_content = result.stdout
-                result = subprocess.run(
-                    ["sudo", "gpg", "--dearmor", "-o", "/usr/share/keyrings/aps-temp.gpg"],
-                    input=key_content,
+                result = run_privileged(
+                    ["gpg", "--dearmor", "-o", "/usr/share/keyrings/aps-temp.gpg"],
+                    stdin_input=key_content,
                     capture_output=True,
                     text=True,
                     check=False,
@@ -149,13 +150,12 @@ class BaseInstaller(ABC):
                 Path(f"/etc/yum.repos.d/{repo_name}.repo")
                 # Implementation specific to each installer
                 return True
-            elif self.distro in ("debian", "ubuntu"):
+            if self.distro in ("debian", "ubuntu"):
                 Path(f"/etc/apt/sources.list.d/{repo_name}.list")
                 # Implementation specific to each installer
                 return True
-            else:
-                logger.warning("Repository file creation not implemented for: %s", self.distro)
-                return True
+            logger.warning("Repository file creation not implemented for: %s", self.distro)
+            return True
 
         except Exception as e:
             logger.error("Error creating repository file: %s", e)
