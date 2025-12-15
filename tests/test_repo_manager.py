@@ -79,6 +79,21 @@ class TestRepositoryManager:
         with pytest.raises(PackageManagerError, match="COPR is only available on Fedora"):
             repo_mgr.enable_copr("user/repo")
 
+    def test_enable_copr_failure(self, fedora_distro: DistroInfo) -> None:
+        """Test enabling COPR repository fails."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(fedora_distro, pm)
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(returncode=1)
+            result = repo_mgr.enable_copr("user/repo")
+
+            assert result is False
+            mock_run.assert_called_once_with(
+                ["sudo", "dnf", "copr", "enable", "-y", "user/repo"],
+                check=False,
+            )
+
     def test_disable_copr_success(self, fedora_distro: DistroInfo) -> None:
         """Test disabling COPR repository successfully."""
         pm = Mock(spec=PackageManager)
@@ -158,6 +173,66 @@ class TestRepositoryManager:
             result = repo_mgr.is_copr_enabled("user/repo")
 
             assert result is False
+
+    def test_check_official_before_enabling_official_available(
+        self, fedora_distro: DistroInfo, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test check_official_before_enabling when package is available in official repos."""
+        pm = Mock(spec=PackageManager)
+        pm.is_available_in_official_repos.return_value = True
+        repo_mgr = RepositoryManager(fedora_distro, pm)
+
+        from aps.core.package_mapper import PackageMapping
+
+        mapping = PackageMapping(
+            original_name="git",
+            mapped_name="git",
+            source="COPR:user/repo",
+        )
+
+        result = repo_mgr.check_official_before_enabling("git", mapping)
+
+        assert result.source == "official"
+        assert result.original_name == "git"
+        assert result.mapped_name == "git"
+        assert "available in official repositories" in caplog.text
+
+    def test_check_official_before_enabling_not_official(self, fedora_distro: DistroInfo) -> None:
+        """Test check_official_before_enabling when package is not available in official repos."""
+        pm = Mock(spec=PackageManager)
+        pm.is_available_in_official_repos.return_value = False
+        repo_mgr = RepositoryManager(fedora_distro, pm)
+
+        from aps.core.package_mapper import PackageMapping
+
+        mapping = PackageMapping(
+            original_name="lazygit",
+            mapped_name="lazygit",
+            source="COPR:user/repo",
+        )
+
+        result = repo_mgr.check_official_before_enabling("lazygit", mapping)
+
+        assert result is mapping  # Should return the same mapping
+
+    def test_check_official_before_enabling_official_mapping(
+        self, fedora_distro: DistroInfo
+    ) -> None:
+        """Test check_official_before_enabling with official mapping."""
+        pm = Mock(spec=PackageManager)
+        repo_mgr = RepositoryManager(fedora_distro, pm)
+
+        from aps.core.package_mapper import PackageMapping
+
+        mapping = PackageMapping(
+            original_name="git",
+            mapped_name="git",
+            source="official",
+        )
+
+        result = repo_mgr.check_official_before_enabling("git", mapping)
+
+        assert result is mapping  # Should return the same mapping without checking
 
     def test_install_aur_package_success(self, arch_distro: DistroInfo) -> None:
         """Test installing AUR package successfully."""

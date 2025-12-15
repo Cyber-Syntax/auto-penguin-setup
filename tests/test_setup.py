@@ -81,7 +81,7 @@ class TestSetupManagerAURHelper:
         ):
             # Setup mocks
             mock_home.return_value = Path("/home/testuser")
-            mock_exists.return_value = True
+            mock_exists.return_value = False  # GPG keyring does not exist
 
             # Mock which() calls: not installed initially, then installed after build
             mock_which.side_effect = [

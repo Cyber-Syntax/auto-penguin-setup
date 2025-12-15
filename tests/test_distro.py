@@ -96,6 +96,23 @@ VERSION_ID=22.04
         assert distro.family == DistroFamily.DEBIAN
         assert distro.package_manager == PackageManagerType.APT
 
+    def test_from_os_release_unknown(self, tmp_path: Path) -> None:
+        """Test parsing unknown distribution os-release."""
+        content = """
+NAME="Unknown Distro"
+ID=unknown
+VERSION_ID=1.0
+"""
+        os_release = tmp_path / "os-release-unknown"
+        os_release.write_text(content)
+
+        distro = DistroInfo.from_os_release(os_release)
+        assert distro.id == "unknown"
+        assert distro.name == "Unknown Distro"
+        assert distro.version == "1.0"
+        assert distro.package_manager == PackageManagerType.UNKNOWN
+        assert distro.family == DistroFamily.UNKNOWN
+
     def test_rolling_version_default(self, tmp_path: Path) -> None:
         """Test default version for rolling release."""
         content = """

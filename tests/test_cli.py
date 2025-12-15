@@ -100,7 +100,11 @@ class TestCLICommands:
         mock_distro.package_manager.value = "dnf"
 
         mock_tracker = Mock()
-        mock_tracker.get_tracked_packages.return_value = []
+        mock_tracker.get_tracked_packages.return_value = [
+            Mock(name="git", source="official"),
+            Mock(name="lazygit", source="COPR:atim/lazygit"),
+            Mock(name="vscode", source="AUR:vscode"),
+        ]
 
         with (
             patch("aps.cli.commands.status.detect_distro", return_value=mock_distro),
@@ -113,7 +117,11 @@ class TestCLICommands:
             captured = capsys.readouterr()
             assert "Distribution: Fedora 39" in captured.err
             assert "Package Manager: dnf" in captured.err
-            assert "Tracked Packages: 0" in captured.err
+            assert "Tracked Packages: 3" in captured.err
+            assert "By Source:" in captured.err
+            assert "official: 1" in captured.err
+            assert "COPR: 1" in captured.err
+            assert "AUR: 1" in captured.err
 
     def test_cmd_list_no_packages(self, capsys: CaptureFixture[str]) -> None:
         """Test list command with no packages."""

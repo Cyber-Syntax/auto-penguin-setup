@@ -58,6 +58,11 @@ class TestPackageMapping:
         mapping = PackageMapping(original_name="git", mapped_name="git", source="official")
         assert mapping.get_repo_name() is None
 
+    def test_get_repo_name_flatpak(self) -> None:
+        """Test extracting Flatpak remote name."""
+        mapping = PackageMapping(original_name="test", mapped_name="test", source="flatpak:flathub")
+        assert mapping.get_repo_name() == "flathub"
+
 
 class TestPackageMapper:
     """Test PackageMapper functionality."""
@@ -167,6 +172,18 @@ class TestPackageMapper:
         assert mapping.source == "PPA:user/repo"
         assert mapping.mapped_name == "package"
 
+    def test_parse_flatpak_mapping(self, tmp_path: Path, fedora_distro: DistroInfo) -> None:
+        """Test parsing Flatpak mapping format."""
+        # Create empty pkgmap for mapper initialization
+        empty_pkgmap = tmp_path / "empty.ini"
+        empty_pkgmap.write_text("")
+
+        mapper = PackageMapper(empty_pkgmap, fedora_distro)
+
+        mapping = mapper._parse_mapping("test", "flatpak:flathub:package")
+        assert mapping.source == "flatpak:flathub"
+        assert mapping.mapped_name == "package"
+
     def test_parse_official_mapping(self, tmp_path: Path, fedora_distro: DistroInfo) -> None:
         """Test parsing official package mapping."""
         # Create empty pkgmap for mapper initialization
@@ -195,6 +212,10 @@ class TestPackageMapper:
         copr_packages = mapper.get_packages_by_source("COPR:")
         assert len(copr_packages) == 2  # brave-browser and lazygit
         assert all(p.is_copr for p in copr_packages)
+
+        official_packages = mapper.get_packages_by_source("official")
+        assert len(official_packages) >= 0  # May have official packages
+        assert all(p.is_official for p in official_packages)
 
     def test_nonexistent_config(self, tmp_path: Path, fedora_distro: DistroInfo) -> None:
         """Test handling nonexistent pkgmap file."""

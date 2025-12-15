@@ -117,11 +117,25 @@ class TestMain:
     def test_main_no_command(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Test main without a command shows help and returns 1."""
+        """Test main without a command shows help and exits with 2."""
         monkeypatch.setattr(sys, "argv", ["aps"])
 
-        # This should trigger parser error and sys.exit(2)
         with pytest.raises(SystemExit) as exc_info:
             main()
 
         assert exc_info.value.code == 2
+        captured = capsys.readouterr()
+        assert "usage:" in captured.err
+
+    def test_main_invalid_command(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test main with invalid command shows help and exits with 2."""
+        monkeypatch.setattr(sys, "argv", ["aps", "invalid"])
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 2
+        captured = capsys.readouterr()
+        assert "usage:" in captured.err

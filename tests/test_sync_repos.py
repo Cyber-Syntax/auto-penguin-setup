@@ -62,6 +62,11 @@ class TestExtractPackageName:
         """Test extracting name from PPA with explicit package name."""
         assert _extract_package_name("PPA:user/repo:mypackage") == "mypackage"
 
+    def test_ppa_without_explicit_name(self) -> None:
+        """Test PPA without explicit name returns full value."""
+        result = _extract_package_name("PPA:user/repo")
+        assert result == "PPA:user/repo"
+
 
 class TestCmdSyncRepos:
     """Test cmd_sync_repos command."""

@@ -262,7 +262,7 @@ class TestPackageTracker:
         records = [
             PackageRecord.create("git", source="official"),
             PackageRecord.create("vim", source="official"),
-            PackageRecord.create("emacs", source="official"),
+            PackageRecord.create("lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"),
         ]
 
         tracker.track_multiple(records)
@@ -315,7 +315,7 @@ class TestPackageTracker:
         # Track initial packages
         records1 = [
             PackageRecord.create("git", source="official"),
-            PackageRecord.create("vim", source="official"),
+            PackageRecord.create("lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"),
         ]
         tracker.track_multiple(records1)
 
@@ -323,7 +323,9 @@ class TestPackageTracker:
         records2 = [
             PackageRecord.create("git", source="official"),  # duplicate
             PackageRecord.create("emacs", source="official"),  # new
-            PackageRecord.create("vim", source="official"),  # duplicate
+            PackageRecord.create(
+                "lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"
+            ),  # duplicate
         ]
         tracker.track_multiple(records2)
 
@@ -331,7 +333,7 @@ class TestPackageTracker:
         packages = tracker.get_tracked_packages()
         assert len(packages) == 3
         names = {p.name for p in packages}
-        assert names == {"git", "vim", "emacs"}
+        assert names == {"git", "lazygit", "emacs"}
 
     def test_track_multiple_with_all_duplicates(self, tmp_path: Path) -> None:
         """Test tracking multiple packages that are all duplicates."""
