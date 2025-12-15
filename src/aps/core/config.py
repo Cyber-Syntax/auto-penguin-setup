@@ -137,17 +137,16 @@ class APSConfigParser:
 
         # Get all items from section
         for _, value in self._parser.items(section):
-            # Split by comma first
-            parts = value.split(",")
+            # Remove inline comments FIRST (both '#' and ';')
+            raw = value
+            if "#" in raw:
+                raw = raw.split("#", 1)[0]
+            if ";" in raw:
+                raw = raw.split(";", 1)[0]
 
+            # THEN split by comma and collect cleaned package names
+            parts = raw.split(",")
             for part in parts:
-                # Remove inline comments
-                if "#" in part:
-                    part = part.split("#")[0]
-                if ";" in part:
-                    part = part.split(";")[0]
-
-                # Strip whitespace and filter out empty strings
                 cleaned = part.strip()
                 if cleaned:
                     packages.append(cleaned)

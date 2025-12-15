@@ -175,6 +175,20 @@ packages=curl, wget ; download tools
         packages = parser.get_section_packages("packages")
         assert packages == ["curl", "wget"]
 
+    def test_inline_comment_contains_comma(self, tmp_path: Path) -> None:
+        """Ensure commas inside inline comments are not parsed as packages."""
+        content = """[packages]
+packages=trash-cli # trashing tool, alternative to rm
+"""
+        config_file = tmp_path / "comment_comma.ini"
+        config_file.write_text(content)
+
+        parser = APSConfigParser()
+        parser.load(config_file)
+
+        packages = parser.get_section_packages("packages")
+        assert packages == ["trash-cli"]
+
     def test_with_full_line_comments(self, tmp_path: Path) -> None:
         """Test with full line comments and mixed formats."""
         content = """[packages]
