@@ -3,8 +3,13 @@
 import logging
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .base import BaseInstaller
+
+if TYPE_CHECKING:
+    pass
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,12 +78,24 @@ class VSCodeInstaller(BaseInstaller):
         def install_from_aur() -> bool:
             """Fallback: Install from AUR."""
             logger.info("Installing Visual Studio Code from AUR...")
-            success, error = self.pm.install(["visual-studio-code-bin"])
-            if not success:
-                logger.error("Failed to install Visual Studio Code: %s", error)
+
+            # Import here to avoid unused import if not Arch
+            from aps.core.package_manager import PacmanManager
+
+            try:
+                if isinstance(self.pm, PacmanManager):
+                    success = self.pm.install_aur(["visual-studio-code-bin"])
+                    if not success:
+                        logger.error("Failed to install Visual Studio Code")
+                        return False
+                    logger.info("Visual Studio Code installation completed.")
+                    return True
+
+                logger.error("AUR install not supported with this package manager instance.")
                 return False
-            logger.info("Visual Studio Code installation completed.")
-            return True
+            except Exception as e:
+                logger.error("Failed to install Visual Studio Code: %s", e)
+                return False
 
         # Try official repos first (package might be 'vscode' in extra repo)
         return self.try_official_first("vscode", install_from_aur)
