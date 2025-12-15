@@ -126,7 +126,7 @@ class TestCmdSyncRepos:
         mock_parser_class.return_value = mock_parser
 
         # Execute
-        args = Namespace()
+        args = Namespace(noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify
@@ -175,7 +175,7 @@ class TestCmdSyncRepos:
         mock_parser_class.return_value = mock_parser
 
         # Execute
-        args = Namespace()
+        args = Namespace(noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify - Flatpak should be skipped, so no changes
@@ -227,7 +227,7 @@ class TestCmdSyncRepos:
         mock_input.return_value = "n"
 
         # Execute
-        args = Namespace()
+        args = Namespace(noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify
@@ -288,7 +288,7 @@ class TestCmdSyncRepos:
         mock_parser_class.return_value = mock_parser
 
         # Execute with --auto flag
-        args = Namespace(auto=True)
+        args = Namespace(auto=True, noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify
@@ -360,7 +360,7 @@ class TestCmdSyncRepos:
         mock_parser_class.return_value = mock_parser
 
         # Execute with --auto flag
-        args = Namespace(auto=True)
+        args = Namespace(auto=True, noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify
@@ -399,7 +399,7 @@ class TestCmdSyncRepos:
         mock_tracker_class.return_value = mock_tracker
 
         # Execute
-        args = Namespace()
+        args = Namespace(noconfirm=False)
         cmd_sync_repos(args)
 
         # Verify that config files were created

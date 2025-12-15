@@ -190,8 +190,7 @@ class RepositoryManager:
             # Update apt cache after adding PPA
             self.pm.update_cache()
             return True
-        else:
-            self.logger.error("Failed to add PPA repository: %s", ppa)
+        self.logger.error("Failed to add PPA repository: %s", ppa)
 
         return False
 
@@ -223,12 +222,12 @@ class RepositoryManager:
         """
         return shutil.which("flatpak") is not None
 
-    def ensure_flatpak_installed(self, assume_yes: bool = True) -> bool:
+    def ensure_flatpak_installed(self, assume_yes: bool = False) -> bool:
         """
         Ensure flatpak is installed, installing it if necessary.
 
         Args:
-            assume_yes: Auto-confirm installation
+            assume_yes: Auto-confirm installation (default: False)
 
         Returns:
             True if flatpak is available (already installed or successfully installed)
@@ -251,8 +250,7 @@ class RepositoryManager:
         if self.is_flatpak_installed():
             self.logger.info("flatpak installed successfully")
             return True
-        else:
-            raise PackageManagerError("flatpak installation verification failed")
+        raise PackageManagerError("flatpak installation verification failed")
 
     def enable_flatpak_remote(self, remote_name: str, remote_url: str | None = None) -> bool:
         """

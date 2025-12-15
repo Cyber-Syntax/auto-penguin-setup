@@ -21,7 +21,7 @@ def cmd_remove(args: Namespace) -> None:
         if args.dry_run:
             logger.info("Would remove: %s", pkg)
         else:
-            success, error = pm.remove([pkg])
+            success, error = pm.remove([pkg], assume_yes=args.noconfirm)
             if success:
                 tracker.remove_package(pkg)
                 logger.info("Removed: %s", pkg)

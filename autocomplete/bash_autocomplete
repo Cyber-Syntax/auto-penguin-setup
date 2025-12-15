@@ -13,11 +13,11 @@ _aps_completion() {
     commands="install remove list sync-repos status setup"
     
     # Global options
-    local global_opts="--help -h --verbose --version -v"
+    local global_opts="--help -h --verbose --version -v --noconfirm"
     
     # Command-specific options
     local install_opts="--dry-run --verbose --help -h"
-    local remove_opts="--verbose --help -h"
+    local remove_opts="--dry-run --verbose --help -h"
     local list_opts="--source --verbose --help -h"
     local sync_repos_opts="--auto --verbose --help -h"
     local status_opts="--verbose --help -h"

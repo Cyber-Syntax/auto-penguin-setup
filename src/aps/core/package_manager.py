@@ -27,13 +27,13 @@ class PackageManager(ABC):
         self.distro = distro
 
     @abstractmethod
-    def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
         """
         Install packages.
 
         Args:
             packages: List of package names to install
-            assume_yes: Auto-confirm installation (default: True)
+            assume_yes: Auto-confirm installation (default: False)
 
         Returns:
             Tuple of (success: bool, error_message: str)
@@ -42,13 +42,13 @@ class PackageManager(ABC):
         pass
 
     @abstractmethod
-    def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def remove(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
         """
         Remove packages.
 
         Args:
             packages: List of package names to remove
-            assume_yes: Auto-confirm removal (default: True)
+            assume_yes: Auto-confirm removal (default: False)
 
         Returns:
             Tuple of (success: bool, error_message: str)
@@ -109,7 +109,7 @@ class PackageManager(ABC):
 class DnfManager(PackageManager):
     """Package manager for Fedora and RHEL-based distributions using dnf."""
 
-    def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -118,14 +118,14 @@ class DnfManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
         result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
-        else:
-            logger.error("Failed to install packages %s", packages)
-            return False, "Package installation failed"
+        logger.error("Failed to install packages %s", packages)
+        return False, "Package installation failed"
 
     def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
@@ -136,14 +136,14 @@ class DnfManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
         result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             logger.info("Successfully removed packages")
             return True, ""
-        else:
-            logger.error("Failed to remove packages %s", packages)
-            return False, "Package removal failed"
+        logger.error("Failed to remove packages %s", packages)
+        return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
         cmd: list[str] = ["dnf", "search", "--quiet", query]
@@ -233,7 +233,7 @@ class PacmanManager(PackageManager):
                 return helper
         return None
 
-    def install_paru(self, assume_yes: bool = True) -> bool:
+    def install_paru(self, assume_yes: bool = False) -> bool:
         """
         Install paru AUR helper.
 
@@ -243,7 +243,6 @@ class PacmanManager(PackageManager):
         Returns:
             True if paru was installed successfully, False otherwise
         """
-        import os
         import tempfile
 
         logger = logging.getLogger(__name__)
@@ -275,7 +274,9 @@ class PacmanManager(PackageManager):
                 logger.error("Failed to clone paru repository")
                 return False
 
-            paru_dir = os.path.join(tmpdir, "paru")
+            from pathlib import Path
+
+            paru_dir = Path(tmpdir) / "paru"
             logger.info("Building paru...")
             build_cmd = ["makepkg", "-si"]
             if assume_yes:
@@ -291,11 +292,10 @@ class PacmanManager(PackageManager):
             logger.info("paru installed successfully")
             self.aur_helper = "paru"
             return True
-        else:
-            logger.error("paru installation verification failed")
-            return False
+        logger.error("paru installation verification failed")
+        return False
 
-    def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -304,22 +304,22 @@ class PacmanManager(PackageManager):
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
         result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
-        else:
-            logger.error("Failed to install packages %s", packages)
-            return False, "Package installation failed"
+        logger.error("Failed to install packages %s", packages)
+        return False, "Package installation failed"
 
-    def install_aur(self, packages: list[str], assume_yes: bool = True) -> bool:
+    def install_aur(self, packages: list[str], assume_yes: bool = False) -> bool:
         """
         Install packages from AUR using detected helper.
 
         Args:
             packages: List of AUR package names
-            assume_yes: Auto-confirm installation
+            assume_yes: Auto-confirm installation (default: False)
 
         Returns:
             True if installation succeeded, False otherwise
@@ -336,32 +336,47 @@ class PacmanManager(PackageManager):
 
         logger.info("Installing AUR packages: %s", ", ".join(packages))
 
+        # aur_helper should be set at this point
+        if not self.aur_helper:
+            raise PackageManagerError("AUR helper not available")
+
         cmd = [self.aur_helper, "-S"]
+        # Note: Do NOT use --noconfirm for AUR installs to allow interactive conflict resolution
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
         result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             logger.info("Successfully installed AUR packages")
             return True
-        else:
-            logger.error("Failed to install AUR packages")
-            return False
+        logger.error("Failed to install AUR packages")
+        return False
 
-    def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def remove(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+        """Remove packages.
+
+        Args:
+            packages: List of package names to remove
+            assume_yes: Auto-confirm removal (default: False)
+        Returns:
+            Tuple of (success: bool, error_message: str)
+            error_message is empty string if success
+        """
         cmd = ["sudo", "pacman", "-R"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
+        logger = logging.getLogger(__name__)
+        logger.debug("Executing command: %s", " ".join(cmd))
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True, ""
-        else:
-            logging.error("Failed to remove packages %s: %s", packages, result.stderr)
-            return False, result.stderr
+        logging.error("Failed to remove packages %s: %s", packages, result.stderr)
+        return False, result.stderr
 
     def search(self, query: str) -> list[str]:
         cmd = ["pacman", "-Ss", query]
@@ -424,7 +439,7 @@ class PacmanManager(PackageManager):
 class AptManager(PackageManager):
     """Package manager for Debian and Ubuntu-based distributions using apt."""
 
-    def install(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -433,6 +448,7 @@ class AptManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Set DEBIAN_FRONTEND to avoid interactive prompts
         # Don't capture output - let it display to user
         import os
@@ -443,9 +459,8 @@ class AptManager(PackageManager):
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
-        else:
-            logger.error("Failed to install packages %s", packages)
-            return False, "Package installation failed"
+        logger.error("Failed to install packages %s", packages)
+        return False, "Package installation failed"
 
     def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
@@ -456,6 +471,7 @@ class AptManager(PackageManager):
             cmd.append("-y")
         cmd.extend(packages)
 
+        logger.debug("Executing command: %s", " ".join(cmd))
         # Don't capture output - let it display to user
         import os
 
@@ -465,9 +481,8 @@ class AptManager(PackageManager):
         if result.returncode == 0:
             logger.info("Successfully removed packages")
             return True, ""
-        else:
-            logger.error("Failed to remove packages %s", packages)
-            return False, "Package removal failed"
+        logger.error("Failed to remove packages %s", packages)
+        return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
         cmd = ["apt-cache", "search", query]

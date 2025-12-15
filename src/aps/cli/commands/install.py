@@ -136,7 +136,7 @@ def cmd_install(args: Namespace) -> None:
         system_to_install: list[str] = [m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs]
         logger.debug("Installing system packages: %s", system_to_install)
         if system_to_install:
-            success, error = pm.install(system_to_install, assume_yes=True)
+            success, error = pm.install(system_to_install, assume_yes=args.noconfirm)
             if not success:
                 logger.error("Failed to install system packages: %s", error)
                 return
@@ -146,7 +146,7 @@ def cmd_install(args: Namespace) -> None:
             aur_to_install: list[str] = [m.mapped_name for m in aur_pkgs]
             logger.debug("Installing AUR packages: %s", aur_to_install)
             if isinstance(pm, PacmanManager):
-                success = pm.install_aur(aur_to_install, assume_yes=True)
+                success = pm.install_aur(aur_to_install, assume_yes=args.noconfirm)
                 if not success:
                     logger.error("Failed to install AUR packages")
                     return

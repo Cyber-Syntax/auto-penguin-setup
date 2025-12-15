@@ -26,6 +26,13 @@ def create_parser() -> argparse.ArgumentParser:
         "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )
 
+    # Add global noconfirm flag
+    parser.add_argument(
+        "--noconfirm",
+        action="store_true",
+        help="Skip confirmation prompts (auto-confirm all operations)",
+    )
+
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # aps install
@@ -51,6 +58,7 @@ Examples:
     # aps remove
     remove_parser = subparsers.add_parser("remove", help="Remove packages")
     remove_parser.add_argument("packages", nargs="+")
+    remove_parser.add_argument("--dry-run", action="store_true", help="Show what would be removed")
     remove_parser.add_argument(
         "--verbose", action="store_true", help="Enable verbose output (show debug messages)"
     )

@@ -145,25 +145,24 @@ def cmd_sync_repos(args: Namespace) -> None:
         try:
             # Step 1: Remove from old source
             logger.info("  Removing from %s...", old_source)
-            success, error = pm.remove([package_name], assume_yes=True)
+            success, error = pm.remove([package_name], assume_yes=args.noconfirm)
             if not success:
                 raise PackageManagerError(f"Failed to remove: {error}")
 
             # Step 2: Install from new source
             logger.info("  Installing from %s...", new_source)
-            success, error = pm.install([new_package_name], assume_yes=True)
+            success, error = pm.install([new_package_name], assume_yes=args.noconfirm)
             if not success:
                 # Rollback: try to reinstall from old source
                 logger.warning("  Installation failed. Attempting rollback...")
-                rollback_success, _ = pm.install([package_name], assume_yes=True)
+                rollback_success, _ = pm.install([package_name], assume_yes=args.noconfirm)
                 if rollback_success:
                     raise PackageManagerError(
                         f"Failed to install from new source, rolled back to {old_source}"
                     )
-                else:
-                    raise PackageManagerError(
-                        f"Failed to install from new source AND rollback failed: {error}"
-                    )
+                raise PackageManagerError(
+                    f"Failed to install from new source AND rollback failed: {error}"
+                )
 
             # Step 3: Update tracking
             tracker.remove_package(pkg.name)

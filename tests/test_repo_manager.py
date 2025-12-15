@@ -546,7 +546,7 @@ class TestRepositoryManager:
             result = repo_mgr.ensure_flatpak_installed()
 
             assert result is True
-            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=False)
 
     def test_ensure_flatpak_installed_install_fails(self, arch_distro: DistroInfo) -> None:
         """Test handling installation failure."""
@@ -591,7 +591,7 @@ class TestRepositoryManager:
             result = repo_mgr.enable_flatpak_remote("flathub")
 
             assert result is True
-            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=False)
 
     def test_install_flatpak_installs_flatpak_first(self, arch_distro: DistroInfo) -> None:
         """Test that installing flatpak package installs flatpak command if needed."""
@@ -609,4 +609,4 @@ class TestRepositoryManager:
             result = repo_mgr.install_flatpak("org.mozilla.firefox")
 
             assert result is True
-            pm.install.assert_called_once_with(["flatpak"], assume_yes=True)
+            pm.install.assert_called_once_with(["flatpak"], assume_yes=False)
