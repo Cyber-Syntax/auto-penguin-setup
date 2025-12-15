@@ -208,6 +208,290 @@ class TestCLICommands:
             assert "neovim" in captured.err
             assert "aur" in captured.err
 
+    def test_cmd_list_with_case_insensitive_source_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
+        """Test list command with case-insensitive source filtering."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        # Create mock records with various source formats
+        mock_record1 = Mock()
+        mock_record1.name = "lazygit"
+        mock_record1.source = "COPR:atim/lazygit"
+        mock_record1.category = "dev"
+        mock_record1.installed_at = "2025-12-06 17:24:50 +0000"
+
+        mock_record2 = Mock()
+        mock_record2.name = "starship"
+        mock_record2.source = "COPR:atim/starship"
+        mock_record2.category = "shell"
+        mock_record2.installed_at = "2025-12-06 17:25:00 +0000"
+
+        mock_record3 = Mock()
+        mock_record3.name = "obsidian"
+        mock_record3.source = "flatpak:flathub"
+        mock_record3.category = "apps"
+        mock_record3.installed_at = "2025-12-06 17:26:00 +0000"
+
+        mock_record4 = Mock()
+        mock_record4.name = "curl"
+        mock_record4.source = "official"
+        mock_record4.category = None
+        mock_record4.installed_at = "2025-12-06 17:27:00 +0000"
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+            mock_record3,
+            mock_record4,
+        ]
+
+        # Test lowercase "copr" matches "COPR:..." sources
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="copr")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "lazygit" in captured.err
+            assert "starship" in captured.err
+            assert "COPR:atim/lazygit" in captured.err
+            assert "COPR:atim/starship" in captured.err
+            # Should NOT include flatpak or official packages
+            assert "obsidian" not in captured.err
+            assert "curl" not in captured.err
+
+    def test_cmd_list_with_uppercase_source_filter(self, capsys: CaptureFixture[str]) -> None:
+        """Test list command with uppercase source filter."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        mock_record1 = Mock()
+        mock_record1.name = "obsidian"
+        mock_record1.source = "flatpak:flathub"
+        mock_record1.category = "apps"
+        mock_record1.installed_at = "2025-12-06 17:26:00 +0000"
+
+        mock_record2 = Mock()
+        mock_record2.name = "signal"
+        mock_record2.source = "flatpak:flathub"
+        mock_record2.category = "apps"
+        mock_record2.installed_at = "2025-12-06 17:26:30 +0000"
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
+
+        # Test uppercase "FLATPAK" matches "flatpak:..." sources
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="FLATPAK")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "obsidian" in captured.err
+            assert "signal" in captured.err
+            assert "flatpak:flathub" in captured.err
+
+    def test_cmd_list_with_official_source_filter(self, capsys: CaptureFixture[str]) -> None:
+        """Test list command filtering official packages (no colon in source)."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        mock_record1 = Mock()
+        mock_record1.name = "curl"
+        mock_record1.source = "official"
+        mock_record1.category = None
+        mock_record1.installed_at = "2025-12-06 17:27:00 +0000"
+
+        mock_record2 = Mock()
+        mock_record2.name = "git"
+        mock_record2.source = "official"
+        mock_record2.category = None
+        mock_record2.installed_at = "2025-12-06 17:27:30 +0000"
+
+        mock_record3 = Mock()
+        mock_record3.name = "lazygit"
+        mock_record3.source = "COPR:atim/lazygit"
+        mock_record3.category = "dev"
+        mock_record3.installed_at = "2025-12-06 17:24:50 +0000"
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2, mock_record3]
+
+        # Test "official" or "OFFICIAL" matches "official" sources
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="OFFICIAL")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "curl" in captured.err
+            assert "git" in captured.err
+            # Should NOT include COPR package
+            assert "lazygit" not in captured.err
+
+    def test_cmd_list_with_aur_lowercase_filter(self, capsys: CaptureFixture[str]) -> None:
+        """Test list command with lowercase 'aur' filter matching AUR packages."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        mock_record1 = Mock()
+        mock_record1.name = "lazygit"
+        mock_record1.source = "AUR:lazygit"
+        mock_record1.category = "dev"
+        mock_record1.installed_at = "2025-12-06 17:24:50 +0000"
+
+        mock_record2 = Mock()
+        mock_record2.name = "thinkfan"
+        mock_record2.source = "AUR:thinkfan"
+        mock_record2.category = "laptop"
+        mock_record2.installed_at = "2025-12-06 17:25:00 +0000"
+
+        mock_record3 = Mock()
+        mock_record3.name = "qtile-extras"
+        mock_record3.source = "AUR:qtile-extras"
+        mock_record3.category = "wm-common"
+        mock_record3.installed_at = "2025-12-06 17:25:30 +0000"
+
+        mock_record4 = Mock()
+        mock_record4.name = "curl"
+        mock_record4.source = "official"
+        mock_record4.category = None
+        mock_record4.installed_at = "2025-12-06 17:27:00 +0000"
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+            mock_record3,
+            mock_record4,
+        ]
+
+        # Test lowercase "aur" matches "AUR:..." sources
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="aur")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "lazygit" in captured.err
+            assert "thinkfan" in captured.err
+            assert "qtile-extras" in captured.err
+            assert "AUR:lazygit" in captured.err
+            assert "AUR:thinkfan" in captured.err
+            assert "AUR:qtile-extras" in captured.err
+            # Should NOT include official package
+            assert "curl" not in captured.err
+            assert "official" not in captured.err
+
+    def test_cmd_list_with_aur_uppercase_filter(self, capsys: CaptureFixture[str]) -> None:
+        """Test list command with uppercase 'AUR' filter matching AUR packages."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        mock_record1 = Mock()
+        mock_record1.name = "xautolock"
+        mock_record1.source = "AUR:xautolock"
+        mock_record1.category = "desktop"
+        mock_record1.installed_at = "2025-12-06 17:26:00 +0000"
+
+        mock_record2 = Mock()
+        mock_record2.name = "starship"
+        mock_record2.source = "COPR:atim/starship"
+        mock_record2.category = "shell"
+        mock_record2.installed_at = "2025-12-06 17:26:30 +0000"
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
+
+        # Test uppercase "AUR" matches "AUR:..." sources
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="AUR")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "Tracked Packages:" in captured.err
+            assert "xautolock" in captured.err
+            assert "AUR:xautolock" in captured.err
+            # Should NOT include COPR package
+            assert "starship" not in captured.err
+            assert "COPR:atim/starship" not in captured.err
+
+    def test_cmd_list_with_mixed_sources(self, capsys: CaptureFixture[str]) -> None:
+        """Test list command correctly filters among mixed source types."""
+        from unittest.mock import Mock, patch
+
+        from aps.core.logger import setup_logging
+
+        setup_logging()
+
+        # Create a diverse set of packages from different sources
+        mock_records = [
+            Mock(
+                name="curl",
+                source="official",
+                category=None,
+                installed_at="2025-12-06 17:27:00 +0000",
+            ),
+            Mock(
+                name="lazygit",
+                source="AUR:lazygit",
+                category="dev",
+                installed_at="2025-12-06 17:24:50 +0000",
+            ),
+            Mock(
+                name="starship",
+                source="COPR:atim/starship",
+                category="shell",
+                installed_at="2025-12-06 17:25:00 +0000",
+            ),
+            Mock(
+                name="obsidian",
+                source="flatpak:flathub",
+                category="apps",
+                installed_at="2025-12-06 17:26:00 +0000",
+            ),
+            Mock(
+                name="thinkfan",
+                source="AUR:thinkfan",
+                category="laptop",
+                installed_at="2025-12-06 17:25:30 +0000",
+            ),
+        ]
+
+        mock_tracker = Mock()
+        mock_tracker.get_tracked_packages.return_value = mock_records
+
+        # Test filtering by "aur" - should only show AUR packages
+        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+            args = Namespace(source="aur")
+            cmd_list(args)
+
+            captured = capsys.readouterr()
+            assert "lazygit" in captured.err
+            assert "thinkfan" in captured.err
+            # Should NOT include other source types
+            assert "curl" not in captured.err
+            assert "starship" not in captured.err
+            assert "obsidian" not in captured.err
+
     def test_cmd_install_dry_run(self, capsys: CaptureFixture[str]) -> None:
         """Test install command with dry run."""
         from unittest.mock import Mock, patch

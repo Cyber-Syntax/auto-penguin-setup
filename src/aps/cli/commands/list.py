@@ -15,7 +15,10 @@ def cmd_list(args: Namespace) -> None:
     packages = tracker.get_tracked_packages()
 
     if args.source:
-        packages = [p for p in packages if p.source.startswith(args.source)]
+        # Extract prefix from source (before ':' if present) and compare case-insensitively
+        # Handles both simple sources ("official") and compound sources ("COPR:user/repo")
+        filter_prefix = args.source.lower()
+        packages = [p for p in packages if p.source.split(":")[0].lower() == filter_prefix]
 
     if not packages:
         return
