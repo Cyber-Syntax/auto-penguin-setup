@@ -19,6 +19,7 @@ class UeberzugppInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Installing ueberzugpp...")
 
@@ -47,14 +48,22 @@ class UeberzugppInstaller(BaseInstaller):
 
         repo_version = repo_map.get(version, "Fedora_Rawhide")
         if version not in repo_map:
-            logger.warning("Unknown Fedora version '%s', using Rawhide repository", version)
+            logger.warning(
+                "Unknown Fedora version '%s', using Rawhide repository",
+                version,
+            )
 
         repo_url = f"https://download.opensuse.org/repositories/home:justkidding/{repo_version}/home:justkidding.repo"
         logger.info("Adding repository from: %s", repo_url)
 
         try:
             run_privileged(
-                ["dnf", "config-manager", "addrepo", f"--from-repofile={repo_url}"],
+                [
+                    "dnf",
+                    "config-manager",
+                    "addrepo",
+                    f"--from-repofile={repo_url}",
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -104,7 +113,10 @@ class UeberzugppInstaller(BaseInstaller):
             }
             repo_name = ubuntu_map.get(version, "xUbuntu_24.04")
             if version not in ubuntu_map:
-                logger.warning("Unknown Ubuntu version '%s', using 24.04 repository", version)
+                logger.warning(
+                    "Unknown Ubuntu version '%s', using 24.04 repository",
+                    version,
+                )
         elif os_id == "debian":
             debian_map = {
                 "12": "Debian_12",
@@ -112,15 +124,18 @@ class UeberzugppInstaller(BaseInstaller):
             }
             repo_name = debian_map.get(version, "Debian_Testing")
             if version not in debian_map:
-                logger.warning("Unknown Debian version '%s', using Testing repository", version)
+                logger.warning(
+                    "Unknown Debian version '%s', using Testing repository",
+                    version,
+                )
         else:
-            logger.warning("Unknown Debian-based system, using Debian Testing repository")
+            logger.warning(
+                "Unknown Debian-based system, using Debian Testing repository"
+            )
             repo_name = "Debian_Testing"
 
         repo_url = f"http://download.opensuse.org/repositories/home:/justkidding/{repo_name}/"
-        key_url = (
-            f"https://download.opensuse.org/repositories/home:justkidding/{repo_name}/Release.key"
-        )
+        key_url = f"https://download.opensuse.org/repositories/home:justkidding/{repo_name}/Release.key"
 
         logger.info("Adding repository: %s", repo_url)
 
@@ -135,7 +150,9 @@ class UeberzugppInstaller(BaseInstaller):
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.error("Failed to add repository to sources list: %s", e.stderr)
+            logger.error(
+                "Failed to add repository to sources list: %s", e.stderr
+            )
             return False
 
         # Add GPG key
@@ -152,10 +169,9 @@ class UeberzugppInstaller(BaseInstaller):
             # Dearmor and save
             subprocess.run(
                 ["gpg", "--dearmor"],
-                input=key_result.stdout,
+                input=key_result.stdout.encode("utf-8"),
                 check=True,
                 capture_output=True,
-                stdout=subprocess.PIPE,
             )
 
             run_privileged(
@@ -189,5 +205,6 @@ class UeberzugppInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         return self.pm.is_installed("ueberzugpp")
