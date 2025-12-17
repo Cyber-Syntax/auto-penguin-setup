@@ -1,10 +1,47 @@
 """Test fixtures for pytest."""
 
+import logging
+from collections.abc import Generator
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
+
+# Store global mock reference
+_run_privileged_mock: MagicMock | None = None
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure pytest to mock privileged operations."""
+    global _run_privileged_mock
+
+    # Patch run_privileged globally for all tests
+    patcher = patch("aps.utils.privilege.run_privileged")
+    _run_privileged_mock = patcher.start()
+    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+    # Configure logging to avoid "I/O operation on closed file" errors
+    # Remove all handlers and use NullHandler for tests
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.addHandler(logging.NullHandler())
+    root_logger.setLevel(logging.DEBUG)
+
+
+@pytest.fixture(autouse=True)
+def mock_run_privileged() -> Generator[MagicMock, None, None]:
+    """Global fixture to ensure run_privileged is mocked in tests and provides access to mock."""
+    global _run_privileged_mock
+    if _run_privileged_mock is None:
+        raise RuntimeError("Global run_privileged mock not initialized")
+
+    # Reset mock before each test - including side_effect
+    _run_privileged_mock.reset_mock(side_effect=True)
+    # Set default return value
+    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    yield _run_privileged_mock
 
 
 @pytest.fixture

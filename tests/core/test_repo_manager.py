@@ -61,14 +61,15 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.enable_copr("user/repo")
 
             assert result is True
             mock_run.assert_called_once_with(
-                ["sudo", "dnf", "copr", "enable", "-y", "user/repo"],
+                ["dnf", "copr", "enable", "-y", "user/repo"],
                 check=False,
+                capture_output=False,
             )
 
     def test_enable_copr_non_fedora(self, arch_distro: DistroInfo) -> None:
@@ -84,14 +85,15 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=1)
             result = repo_mgr.enable_copr("user/repo")
 
             assert result is False
             mock_run.assert_called_once_with(
-                ["sudo", "dnf", "copr", "enable", "-y", "user/repo"],
+                ["dnf", "copr", "enable", "-y", "user/repo"],
                 check=False,
+                capture_output=False,
             )
 
     def test_disable_copr_success(self, fedora_distro: DistroInfo) -> None:
@@ -99,13 +101,13 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.disable_copr("user/repo")
 
             assert result is True
             mock_run.assert_called_once_with(
-                ["sudo", "dnf", "copr", "disable", "-y", "user/repo"],
+                ["dnf", "copr", "disable", "-y", "user/repo"],
                 capture_output=True,
                 check=False,
             )
@@ -168,7 +170,7 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=1, stdout="")
             result = repo_mgr.is_copr_enabled("user/repo")
 
@@ -266,14 +268,15 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(debian_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.add_ppa("user/repo")
 
             assert result is True
             mock_run.assert_called_once_with(
-                ["sudo", "add-apt-repository", "-y", "ppa:user/repo"],
+                ["add-apt-repository", "-y", "ppa:user/repo"],
                 check=False,
+                capture_output=False,
             )
             pm.update_cache.assert_called_once()
 
@@ -282,7 +285,7 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(debian_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=1)
             result = repo_mgr.add_ppa("user/repo")
 
@@ -302,13 +305,13 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(debian_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.remove_ppa("user/repo")
 
             assert result is True
             mock_run.assert_called_once_with(
-                ["sudo", "add-apt-repository", "-y", "--remove", "ppa:user/repo"],
+                ["add-apt-repository", "-y", "--remove", "ppa:user/repo"],
                 capture_output=True,
                 check=False,
             )
@@ -328,7 +331,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # Simulate flatpak already installed
             mock_which.return_value = "/usr/bin/flatpak"
@@ -338,7 +341,6 @@ class TestRepositoryManager:
             assert result is True
             mock_run.assert_called_once_with(
                 [
-                    "sudo",
                     "flatpak",
                     "remote-add",
                     "--if-not-exists",
@@ -356,7 +358,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # Simulate flatpak already installed
             mock_which.return_value = "/usr/bin/flatpak"
@@ -385,7 +387,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # Simulate flatpak installed
             mock_which.return_value = "/usr/bin/flatpak"
@@ -433,7 +435,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # Simulate flatpak already installed
             mock_which.return_value = "/usr/bin/flatpak"
@@ -443,8 +445,9 @@ class TestRepositoryManager:
             assert result is True
             # No -y flag - installation is interactive
             mock_run.assert_called_once_with(
-                ["sudo", "flatpak", "install", "flathub", "org.mozilla.firefox"],
+                ["flatpak", "install", "flathub", "org.mozilla.firefox"],
                 check=False,
+                capture_output=False,
             )
 
     def test_install_flatpak_custom_remote(self, fedora_distro: DistroInfo) -> None:
@@ -454,7 +457,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # Simulate flatpak already installed
             mock_which.return_value = "/usr/bin/flatpak"
@@ -464,8 +467,9 @@ class TestRepositoryManager:
             assert result is True
             # No -y flag - installation is interactive
             mock_run.assert_called_once_with(
-                ["sudo", "flatpak", "install", "fedora", "org.mozilla.firefox"],
+                ["flatpak", "install", "fedora", "org.mozilla.firefox"],
                 check=False,
+                capture_output=False,
             )
 
     def test_remove_flatpak_success(self, fedora_distro: DistroInfo) -> None:
@@ -473,13 +477,13 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("subprocess.run") as mock_run:
+        with patch("aps.core.repo_manager.run_privileged") as mock_run:
             mock_run.return_value = Mock(returncode=0)
             result = repo_mgr.remove_flatpak("org.mozilla.firefox")
 
             assert result is True
             mock_run.assert_called_once_with(
-                ["sudo", "flatpak", "uninstall", "-y", "org.mozilla.firefox"],
+                ["flatpak", "uninstall", "-y", "org.mozilla.firefox"],
                 capture_output=True,
                 check=False,
             )
@@ -583,7 +587,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # First call: not installed, second call: installed
             mock_which.side_effect = [None, "/usr/bin/flatpak"]
@@ -601,7 +605,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
+            patch("aps.core.repo_manager.run_privileged") as mock_run,
         ):
             # First call: not installed, second call: installed
             mock_which.side_effect = [None, "/usr/bin/flatpak"]

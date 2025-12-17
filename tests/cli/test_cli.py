@@ -527,6 +527,7 @@ class TestCLICommands:
         mock_mapper.map_package.return_value = mock_mapping
 
         with (
+            patch("aps.utils.privilege.ensure_sudo"),  # Mock at the source
             patch("aps.cli.commands.install.detect_distro", return_value=mock_distro),
             patch("aps.cli.commands.install.get_package_manager", return_value=mock_pm),
             patch("aps.cli.commands.install.RepositoryManager", return_value=mock_repo_mgr),
@@ -557,6 +558,7 @@ class TestCLICommands:
         mock_tracker = Mock()
 
         with (
+            patch("aps.utils.privilege.ensure_sudo"),  # Mock at the source
             patch("aps.cli.commands.remove.detect_distro", return_value=mock_distro),
             patch("aps.cli.commands.remove.get_package_manager", return_value=mock_pm),
             patch("aps.cli.commands.remove.PackageTracker", return_value=mock_tracker),

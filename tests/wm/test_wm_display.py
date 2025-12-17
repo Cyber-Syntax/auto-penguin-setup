@@ -38,7 +38,7 @@ class TestQtileConfig:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    @patch("aps.wm.qtile.subprocess.run")
+    @patch("aps.wm.qtile.run_privileged")
     def test_setup_backlight_rules(
         self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
     ) -> None:
@@ -245,7 +245,7 @@ class TestLightDMConfig:
 
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.lightdm.subprocess.run")
+    @patch("aps.display.lightdm.run_privileged")
     def test_switch_to_lightdm(
         self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
     ) -> None:
@@ -271,7 +271,7 @@ class TestLightDMConfig:
 
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.lightdm.subprocess.run")
+    @patch("aps.display.lightdm.run_privileged")
     @patch("aps.display.lightdm.Path.exists", return_value=True)
     def test_configure_autologin(
         self, mock_exists: Mock, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
