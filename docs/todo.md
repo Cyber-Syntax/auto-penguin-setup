@@ -3,6 +3,16 @@
 ## testing
 
 - [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
+- [ ] extra official repo check for cachyos/nobara, install vscode to test it
+- [ ] Testing installers:
+      - [ ] vscode aur install test with paru
+      - [ ] vscode copr install test with dnf
+      - [ ] lazygit copr install test with dnf
+      - [ ] syncthing setup
+      - [ ] thinkfan setup test on thinkpad
+      - [ ] virtmanager
+- [ ] move test_system test to their own modules like tests/system/test_<distro>.py
+- [ ] add folder structure to tests/ folder similar to src/aps/ for better organization of tests
 
 ## in-progress
 
@@ -10,9 +20,11 @@
 - [ ] add option to remove the packages, which it would remove from tracked database
 - [ ] logs rotation setup for aps logs to avoid large log files
 - [ ] Keep only the name, source and maybe time in the tracking database for simplicity
+- [ ] test auto-cpufreq installer outputs to terminal properly
 
 ## todo
 
+- [ ] exclude configs/readme.md from uv builds
 - [ ] add lightdm auto unlock keyring subcommand
 - [ ] BUG: lightdm auto keyring unlock not work:
 
@@ -164,6 +176,8 @@ sudo dnf remove irqbalance
 
 ## done
 
+- `uv tool install .` tested on cachyos and work as expected.
+- Brave setup works.
 - [ ] Switch to python for core modules, keep the bash for other simple scripts
 - [ ] switch to json or jsonl for tracking database instead of ini for performance and easier parsing (orjson library)
 - [ ] move tracking database to .config/auto-penguin-setup/metadata.jsonl
