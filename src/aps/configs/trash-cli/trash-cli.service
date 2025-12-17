@@ -1,0 +1,8 @@
+[Unit]
+Description=Trash-cli cleanup service
+
+[Service]
+Type=oneshot
+User=developer
+# Adjust the path if trash-empty is not in /usr/bin. This command removes files older than 30 days.
+ExecStart=/usr/bin/trash-empty 30

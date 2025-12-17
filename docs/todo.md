@@ -2,21 +2,29 @@
 
 ## testing
 
+- [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
+- [ ] extra official repo check for cachyos/nobara, install vscode to test it
+- [ ] Testing installers:
+      - [ ] vscode aur install test with paru
+      - [ ] vscode copr install test with dnf
+      - [ ] lazygit copr install test with dnf
+      - [ ] syncthing setup
+      - [ ] thinkfan setup test on thinkpad
+      - [ ] virtmanager
+- [ ] move test_system test to their own modules like tests/system/test_<distro>.py
+- [ ] add folder structure to tests/ folder similar to src/aps/ for better organization of tests
+
 ## in-progress
 
-- [ ] Switch to python for core modules, keep the bash for other simple scripts
-- [ ] switch to json or jsonl for tracking database instead of ini for performance and easier parsing (orjson library)
-- [ ] move tracking database to .config/auto-penguin-setup/metadata.jsonl
-- [ ] move logs to .config/auto-penguin-setup/logs/
-- [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
-- [ ] Keep only the name, source and maybe time in the tracking database for simplicity
-- [ ] make cli tool like `aps install`
+- [ ] test all aps commands in virtual machines for all distros
 - [ ] add option to remove the packages, which it would remove from tracked database
-- [ ] keepchangelog
-      <https://keepachangelog.com/en/1.1.0/>
+- [ ] logs rotation setup for aps logs to avoid large log files
+- [ ] Keep only the name, source and maybe time in the tracking database for simplicity
+- [ ] test auto-cpufreq installer outputs to terminal properly
 
 ## todo
 
+- [ ] exclude configs/readme.md from uv builds
 - [ ] add lightdm auto unlock keyring subcommand
 - [ ] BUG: lightdm auto keyring unlock not work:
 
@@ -77,9 +85,6 @@
       Below best one to keep zshrc unchanged:
       sh -c "$(curl -fsSL <https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh>)" "" --keep-zshrc
 
-- [ ] remove lazygit.sh module which it is not used anymore
-- [ ] test: all function in virt
-
 - [ ] add a warning when the pkgmap.ini didn't found the packages for the current distro
 - [ ] add zen.desktop to default apps
 - [ ] disable intel_pstate , enable acpi-cpufreq or enable intel_pstate
@@ -87,12 +92,9 @@
 - [ ] browser profile save advanced
       <https://docs.zen-browser.app/guides/manage-profiles>
 - [ ] font setup
-- [ ] move flatpak to AUR for arch
-- [ ] git
+- [ ] git setup
 - [ ] maybe user have nvidia and thinkpad
       so better to make thinkfan and similar to command not laptop package.
-- [ ] real test on laptop
-- [ ] real test on desktop
 - [ ] create default config util
       config_examples copy not good because it is cumbersome, need to use create default config.sh util to handle it
 - [ ] update docs
@@ -102,6 +104,7 @@
 - [ ] my-unicorn compatibility for mimeapp.list
 - [ ] bats unittest updates
 - [ ] tmux dotfiles need to git clone tpm to tmux/plugins folder than install the plugins prefix and press shift and I to install
+- [ ] qtile-extras need to handled on debian based systems
 
 ## backlog
 
@@ -173,6 +176,16 @@ sudo dnf remove irqbalance
 
 ## done
 
+- `uv tool install .` tested on cachyos and work as expected.
+- Brave setup works.
+- [ ] Switch to python for core modules, keep the bash for other simple scripts
+- [ ] switch to json or jsonl for tracking database instead of ini for performance and easier parsing (orjson library)
+- [ ] move tracking database to .config/auto-penguin-setup/metadata.jsonl
+- [ ] move logs to .config/auto-penguin-setup/logs/
+- [ ] keepchangelog
+      <https://keepachangelog.com/en/1.1.0/>
+- [ ] make cli tool like `aps install`
+- [ ] ohmyzsh fail when in bash shell(arch linux virtual machine test):
 - [ ] refactor update_config.sh for new INI system
 - [ ] add flatpak tracking
 - [ ] test new tracking system for all of the packages.ini setups

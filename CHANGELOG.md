@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha]
+
+### Added
+
+- Comprehensive tests for system and window manager configurations
+- --noconfirm option to commands for skipping confirmation prompts
+- Enhanced CLI and distribution tests with additional scenarios
+- Type hints and improved readability in tests
+- Check official repo before AUR/COPR repo installs
+- Autocomplete and CLI installation script
+- Flatpak management functions and updated installation logic
+- Entry point script for auto-penguin-setup development
+- All setup components to setup command
+
+### Changed
+
+- Updated AGENTS.md and todos for improved guidelines and testing organization
+- Reorganized package lists and improved logging in AMD and Ueberzugpp installers
+- Added privilege escalation in installers and system configurations
+- Updated timer and service descriptions for monthly cleanup in trash-cli
+- Enhanced type annotations for better clarity and maintainability
+- Improved error logging and output handling in auto-cpufreq installer
+- Migrated better naming
+- Removed outdated documentation files and updated docs
+- Moved configs/ and default configs to cli folder
+- Enhanced distribution detection with package manager validation and improved logging
+- Improved configuration handling and package mapping logic
+- Reorganized CLI command implementations into separate modules for improved maintainability
+- Replaced print statements with logger calls for improved logging consistency
+- Enhanced package tracking logic to prevent duplicates and improve logging
+- Added verbose flag to all CLI commands for improved output control
+- Centralized logging setup and improved log message levels
+- Enabled package manager output shows on terminal
+- Optimized distribution-specific logic and logger performance
+- Migrated auto-penguin-setup from bash to python
+
+### Fixed
+
+- Improved source filtering to be case-insensitive and handle copr/aur in list command
+- Added AUR installation handling and error logging in vscode
+- Strip inline comments before comma-split to avoid parsing comment text as packages in config
+- Updated vscode package reference
+- Oh-my-zsh setup to work on automated install
+
+### Removed
+
+- Outdated installation script for mpv
+
 ## [0.1.0-alpha]
 
 ### Added
@@ -75,4 +123,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added repository removal functions
     - Improved code formatting
 
-[0.1.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.1.0-alpha...HEAD
+[0.2.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.1.0-alpha...v0.2.0-alpha
+[0.1.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/releases/tag/v0.1.0-alpha

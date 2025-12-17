@@ -1,0 +1,137 @@
+[project]
+name = "auto-penguin-setup"
+version = "0.2.0-alpha"
+license = { text = "BSD-3-Clause" }
+description = "Automated Linux setup tool supporting Fedora, Arch, and Debian-based systems"
+keywords = ["linux", "automation", "setup", "package-manager"]
+requires-python = ">=3.12"
+authors = [{ name = "Cyber-Syntax" }]
+dependencies = ["orjson"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: POSIX :: Linux",
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+
+[project.urls]
+repository = "https://github.com/Cyber-Syntax/auto-penguin-setup"
+issues = "https://github.com/Cyber-Syntax/auto-penguin-setup/issues"
+changelog = "https://github.com/Cyber-Syntax/auto-penguin-setup/blob/main/CHANGELOG.md"
+funding = "https://github.com/sponsors/Cyber-Syntax"
+documentation = "https://github.com/Cyber-Syntax/auto-penguin-setup#readme"
+
+[project.scripts]
+aps = "aps.main:main"
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov"]
+lint = ["ruff"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+managed = true
+required-environments = ["sys_platform == 'linux'"]
+
+[tool.setuptools.package-data]
+aps = ["configs/**"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aps*"]
+
+[tool.pytest.ini_options]
+addopts = "-vq"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+
+[tool.ruff]
+line-length = 79
+indent-width = 4
+include = ["pyproject.toml"]
+src = ["src", "tests"]
+# Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373.
+ignore = ["E203"]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+# set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+extend-select = [
+  "B",   # bugbear
+  "B9",
+  "PL",  # pylint
+  "D",   # test pycodestyle
+  "W",   # PyCodeStyle warnings
+  "E",   # PyCodeStyle errors
+  "I",   # Sort imports properly
+  "UP",  # Warn if certain things can changed due to newer Python versions
+  "C4",  # Catch incorrect use of comprehensions, dict, list, etc
+  "FA",  # Enforce from __future__ import annotations
+  "ISC", # Good use of string concatenation
+  "ICN", # Use common import conventions
+  "RET", # Good return practices
+  "SIM", # Common simplification rules
+  "TID", # Some good import practices
+  "TC",  # Enforce importing certain types in a TYPE_CHECKING block
+  "PTH", # Use pathlib instead of os.path
+  "PGH", # pygrep-hooks
+  "TD",  # Be diligent with TODO comments
+  "RUF", # ruff-specific rules
+  "E501", # line too long (handled by formatter)
+]
+
+ignore = [
+  # only relevant if you run a script with `python -0`,
+  # which seems unlikely for any of the scripts in this repo
+  "B011",
+  # Leave it to the formatter to split long lines and
+  # the judgement of all of us.
+  # "E501"
+]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 79
+
+[tool.coverage.run]
+source = ["src/aps"]
+omit = ["tests/*", "scripts/*", "**/__pycache__/*"]
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_no_return = true

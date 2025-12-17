@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# aps bash completion script
+# Source this file to enable tab completion for aps command
+
+_aps_completion() {
+    local cur prev commands
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Available commands
+    commands="install remove list sync-repos status setup"
+    
+    # Global options
+    local global_opts="--help -h --verbose --version -v --noconfirm"
+    
+    # Command-specific options
+    local install_opts="--dry-run --verbose --help -h"
+    local remove_opts="--dry-run --verbose --help -h"
+    local list_opts="--source --verbose --help -h"
+    local sync_repos_opts="--auto --verbose --help -h"
+    local status_opts="--verbose --help -h"
+    local setup_opts="--verbose --help -h"
+    
+    # Categories for install command
+    local categories="@core @apps @dev @desktop @laptop @homeserver @qtile @i3 @wm-common @games @flatpak"
+    
+    # Components for setup command
+    local components="aur-helper flatpak ollama tlp nvidia brave fonts ohmyzsh neovim-config"
+    
+    # Sources for list --source
+    local sources="official copr aur ppa flatpak"
+    
+    # If we're completing the first argument (command)
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+        mapfile -t COMPREPLY < <(compgen -W "${commands} ${global_opts}" -- "${cur}")
+        return 0
+    fi
+    
+    # Get the command being used
+    local command="${COMP_WORDS[1]}"
+    
+    case "${command}" in
+        install)
+            if [[ ${cur} == -* ]]; then
+                mapfile -t COMPREPLY < <(compgen -W "${install_opts}" -- "${cur}")
+            elif [[ ${cur} == @* ]]; then
+                mapfile -t COMPREPLY < <(compgen -W "${categories}" -- "${cur}")
+            else
+                # Complete with package names (empty for now)
+                COMPREPLY=()
+            fi
+            ;;
+        remove)
+            if [[ ${cur} == -* ]]; then
+                mapfile -t COMPREPLY < <(compgen -W "${remove_opts}" -- "${cur}")
+            else
+                # Complete with package names (empty for now)
+                COMPREPLY=()
+            fi
+            ;;
+        list)
+            case "${prev}" in
+                --source)
+                    mapfile -t COMPREPLY < <(compgen -W "${sources}" -- "${cur}")
+                    ;;
+                *)
+                    if [[ ${cur} == -* ]]; then
+                        mapfile -t COMPREPLY < <(compgen -W "${list_opts}" -- "${cur}")
+                    else
+                        COMPREPLY=()
+                    fi
+                    ;;
+            esac
+            ;;
+        sync-repos)
+            mapfile -t COMPREPLY < <(compgen -W "${sync_repos_opts}" -- "${cur}")
+            ;;
+        status)
+            mapfile -t COMPREPLY < <(compgen -W "${status_opts}" -- "${cur}")
+            ;;
+        setup)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ ${cur} == -* ]]; then
+                    mapfile -t COMPREPLY < <(compgen -W "${setup_opts}" -- "${cur}")
+                else
+                    mapfile -t COMPREPLY < <(compgen -W "${components}" -- "${cur}")
+                fi
+            else
+                mapfile -t COMPREPLY < <(compgen -W "${setup_opts}" -- "${cur}")
+            fi
+            ;;
+        *)
+            # Unknown command, no completion
+            COMPREPLY=()
+            ;;
+    esac
+    
+    return 0
+}
+
+# Register the completion function for aps command
+complete -F _aps_completion aps

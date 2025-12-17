@@ -1,0 +1,13 @@
+[Unit]
+Description=Monthly timer for trash-cli cleanup
+
+[Timer]
+# Runs the service monthly.
+OnCalendar=monthly
+# Randomize start time to avoid simultaneous execution with other timers.
+RandomizedDelaySec=30m
+# Persistent makes sure that if the scheduled run was missed, it will run as soon as possible.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

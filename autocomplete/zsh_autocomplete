@@ -1,0 +1,102 @@
+#compdef aps
+
+# aps zsh completion script
+# Add this to your zsh completions directory or source it in your .zshrc
+
+_aps() {
+    local -a commands
+    local state line
+    
+    # Define available commands
+    commands=(
+        'install:Install packages or categories'
+        'remove:Remove packages'
+        'list:List tracked packages'
+        'sync-repos:Migrate repository changes'
+        'status:Show installation status'
+        'setup:Setup system components'
+    )
+
+    _arguments -C \
+        '(-h --help)'{-h,--help}'[Show help information]' \
+        '(--verbose)--verbose[Enable verbose output]' \
+        '(--noconfirm)--noconfirm[Skip confirmation prompts]' \
+        '(-v --version)'{-v,--version}'[Show version and exit]' \
+        '1: :->command' \
+        '*: :->args' \
+        && return 0
+
+    case $state in
+        command)
+            _describe 'aps commands' commands
+            ;;
+        args)
+            case ${line[1]} in
+                install)
+                    local -a categories
+                    categories=(
+                        '@core:Core system packages'
+                        '@apps:Application packages'
+                        '@dev:Development tools'
+                        '@desktop:Desktop environment packages'
+                        '@laptop:Laptop-specific packages'
+                        '@homeserver:Home server packages'
+                        '@qtile:Qtile window manager'
+                        '@i3:i3 window manager'
+                        '@wm-common:Common window manager tools'
+                        '@games:Gaming packages'
+                        '@flatpak:Flatpak applications'
+                    )
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]' \
+                        '--dry-run[Simulate installation without making changes]' \
+                        '*:package or category:_values "packages and categories" ${categories[@]}'
+                    ;;
+                remove)
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]' \
+                        '*:package:_files'
+                    ;;
+                list)
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]' \
+                        '--source[Filter by source]:source:(official copr aur ppa flatpak)'
+                    ;;
+                sync-repos)
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]' \
+                        '--auto[Auto-approve migrations]'
+                    ;;
+                status)
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]'
+                    ;;
+                setup)
+                    local -a components
+                    components=(
+                        'aur-helper:Install AUR helper (paru/yay)'
+                        'flatpak:Setup Flatpak with Flathub'
+                        'ollama:Install Ollama AI platform'
+                        'tlp:Install TLP power management'
+                        'nvidia:Install NVIDIA drivers'
+                        'brave:Install Brave browser'
+                        'fonts:Install common fonts'
+                        'ohmyzsh:Install Oh My Zsh'
+                        'neovim-config:Setup Neovim configuration'
+                    )
+                    _arguments \
+                        '(--verbose)--verbose[Enable verbose output]' \
+                        '(-h --help)'{-h,--help}'[Show help information]' \
+                        '1:component:_values "components" ${components[@]}'
+                    ;;
+            esac
+            ;;
+    esac
+
+    return 0
+}
