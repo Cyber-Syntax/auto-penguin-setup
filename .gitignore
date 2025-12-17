@@ -1,6 +1,7 @@
 memory-bank/
 backups
 plan
+*_cov.txt
 
 # syncthing conflict files
 *.sync-conflict-*

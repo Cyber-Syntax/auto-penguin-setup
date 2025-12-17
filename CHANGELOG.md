@@ -9,33 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Complete Python Migration**: Migrated entire codebase from Bash to Python for better maintainability, performance, and testability
-- **Python CLI Framework**: New command-line interface built with Python using argparse and rich for enhanced user experience
-- **Package Management Abstraction**: Unified package management system supporting Fedora, Arch, and Debian-based distributions
-- **Comprehensive Test Suite**: 106+ pytest tests covering all core functionality with high coverage
-- **Hardware Detection Module**: Python implementation for detecting and configuring hardware-specific settings
-- **System Configuration Module**: Python-based system setup and configuration management
-- **Window Manager Support**: Python modules for configuring various window managers (Qtile, i3, Hyprland)
-- **Display Manager Setup**: Python implementation for configuring display managers (GDM, LightDM, SDDM)
-- **Repository Management**: Enhanced repository handling with automatic migration and cleanup
-- **Package Tracking System**: Improved tracking with metadata storage and repository migration capabilities
-- **Configuration Parser**: Robust INI configuration parsing with validation and error handling
-- **Development Tools**: Added uv package manager support, pre-commit hooks, and development dependencies
+- Comprehensive tests for system and window manager configurations
+- --noconfirm option to commands for skipping confirmation prompts
+- Enhanced CLI and distribution tests with additional scenarios
+- Type hints and improved readability in tests
+- Check official repo before AUR/COPR repo installs
+- Autocomplete and CLI installation script
+- Flatpak management functions and updated installation logic
+- Entry point script for auto-penguin-setup development
+- All setup components to setup command
 
 ### Changed
 
-- **Architecture**: Complete rewrite from shell scripts to object-oriented Python modules
-- **Error Handling**: Improved error handling with proper exceptions and logging
-- **Type Safety**: Added type hints throughout the codebase for better code quality
-- **Testing**: Migrated from BATS to pytest for more comprehensive and maintainable tests
-- **Dependency Management**: Switched to modern Python packaging with pyproject.toml
-- **CLI Interface**: Enhanced command-line interface with better argument parsing and help messages
+- Updated AGENTS.md and todos for improved guidelines and testing organization
+- Reorganized package lists and improved logging in AMD and Ueberzugpp installers
+- Added privilege escalation in installers and system configurations
+- Updated timer and service descriptions for monthly cleanup in trash-cli
+- Enhanced type annotations for better clarity and maintainability
+- Improved error logging and output handling in auto-cpufreq installer
+- Migrated better naming
+- Removed outdated documentation files and updated docs
+- Moved configs/ and default configs to cli folder
+- Enhanced distribution detection with package manager validation and improved logging
+- Improved configuration handling and package mapping logic
+- Reorganized CLI command implementations into separate modules for improved maintainability
+- Replaced print statements with logger calls for improved logging consistency
+- Enhanced package tracking logic to prevent duplicates and improve logging
+- Added verbose flag to all CLI commands for improved output control
+- Centralized logging setup and improved log message levels
+- Enabled package manager output shows on terminal
+- Optimized distribution-specific logic and logger performance
+- Migrated auto-penguin-setup from bash to python
+
+### Fixed
+
+- Improved source filtering to be case-insensitive and handle copr/aur in list command
+- Added AUR installation handling and error logging in vscode
+- Strip inline comments before comma-split to avoid parsing comment text as packages in config
+- Updated vscode package reference
+- Oh-my-zsh setup to work on automated install
 
 ### Removed
 
-- **Bash Scripts**: All 50+ Bash scripts replaced with Python equivalents
-- **Shell Dependencies**: Eliminated reliance on shell-specific utilities and improved security
-- **Legacy Code**: Removed outdated and unmaintained shell script components
+- Outdated installation script for mpv
 
 ## [0.1.0-alpha]
 
