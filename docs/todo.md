@@ -16,6 +16,9 @@
 
 ## in-progress
 
+- [ ] BUG: dry-run not work for copr enabling
+- [ ] add setup commands like system folder, hardware folder to cli which we didn't have yet
+- [ ] better to have util function to backup any config file to keep DRY principle
 - [ ] test all aps commands in virtual machines for all distros
 - [ ] add option to remove the packages, which it would remove from tracked database
 - [ ] logs rotation setup for aps logs to avoid large log files
@@ -129,17 +132,17 @@
 SUBSYSTEM=="rfkill", ATTR{type}=="bluetooth", ATTR{state}="0"
 ```
 
-2. reconfigured the tlp settings
+1. reconfigured the tlp settings
 
 - [ ] display backlight show 3W usage even on 10% brightness
 - [x] powertop need to run 1h 30min to detect power consumption correctly
 - add enable to auto-cpufreq which we do same thing on tlp
 
-3. disable leds like power led, numlock led, mic led
+1. disable leds like power led, numlock led, mic led
 
 ## cpu status
 
-4. disable intel_pstate and enable acpid to get 4.6 Ghz turbo boost , intel_pstate only 1.3Ghz available
+1. disable intel_pstate and enable acpid to get 4.6 Ghz turbo boost , intel_pstate only 1.3Ghz available
    which it would be good for battery and tempature but things would take more time with lower ghz though?
 
 dependencies install:
