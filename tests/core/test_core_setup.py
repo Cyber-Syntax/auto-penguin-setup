@@ -352,7 +352,6 @@ class TestComponentRegistry:
             "thinkfan",
             "tlp",
             "autocpufreq",
-            "borgbackup",
             "nfancurve",
             "syncthing",
             "trashcli",

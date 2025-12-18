@@ -122,7 +122,6 @@ class APSConfigParser:
             # firewall
             ufw
             trash-cli, syncthing
-            borgbackup
 
         Args:
             section: Section name to read packages from

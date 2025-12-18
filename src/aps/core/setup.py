@@ -16,7 +16,6 @@ from aps.hardware import (
 )
 from aps.installers import (
     AutoCPUFreqInstaller,
-    BorgbackupInstaller,
     BraveInstaller,
     NfancurveInstaller,
     OhMyZshInstaller,
@@ -83,10 +82,6 @@ class SetupManager:
         "autocpufreq": {
             "description": "Install Auto-CPUFreq power optimization",
             "installer": AutoCPUFreqInstaller,
-        },
-        "borgbackup": {
-            "description": "Install BorgBackup",
-            "installer": BorgbackupInstaller,
         },
         "nfancurve": {
             "description": "Install NVIDIA fan curve control",

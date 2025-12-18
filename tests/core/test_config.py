@@ -217,7 +217,6 @@ packages=curl, wget
 packages2=ufw
 packages3=trash-cli,syncthing
 # backup tools
-packages4=borgbackup
 packages5=backintime
 packages6=flatpak,jq
 
@@ -243,7 +242,6 @@ shell=starship # prompt
         assert "ufw" in core_packages
         assert "trash-cli" in core_packages
         assert "syncthing" in core_packages
-        assert "borgbackup" in core_packages
         assert "backintime" in core_packages
         assert "flatpak" in core_packages
         assert "jq" in core_packages
