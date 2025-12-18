@@ -27,7 +27,11 @@ class TestAutoCPUFreqInstall:
     @patch("aps.installers.base.get_package_manager")
     @patch("shutil.which")
     def test_install_git_not_installed(
-        self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
+        self,
+        mock_which: Mock,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test install fails when git is not installed."""
         caplog.set_level("ERROR")
@@ -96,7 +100,9 @@ class TestAutoCPUFreqIsInstalled:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     @patch("shutil.which")
-    def test_is_installed_true(self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_is_installed_true(
+        self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test is_installed returns True when installed."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_which.return_value = "/usr/bin/auto-cpufreq"
@@ -109,7 +115,9 @@ class TestAutoCPUFreqIsInstalled:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     @patch("shutil.which")
-    def test_is_installed_false(self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_is_installed_false(
+        self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test is_installed returns False when not installed."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_which.return_value = None

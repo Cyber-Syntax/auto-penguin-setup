@@ -23,9 +23,13 @@ class TestOfficialReposPriority:
 
         with patch("subprocess.run") as mock_run:
             # Mock dnf repoquery returning success
-            mock_repoquery = Mock(returncode=0, stdout="git-2.43.0-1.fc40.x86_64\n")
+            mock_repoquery = Mock(
+                returncode=0, stdout="git-2.43.0-1.fc40.x86_64\n"
+            )
             # Mock dnf list showing official repo (not copr)
-            mock_list = Mock(returncode=0, stdout="git.x86_64 2.43.0-1.fc40 updates\n")
+            mock_list = Mock(
+                returncode=0, stdout="git.x86_64 2.43.0-1.fc40 updates\n"
+            )
 
             mock_run.side_effect = [mock_repoquery, mock_list]
             result = pm.is_available_in_official_repos("git")
@@ -74,7 +78,9 @@ class TestOfficialReposPriority:
 
         with patch("subprocess.run") as mock_run:
             # Mock dnf repoquery returning success
-            mock_repoquery = Mock(returncode=0, stdout="lazygit-0.57.0-1.fc42.x86_64\n")
+            mock_repoquery = Mock(
+                returncode=0, stdout="lazygit-0.57.0-1.fc42.x86_64\n"
+            )
             # Mock dnf list showing COPR repo
             mock_list = Mock(
                 returncode=0,
@@ -147,7 +153,8 @@ class TestOfficialReposPriority:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = Mock(
-                returncode=0, stdout="core/linux 6.6.8-1\n    The Linux kernel and modules\n"
+                returncode=0,
+                stdout="core/linux 6.6.8-1\n    The Linux kernel and modules\n",
             )
             result = pm.is_available_in_official_repos("linux")
 
@@ -193,7 +200,8 @@ class TestOfficialReposPriority:
 
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = Mock(
-                returncode=0, stdout="nonexistent:\n  Installed: (none)\n  Candidate: (none)\n"
+                returncode=0,
+                stdout="nonexistent:\n  Installed: (none)\n  Candidate: (none)\n",
             )
             result = pm.is_available_in_official_repos("nonexistent")
 

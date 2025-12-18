@@ -21,7 +21,9 @@ class TestBaseSystemConfigInit:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_init_initializes_attributes(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_init_initializes_attributes(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that __init__ properly initializes attributes."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -129,7 +131,9 @@ class TestBaseSystemConfigPackageManager:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_package_manager_fedora(self, mock_get_pm: Mock, mock_distro: Mock) -> None:
+    def test_package_manager_fedora(
+        self, mock_get_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that package manager is correctly initialized for Fedora."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -150,7 +154,9 @@ class TestBaseSystemConfigPackageManager:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_package_manager_arch(self, mock_get_pm: Mock, mock_distro: Mock) -> None:
+    def test_package_manager_arch(
+        self, mock_get_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that package manager is correctly initialized for Arch."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -171,7 +177,9 @@ class TestBaseSystemConfigPackageManager:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_package_manager_debian(self, mock_get_pm: Mock, mock_distro: Mock) -> None:
+    def test_package_manager_debian(
+        self, mock_get_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that package manager is correctly initialized for Debian."""
         debian_distro = DistroInfo(
             name="Debian GNU/Linux",

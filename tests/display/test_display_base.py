@@ -25,7 +25,9 @@ class TestBaseDisplayManagerInit:
 
     @patch("aps.display.base.detect_distro")
     @patch("aps.display.base.get_package_manager")
-    def test_init_initializes_attributes(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_init_initializes_attributes(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that __init__ properly initializes attributes."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",

@@ -49,7 +49,9 @@ class TestBaseHardwareConfigAbstractMethods:
 class TestCopyConfigFile:
     """Test _copy_config_file method."""
 
-    def test_copy_file_success(self, tmp_path: Path, caplog: LogCaptureFixture) -> None:
+    def test_copy_file_success(
+        self, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
         """Test successful file copy."""
         caplog.set_level("INFO")
         config = ConcreteHardwareConfig("fedora")
@@ -70,7 +72,9 @@ class TestCopyConfigFile:
         assert destination.read_text() == "config content"
         assert "Copied" in caplog.text
 
-    def test_copy_file_creates_destination_directory(self, tmp_path: Path) -> None:
+    def test_copy_file_creates_destination_directory(
+        self, tmp_path: Path
+    ) -> None:
         """Test that destination directory is created if it doesn't exist."""
         config = ConcreteHardwareConfig("fedora")
 
@@ -87,7 +91,9 @@ class TestCopyConfigFile:
         assert destination.exists()
         assert dest_dir.exists()
 
-    def test_copy_file_source_not_found(self, tmp_path: Path, caplog: LogCaptureFixture) -> None:
+    def test_copy_file_source_not_found(
+        self, tmp_path: Path, caplog: LogCaptureFixture
+    ) -> None:
         """Test handling of missing source file."""
         caplog.set_level("ERROR")
         config = ConcreteHardwareConfig("fedora")
@@ -100,13 +106,19 @@ class TestCopyConfigFile:
         assert result is False
         assert "Failed to copy" in caplog.text
 
-    def test_copy_file_permission_denied(self, caplog: LogCaptureFixture) -> None:
+    def test_copy_file_permission_denied(
+        self, caplog: LogCaptureFixture
+    ) -> None:
         """Test handling of permission denied errors."""
         caplog.set_level("ERROR")
         config = ConcreteHardwareConfig("fedora")
 
-        with patch("shutil.copy2", side_effect=PermissionError("Permission denied")):
-            result = config._copy_config_file("/src/file.conf", "/dest/file.conf")
+        with patch(
+            "shutil.copy2", side_effect=PermissionError("Permission denied")
+        ):
+            result = config._copy_config_file(
+                "/src/file.conf", "/dest/file.conf"
+            )
 
             assert result is False
             assert "Failed to copy" in caplog.text

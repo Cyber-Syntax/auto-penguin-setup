@@ -20,7 +20,9 @@ def pytest_configure(config: pytest.Config) -> None:
     # Patch run_privileged globally for all tests
     patcher = patch("aps.utils.privilege.run_privileged")
     _run_privileged_mock = patcher.start()
-    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    _run_privileged_mock.return_value = MagicMock(
+        returncode=0, stdout="", stderr=""
+    )
 
     # Configure logging to avoid "I/O operation on closed file" errors
     # Remove all handlers and use NullHandler for tests
@@ -40,7 +42,9 @@ def mock_run_privileged() -> Generator[MagicMock, None, None]:
     # Reset mock before each test - including side_effect
     _run_privileged_mock.reset_mock(side_effect=True)
     # Set default return value
-    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    _run_privileged_mock.return_value = MagicMock(
+        returncode=0, stdout="", stderr=""
+    )
     yield _run_privileged_mock
 
 

@@ -20,6 +20,7 @@ class NfancurveInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up nfancurve for NVIDIA fan control...")
 
@@ -35,7 +36,9 @@ class NfancurveInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to create /opt/nfancurve directory: %s", e.stderr)
+                logger.error(
+                    "Failed to create /opt/nfancurve directory: %s", e.stderr
+                )
                 return False
 
         # Copy temp.sh script to /opt/nfancurve
@@ -131,6 +134,7 @@ class NfancurveInstaller(BaseInstaller):
 
         Returns:
             True if enabled, False otherwise
+
         """
         try:
             result = subprocess.run(

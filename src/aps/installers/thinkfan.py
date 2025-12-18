@@ -21,26 +21,33 @@ class ThinkfanInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up thinkfan for fan control...")
 
         # Install thinkfan if not already installed
         if not self.pm.is_installed("thinkfan"):
             logger.info(
-                "thinkfan not installed — attempting to install for distro: %s", self.distro
+                "thinkfan not installed — attempting to install for distro: %s",
+                self.distro,
             )
 
             if self.distro == "arch":
                 # On Arch, install from AUR
                 success, error = self.pm.install(["AUR:thinkfan"])
                 if not success:
-                    logger.error("Failed to install thinkfan from AUR: %s", error)
+                    logger.error(
+                        "Failed to install thinkfan from AUR: %s", error
+                    )
                     return False
             else:
                 # Debian/Fedora should have thinkfan in official repos
                 success, error = self.pm.install(["thinkfan"])
                 if not success:
-                    logger.error("Failed to install thinkfan from distro repositories: %s", error)
+                    logger.error(
+                        "Failed to install thinkfan from distro repositories: %s",
+                        error,
+                    )
                     return False
         else:
             logger.debug("thinkfan package already installed")
@@ -59,7 +66,9 @@ class ThinkfanInstaller(BaseInstaller):
                 shutil.copy2(conf_file, backup_file)
                 logger.debug("Created backup of thinkfan configuration")
             except (OSError, shutil.Error) as e:
-                logger.warning("Failed to create backup of thinkfan configuration: %s", e)
+                logger.warning(
+                    "Failed to create backup of thinkfan configuration: %s", e
+                )
 
         # Copy new configuration
         source_conf = resolve_config_file("thinkfan.conf")
@@ -105,7 +114,9 @@ class ThinkfanInstaller(BaseInstaller):
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.warning("Failed to reload thinkpad_acpi module: %s", e.stderr)
+            logger.warning(
+                "Failed to reload thinkpad_acpi module: %s", e.stderr
+            )
 
         # Enable and start thinkfan services
         logger.info("Enabling and starting thinkfan services...")
@@ -124,7 +135,9 @@ class ThinkfanInstaller(BaseInstaller):
                 logger.warning("Failed to enable service: %s", service)
 
         # Create thinkfan sleep hack service
-        sleep_hack_service = Path("/etc/systemd/system/thinkfan-sleep-hack.service")
+        sleep_hack_service = Path(
+            "/etc/systemd/system/thinkfan-sleep-hack.service"
+        )
         service_content = """[Unit]
 Description=Set fan to auto so BIOS can shut off fan during S2 sleep
 Before=sleep.target
@@ -157,7 +170,9 @@ WantedBy=sleep.target
             )
             logger.debug("Enabled thinkfan-sleep-hack service")
         except subprocess.CalledProcessError as e:
-            logger.warning("Failed to enable thinkfan-sleep-hack service: %s", e.stderr)
+            logger.warning(
+                "Failed to enable thinkfan-sleep-hack service: %s", e.stderr
+            )
 
         logger.info("Thinkfan setup completed successfully.")
         return True
@@ -167,5 +182,6 @@ WantedBy=sleep.target
 
         Returns:
             True if installed, False otherwise
+
         """
         return self.pm.is_installed("thinkfan")

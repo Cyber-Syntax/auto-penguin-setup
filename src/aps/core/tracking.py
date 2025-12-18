@@ -17,7 +17,9 @@ class PackageRecord:
     """Represents a tracked package installation."""
 
     name: str
-    mapped_name: str | None = None  # Actual installed name if different from 'name'
+    mapped_name: str | None = (
+        None  # Actual installed name if different from 'name'
+    )
     source: str = "official"  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", etc.
     category: str | None = None
     installed_at: str = ""  # ISO 8601 timestamp - set in create()
@@ -42,7 +44,9 @@ class PackageRecord:
         Returns:
             New PackageRecord instance
         """
-        timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
+        timestamp = (
+            datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
+        )
         return cls(
             name=name,
             mapped_name=mapped_name,
@@ -111,7 +115,9 @@ class PackageTracker:
         # Check if package exists (by name or mapped_name)
         existing_idx = None
         for idx, pkg in enumerate(packages):
-            if pkg.name == record.name or (pkg.mapped_name and pkg.mapped_name == record.name):
+            if pkg.name == record.name or (
+                pkg.mapped_name and pkg.mapped_name == record.name
+            ):
                 existing_idx = idx
                 break
 
@@ -171,7 +177,10 @@ class PackageTracker:
                 logger.debug("Added new package: %s", record.name)
 
         logger.info(
-            "Tracked %d packages: %d added, %d updated", len(records), added_count, updated_count
+            "Tracked %d packages: %d added, %d updated",
+            len(records),
+            added_count,
+            updated_count,
         )
 
         # Write all packages back
@@ -247,7 +256,9 @@ class PackageTracker:
         original_count = len(packages)
 
         # Filter out the package to remove
-        filtered_packages = [p for p in packages if p.name != name and p.mapped_name != name]
+        filtered_packages = [
+            p for p in packages if p.name != name and p.mapped_name != name
+        ]
 
         if len(filtered_packages) == original_count:
             return False  # Package not found
@@ -273,7 +284,8 @@ class PackageTracker:
         filtered_packages = [
             p
             for p in packages
-            if p.name not in names_set and (p.mapped_name is None or p.mapped_name not in names_set)
+            if p.name not in names_set
+            and (p.mapped_name is None or p.mapped_name not in names_set)
         ]
 
         removed_count = len(packages) - len(filtered_packages)
@@ -296,7 +308,9 @@ class PackageTracker:
         packages = self.get_tracked_packages()
         return [p for p in packages if p.category == category]
 
-    def get_packages_by_source(self, source_prefix: str) -> list[PackageRecord]:
+    def get_packages_by_source(
+        self, source_prefix: str
+    ) -> list[PackageRecord]:
         """
         Get all packages from a specific source.
 
@@ -336,7 +350,9 @@ class PackageTracker:
         """
         if backup_path is None:
             timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-            backup_path = self.db_path.parent / f"{self.db_path.name}.backup.{timestamp}"
+            backup_path = (
+                self.db_path.parent / f"{self.db_path.name}.backup.{timestamp}"
+            )
 
         shutil.copy2(self.db_path, backup_path)
         return backup_path

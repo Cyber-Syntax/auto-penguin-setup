@@ -1,4 +1,4 @@
-"""Multimedia package configuration."""
+"""Multimedia package configuration for Fedora systems."""
 
 import logging
 

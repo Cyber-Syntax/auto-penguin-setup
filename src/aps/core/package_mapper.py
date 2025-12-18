@@ -122,7 +122,9 @@ class PackageMapper:
             self.mappings[original_name] = mapping
         logger.debug("Loaded %d mappings", len(self.mappings))
 
-    def _parse_mapping(self, original_name: str, mapped_value: str) -> PackageMapping:
+    def _parse_mapping(
+        self, original_name: str, mapped_value: str
+    ) -> PackageMapping:
         """
         Parse a mapping value to extract source prefix and package name.
 
@@ -189,7 +191,9 @@ class PackageMapper:
             source="official",
         )
 
-    def map_package(self, package_name: str, category: str | None = None) -> PackageMapping:
+    def map_package(
+        self, package_name: str, category: str | None = None
+    ) -> PackageMapping:
         """
         Map package name to distro-specific name and source.
 
@@ -221,7 +225,9 @@ class PackageMapper:
             category=category,
         )
 
-    def get_packages_by_source(self, source_prefix: str) -> list[PackageMapping]:
+    def get_packages_by_source(
+        self, source_prefix: str
+    ) -> list[PackageMapping]:
         """
         Get all packages from a specific source.
 
@@ -234,7 +240,11 @@ class PackageMapper:
         if source_prefix == "official":
             return [m for m in self.mappings.values() if m.is_official]
 
-        return [m for m in self.mappings.values() if m.source.startswith(source_prefix)]
+        return [
+            m
+            for m in self.mappings.values()
+            if m.source.startswith(source_prefix)
+        ]
 
     def has_mapping(self, package_name: str) -> bool:
         """Check if package has a defined mapping."""

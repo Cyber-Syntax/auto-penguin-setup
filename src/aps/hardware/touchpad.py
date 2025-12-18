@@ -37,7 +37,9 @@ class TouchpadConfig(BaseHardwareConfig):
         destination = "/etc/X11/xorg.conf.d/99-touchpad.conf"
 
         if not os.path.exists(config_source):
-            self.logger.error("Touchpad configuration file not found: %s", config_source)
+            self.logger.error(
+                "Touchpad configuration file not found: %s", config_source
+            )
             return False
 
         if self._copy_config_file(config_source, destination):

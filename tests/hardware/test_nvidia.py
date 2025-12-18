@@ -34,7 +34,9 @@ class TestNvidiaConfigDetection:
     @patch("subprocess.run")
     def test_has_nvidia_gpu_true(self, mock_run: Mock) -> None:
         """Test NVIDIA GPU detection when GPU is present."""
-        mock_run.return_value = Mock(stdout="NVIDIA Corporation GP104 [GeForce RTX 2070]\n")
+        mock_run.return_value = Mock(
+            stdout="NVIDIA Corporation GP104 [GeForce RTX 2070]\n"
+        )
         config = NvidiaConfig("fedora")
 
         result = config._has_nvidia_gpu()  # type: ignore[attr-defined]
@@ -44,7 +46,9 @@ class TestNvidiaConfigDetection:
     @patch("subprocess.run")
     def test_has_nvidia_gpu_false(self, mock_run: Mock) -> None:
         """Test NVIDIA GPU detection when GPU is not present."""
-        mock_run.return_value = Mock(stdout="Intel Corporation UHD Graphics 630\n")
+        mock_run.return_value = Mock(
+            stdout="Intel Corporation UHD Graphics 630\n"
+        )
         config = NvidiaConfig("fedora")
 
         result = config._has_nvidia_gpu()  # type: ignore[attr-defined]
@@ -69,7 +73,9 @@ class TestNvidiaConfigSetupCuda:
     """Test CUDA setup functionality."""
 
     @patch("aps.hardware.nvidia.NvidiaConfig._has_nvidia_gpu")
-    def test_setup_cuda_no_gpu(self, mock_gpu: Mock, caplog: LogCaptureFixture) -> None:
+    def test_setup_cuda_no_gpu(
+        self, mock_gpu: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test setup fails when no NVIDIA GPU is found."""
         caplog.set_level("ERROR")
         mock_gpu.return_value = False
@@ -120,7 +126,9 @@ class TestNvidiaConfigSetupCuda:
         mock_setup.assert_called_once()
 
     @patch("aps.hardware.nvidia.NvidiaConfig._has_nvidia_gpu")
-    def test_setup_cuda_unsupported_distro(self, mock_gpu: Mock, caplog: LogCaptureFixture) -> None:
+    def test_setup_cuda_unsupported_distro(
+        self, mock_gpu: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test setup fails with unsupported distribution."""
         caplog.set_level("ERROR")
         mock_gpu.return_value = True

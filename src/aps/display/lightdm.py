@@ -86,7 +86,9 @@ class LightDMConfig(BaseDisplayManager):
         config_file = Path("/etc/lightdm/lightdm.conf")
 
         if not config_file.exists():
-            logger.error("LightDM configuration file not found: %s", config_file)
+            logger.error(
+                "LightDM configuration file not found: %s", config_file
+            )
             return False
 
         # Create backup
@@ -124,9 +126,7 @@ class LightDMConfig(BaseDisplayManager):
         else:
             # Add new [Seat:*] section
             logger.info("Adding new LightDM autologin configuration...")
-            new_content = (
-                f"{content}\n\n[Seat:*]\nautologin-user={username}\nautologin-session={session}\n"
-            )
+            new_content = f"{content}\n\n[Seat:*]\nautologin-user={username}\nautologin-session={session}\n"
 
         # Write new configuration
         result = run_privileged(
@@ -144,7 +144,9 @@ class LightDMConfig(BaseDisplayManager):
         logger.info("LightDM autologin configured successfully")
         return True
 
-    def _modify_seat_section(self, content: str, username: str, session: str) -> str:
+    def _modify_seat_section(
+        self, content: str, username: str, session: str
+    ) -> str:
         """Modify the [Seat:*] section in LightDM config.
 
         Args:

@@ -12,7 +12,9 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_fedora(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
+    def test_configure_fedora(
+        self, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test optimization for Fedora."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -34,7 +36,9 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_arch(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
+    def test_configure_arch(
+        self, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test optimization for Arch."""
         arch_distro = DistroInfo(
             name="Arch Linux",
@@ -56,7 +60,9 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_unsupported(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
+    def test_configure_unsupported(
+        self, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test optimization for unsupported distro."""
         unsupported_distro = DistroInfo(
             name="Unknown",
@@ -76,7 +82,9 @@ class TestPackageManagerOptimizer:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_create_backup_success(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
+    def test_create_backup_success(
+        self, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test successful backup creation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",

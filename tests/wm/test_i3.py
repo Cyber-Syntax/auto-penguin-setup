@@ -54,7 +54,9 @@ class TestI3ConfigInstall:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_install_with_packages(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_with_packages(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test install with packages provided."""
         mock_distro.return_value = DistroInfo(
             name="Fedora Linux",
@@ -76,7 +78,9 @@ class TestI3ConfigInstall:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_install_without_packages(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_without_packages(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test install without packages (empty list)."""
         mock_distro.return_value = DistroInfo(
             name="Fedora Linux",
@@ -118,7 +122,9 @@ class TestI3ConfigInstall:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_install_exception_handling(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_exception_handling(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test install exception handling."""
         mock_distro.return_value = DistroInfo(
             name="Fedora Linux",
@@ -143,7 +149,9 @@ class TestI3ConfigConfigure:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_configure_returns_true(self, _mock_pm: Mock, _mock_distro: Mock) -> None:
+    def test_configure_returns_true(
+        self, _mock_pm: Mock, _mock_distro: Mock
+    ) -> None:
         """Test that configure always returns True."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",

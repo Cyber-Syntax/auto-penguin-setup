@@ -28,6 +28,7 @@ def run_privileged(
 
     Returns:
         CompletedProcess instance
+
     """
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("Running privileged command: %s", " ".join(cmd))

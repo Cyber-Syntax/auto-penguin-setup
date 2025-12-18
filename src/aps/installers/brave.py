@@ -20,6 +20,7 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
         logger.info("Installing Brave Browser...")
 
@@ -39,7 +40,9 @@ class BraveInstaller(BaseInstaller):
             logger.info("Brave Browser installed successfully")
 
         if not self._disable_keyring():
-            logger.warning("Failed to modify Brave desktop file, but continuing")
+            logger.warning(
+                "Failed to modify Brave desktop file, but continuing"
+            )
 
         return True
 
@@ -48,14 +51,19 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             bool: True if Brave is installed, False otherwise.
+
         """
-        return shutil.which("brave") is not None or shutil.which("brave-browser") is not None
+        return (
+            shutil.which("brave") is not None
+            or shutil.which("brave-browser") is not None
+        )
 
     def _install_brave(self) -> bool:
         """Install Brave using the official install script.
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
         try:
             # Download and execute official Brave install script
@@ -92,8 +100,11 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             bool: True if desktop file was modified successfully, False otherwise.
+
         """
-        xdg_data_home = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        xdg_data_home = os.environ.get(
+            "XDG_DATA_HOME", os.path.expanduser("~/.local/share")
+        )
         user_desktop_dir = Path(xdg_data_home) / "applications"
         user_desktop_file = user_desktop_dir / "brave-browser.desktop"
 
@@ -107,7 +118,9 @@ class BraveInstaller(BaseInstaller):
                 logger.info("Copying system desktop file to user directory...")
                 shutil.copy2(system_desktop_file, user_desktop_file)
             else:
-                logger.error("Brave desktop file not found at: %s", system_desktop_file)
+                logger.error(
+                    "Brave desktop file not found at: %s", system_desktop_file
+                )
                 return False
 
         if self._is_already_modified(user_desktop_file):
@@ -119,7 +132,9 @@ class BraveInstaller(BaseInstaller):
         try:
             shutil.copy2(user_desktop_file, backup_file)
         except Exception as e:
-            logger.warning("Failed to create backup file: %s, but proceeding anyway", e)
+            logger.warning(
+                "Failed to create backup file: %s, but proceeding anyway", e
+            )
 
         if not self._modify_desktop_file(user_desktop_file):
             logger.error("Failed to modify desktop file")
@@ -136,6 +151,7 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             Path: Path to the system desktop file.
+
         """
         standard_path = Path("/usr/share/applications/brave-browser.desktop")
 
@@ -163,6 +179,7 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             bool: True if already modified, False otherwise.
+
         """
         try:
             content = desktop_file.read_text()
@@ -179,6 +196,7 @@ class BraveInstaller(BaseInstaller):
 
         Returns:
             bool: True if modification was successful, False otherwise.
+
         """
         try:
             content = desktop_file.read_text()
@@ -186,8 +204,12 @@ class BraveInstaller(BaseInstaller):
             modified = False
 
             # Pattern 1: /usr/bin/brave-browser-stable
-            if re.search(r"^Exec=/usr/bin/brave-browser-stable", content, re.MULTILINE):
-                logger.debug("Modifying Exec lines with /usr/bin/brave-browser-stable")
+            if re.search(
+                r"^Exec=/usr/bin/brave-browser-stable", content, re.MULTILINE
+            ):
+                logger.debug(
+                    "Modifying Exec lines with /usr/bin/brave-browser-stable"
+                )
                 content = re.sub(
                     r"^Exec=/usr/bin/brave-browser-stable(.*)$",
                     r"Exec=/usr/bin/brave-browser-stable --password-store=basic\1",
@@ -214,7 +236,9 @@ class BraveInstaller(BaseInstaller):
                 modified = True
 
             if not modified:
-                logger.error("Failed to modify desktop file - no matching Exec lines found")
+                logger.error(
+                    "Failed to modify desktop file - no matching Exec lines found"
+                )
                 logger.debug("Desktop file Exec lines:")
                 for line in content.split("\n"):
                     if line.startswith("Exec="):

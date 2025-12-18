@@ -24,7 +24,9 @@ def cmd_install(args: Namespace) -> None:
     ensure_sudo()
 
     distro_info = detect_distro()
-    logger.debug("Detected distro: %s %s", distro_info.name, distro_info.version)
+    logger.debug(
+        "Detected distro: %s %s", distro_info.name, distro_info.version
+    )
 
     pm = get_package_manager(distro_info)
     repo_mgr = RepositoryManager(distro_info, pm)
@@ -71,29 +73,48 @@ def cmd_install(args: Namespace) -> None:
         mapping = repo_mgr.check_official_before_enabling(pkg, mapping)
 
         mapped_system.append(mapping)
-        logger.debug("Mapped %s -> %s (source: %s)", pkg, mapping.mapped_name, mapping.source)
+        logger.debug(
+            "Mapped %s -> %s (source: %s)",
+            pkg,
+            mapping.mapped_name,
+            mapping.source,
+        )
 
     # Separate by source (only for relevant distro families)
-    official_pkgs: list[PackageMapping] = [m for m in mapped_system if m.is_official]
+    official_pkgs: list[PackageMapping] = [
+        m for m in mapped_system if m.is_official
+    ]
     copr_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_copr] if distro_info.family == DistroFamily.FEDORA else []
+        [m for m in mapped_system if m.is_copr]
+        if distro_info.family == DistroFamily.FEDORA
+        else []
     )
     aur_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_aur] if distro_info.family == DistroFamily.ARCH else []
+        [m for m in mapped_system if m.is_aur]
+        if distro_info.family == DistroFamily.ARCH
+        else []
     )
     ppa_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_ppa] if distro_info.family == DistroFamily.DEBIAN else []
+        [m for m in mapped_system if m.is_ppa]
+        if distro_info.family == DistroFamily.DEBIAN
+        else []
     )
-    flatpak_mapped: list[PackageMapping] = [m for m in mapped_system if m.is_flatpak]
+    flatpak_mapped: list[PackageMapping] = [
+        m for m in mapped_system if m.is_flatpak
+    ]
 
-    logger.debug("Official packages: %s", [m.mapped_name for m in official_pkgs])
+    logger.debug(
+        "Official packages: %s", [m.mapped_name for m in official_pkgs]
+    )
     if distro_info.family == DistroFamily.FEDORA:
         logger.debug("COPR packages: %s", [m.mapped_name for m in copr_pkgs])
     if distro_info.family == DistroFamily.ARCH:
         logger.debug("AUR packages: %s", [m.mapped_name for m in aur_pkgs])
     if distro_info.family == DistroFamily.DEBIAN:
         logger.debug("PPA packages: %s", [m.mapped_name for m in ppa_pkgs])
-    logger.debug("Flatpak mapped packages: %s", [m.mapped_name for m in flatpak_mapped])
+    logger.debug(
+        "Flatpak mapped packages: %s", [m.mapped_name for m in flatpak_mapped]
+    )
 
     # Add mapped flatpak to flatpak_packages
     for m in flatpak_mapped:
@@ -129,7 +150,9 @@ def cmd_install(args: Namespace) -> None:
                     logger.error("Failed to add PPA %s", repo)
                     return
 
-    all_packages: list[str] = [m.original_name for m in mapped_system] + flatpak_packages
+    all_packages: list[str] = [
+        m.original_name for m in mapped_system
+    ] + flatpak_packages
 
     if args.dry_run:
         for p in all_packages:
@@ -137,10 +160,14 @@ def cmd_install(args: Namespace) -> None:
         logger.debug("Dry run completed")
     else:
         # Install system packages
-        system_to_install: list[str] = [m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs]
+        system_to_install: list[str] = [
+            m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs
+        ]
         logger.debug("Installing system packages: %s", system_to_install)
         if system_to_install:
-            success, error = pm.install(system_to_install, assume_yes=args.noconfirm)
+            success, error = pm.install(
+                system_to_install, assume_yes=args.noconfirm
+            )
             if not success:
                 logger.error("Failed to install system packages: %s", error)
                 return
@@ -150,7 +177,9 @@ def cmd_install(args: Namespace) -> None:
             aur_to_install: list[str] = [m.mapped_name for m in aur_pkgs]
             logger.debug("Installing AUR packages: %s", aur_to_install)
             if isinstance(pm, PacmanManager):
-                success = pm.install_aur(aur_to_install, assume_yes=args.noconfirm)
+                success = pm.install_aur(
+                    aur_to_install, assume_yes=args.noconfirm
+                )
                 if not success:
                     logger.error("Failed to install AUR packages")
                     return
@@ -176,7 +205,9 @@ def cmd_install(args: Namespace) -> None:
                 return
 
         # Track packages
-        for m in official_pkgs + copr_pkgs + aur_pkgs + ppa_pkgs + flatpak_mapped:
+        for m in (
+            official_pkgs + copr_pkgs + aur_pkgs + ppa_pkgs + flatpak_mapped
+        ):
             record = PackageRecord.create(
                 name=m.original_name,
                 source=m.source,
@@ -184,7 +215,9 @@ def cmd_install(args: Namespace) -> None:
                 mapped_name=m.mapped_name,
             )
             tracker.track_install(record)
-            logger.debug("Tracked package: %s from %s", m.original_name, m.source)
+            logger.debug(
+                "Tracked package: %s from %s", m.original_name, m.source
+            )
             logger.info("Installed: %s", m.original_name)
 
         # Track category flatpak packages

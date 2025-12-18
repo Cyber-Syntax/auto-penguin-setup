@@ -18,8 +18,11 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
-        logger.info("Optimizing package manager configuration for %s...", self.distro)
+        logger.info(
+            "Optimizing package manager configuration for %s...", self.distro
+        )
 
         if self.distro in ("fedora", "rhel", "centos", "nobara"):
             success = self._optimize_dnf()
@@ -40,6 +43,7 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
         logger.info("Configuring DNF for improved performance...")
         dnf_conf = Path("/etc/dnf/dnf.conf")
@@ -68,6 +72,7 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
         logger.info("Configuring pacman for improved performance...")
         pacman_conf = Path("/etc/pacman.conf")
@@ -79,7 +84,9 @@ class PackageManagerOptimizer(BaseSystemConfig):
         settings = {"ParallelDownloads": "20"}
 
         for key, value in settings.items():
-            if not self._add_or_update_setting(pacman_conf, key, value, separator=" = "):
+            if not self._add_or_update_setting(
+                pacman_conf, key, value, separator=" = "
+            ):
                 return False
 
         if not self._enable_pacman_color(pacman_conf):
@@ -93,6 +100,7 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
         logger.info("Configuring APT for improved performance...")
         apt_conf = Path("/etc/apt/apt.conf.d/99custom")
@@ -131,6 +139,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if backup was created or already exists, False on error.
+
         """
         backup_file = Path(f"{config_file}.bak")
 
@@ -168,6 +177,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if setting was added/updated successfully, False otherwise.
+
         """
         try:
             content = config_file.read_text()
@@ -176,7 +186,9 @@ Acquire::https::Timeout "15";
             # Check if key exists
             import re
 
-            pattern = rf"^{re.escape(key)}\s*{re.escape(separator.strip())}\s*(.+)$"
+            pattern = (
+                rf"^{re.escape(key)}\s*{re.escape(separator.strip())}\s*(.+)$"
+            )
             match = re.search(pattern, content, re.MULTILINE)
 
             if match:
@@ -186,8 +198,12 @@ Acquire::https::Timeout "15";
                     return True
 
                 # Update existing setting
-                logger.debug("Updating %s from %s to %s", key, current_value, value)
-                new_content = re.sub(pattern, setting_line, content, flags=re.MULTILINE)
+                logger.debug(
+                    "Updating %s from %s to %s", key, current_value, value
+                )
+                new_content = re.sub(
+                    pattern, setting_line, content, flags=re.MULTILINE
+                )
 
                 result = run_privileged(
                     ["tee", str(config_file)],
@@ -233,6 +249,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if color was enabled successfully, False otherwise.
+
         """
         try:
             content = pacman_conf.read_text()

@@ -19,6 +19,7 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
         logger.info("Installing Visual Studio Code...")
 
@@ -36,6 +37,7 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
 
         def install_with_repo() -> bool:
@@ -69,6 +71,7 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
 
         def install_from_aur() -> bool:
@@ -87,7 +90,9 @@ class VSCodeInstaller(BaseInstaller):
                     logger.info("Visual Studio Code installation completed.")
                     return True
 
-                logger.error("AUR install not supported with this package manager instance.")
+                logger.error(
+                    "AUR install not supported with this package manager instance."
+                )
                 return False
             except Exception as e:
                 logger.error("Failed to install Visual Studio Code: %s", e)
@@ -101,6 +106,7 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
         logger.info("Adding Visual Studio Code repository for Debian...")
 
@@ -133,10 +139,15 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         try:
             result = run_privileged(
-                ["rpm", "--import", "https://packages.microsoft.com/keys/microsoft.asc"],
+                [
+                    "rpm",
+                    "--import",
+                    "https://packages.microsoft.com/keys/microsoft.asc",
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -151,6 +162,7 @@ class VSCodeInstaller(BaseInstaller):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         repo_file = Path("/etc/yum.repos.d/vscode.repo")
 
@@ -183,6 +195,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         success, error = self.pm.install(["wget", "gpg"])
         if not success:
@@ -195,10 +208,15 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         try:
             wget_process = subprocess.Popen(
-                ["wget", "-qO-", "https://packages.microsoft.com/keys/microsoft.asc"],
+                [
+                    "wget",
+                    "-qO-",
+                    "https://packages.microsoft.com/keys/microsoft.asc",
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -220,7 +238,9 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
 
             result = run_privileged(
                 ["tee", "/usr/share/keyrings/packages.microsoft.gpg"],
-                stdin_input=gpg_output.decode() if isinstance(gpg_output, bytes) else gpg_output,
+                stdin_input=gpg_output.decode()
+                if isinstance(gpg_output, bytes)
+                else gpg_output,
                 capture_output=True,
                 check=False,
             )
@@ -256,6 +276,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         repo_content = (
             "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/packages.microsoft.gpg] "

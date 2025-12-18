@@ -16,6 +16,7 @@ class SyncthingInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up Syncthing...")
 
@@ -38,6 +39,7 @@ class SyncthingInstaller(BaseInstaller):
 
         Returns:
             True if enabled, False otherwise
+
         """
         try:
             result = subprocess.run(

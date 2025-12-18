@@ -94,8 +94,12 @@ class SDDMConfig(BaseDisplayManager):
             return False
 
         logger.info("SDDM is now set as the default display manager")
-        logger.info("To select your session, choose it from the SDDM session menu at login")
-        logger.info("You should reboot your system for the changes to take effect")
+        logger.info(
+            "To select your session, choose it from the SDDM session menu at login"
+        )
+        logger.info(
+            "You should reboot your system for the changes to take effect"
+        )
         return True
 
     def configure_autologin(self, username: str, session: str) -> bool:
@@ -108,7 +112,11 @@ class SDDMConfig(BaseDisplayManager):
         Returns:
             True on success
         """
-        logger.info("Setting up SDDM autologin for user %s with session %s...", username, session)
+        logger.info(
+            "Setting up SDDM autologin for user %s with session %s...",
+            username,
+            session,
+        )
 
         config_file = Path("/etc/sddm.conf")
         config_dir = Path("/etc/sddm.conf.d")
@@ -123,7 +131,9 @@ class SDDMConfig(BaseDisplayManager):
                 check=False,
             )
             if result.returncode != 0:
-                logger.error("Failed to create SDDM config directory: %s", result.stderr)
+                logger.error(
+                    "Failed to create SDDM config directory: %s", result.stderr
+                )
                 return False
 
         # Create autologin config in drop-in directory
@@ -142,7 +152,10 @@ Session={session}
         )
 
         if result.returncode != 0:
-            logger.error("Failed to write SDDM autologin configuration: %s", result.stderr)
+            logger.error(
+                "Failed to write SDDM autologin configuration: %s",
+                result.stderr,
+            )
             return False
 
         logger.info("SDDM autologin configured successfully")

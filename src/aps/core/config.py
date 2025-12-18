@@ -200,7 +200,9 @@ class APSConfigParser:
 
         return variables
 
-    def get(self, section: str, option: str, fallback: str | None = None) -> str | None:
+    def get(
+        self, section: str, option: str, fallback: str | None = None
+    ) -> str | None:
         """
         Get a single configuration value.
 
@@ -276,7 +278,9 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
     examples_dir = get_default_configs_dir()
 
     if not examples_dir.exists():
-        raise FileNotFoundError(f"Config examples directory not found: {examples_dir}")
+        raise FileNotFoundError(
+            f"Config examples directory not found: {examples_dir}"
+        )
 
     # Ensure config directory exists
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -296,7 +300,9 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
                 shutil.copy2(source, destination)
                 results[filename] = True
             else:
-                raise FileNotFoundError(f"Example config file not found: {source}")
+                raise FileNotFoundError(
+                    f"Example config file not found: {source}"
+                )
         else:
             results[filename] = False
 

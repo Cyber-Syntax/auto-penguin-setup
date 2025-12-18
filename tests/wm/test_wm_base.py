@@ -25,7 +25,9 @@ class TestBaseWMConfigInit:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_init_initializes_attributes(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_init_initializes_attributes(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that __init__ properly initializes attributes."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -108,7 +110,9 @@ class TestBaseWMConfigInit:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_pm_initialized_from_distro_info(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_pm_initialized_from_distro_info(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that package manager is initialized with correct distro_info."""
         test_distro = DistroInfo(
             name="Fedora Linux",
@@ -166,7 +170,9 @@ class TestAbstractMethods:
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")
-    def test_concrete_implementation_succeeds(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_concrete_implementation_succeeds(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that proper concrete implementation works."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",

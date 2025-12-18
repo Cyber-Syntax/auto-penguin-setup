@@ -56,7 +56,9 @@ class TestSetupCommand:
         mock_detect_distro.return_value = mock_distro
 
         manager = Mock()
-        manager.setup_component.side_effect = SetupError("Component not available")
+        manager.setup_component.side_effect = SetupError(
+            "Component not available"
+        )
         mock_manager_cls.return_value = manager
 
         caplog.set_level("ERROR")

@@ -41,14 +41,18 @@ class TestSetupLogging:
         assert len(handlers) == 2
 
         # Check that there's a StreamHandler with INFO level (default non-verbose)
-        stream_handlers = [h for h in handlers if isinstance(h, logging.StreamHandler)]
+        stream_handlers = [
+            h for h in handlers if isinstance(h, logging.StreamHandler)
+        ]
         assert any(h.level == logging.INFO for h in stream_handlers)
 
 
 class TestMain:
     """Tests for main function."""
 
-    def test_main_install_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_install_command(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test main with install command."""
         mock_cmd_install = Mock()
         monkeypatch.setattr("aps.main.cmd_install", mock_cmd_install)
@@ -59,7 +63,9 @@ class TestMain:
         assert result == 0
         mock_cmd_install.assert_called_once()
 
-    def test_main_remove_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_remove_command(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test main with remove command."""
         mock_cmd_remove = Mock()
         monkeypatch.setattr("aps.main.cmd_remove", mock_cmd_remove)
@@ -81,7 +87,9 @@ class TestMain:
         assert result == 0
         mock_cmd_list.assert_called_once()
 
-    def test_main_sync_repos_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_sync_repos_command(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test main with sync-repos command."""
         mock_cmd_sync_repos = Mock()
         monkeypatch.setattr("aps.main.cmd_sync_repos", mock_cmd_sync_repos)
@@ -92,7 +100,9 @@ class TestMain:
         assert result == 0
         mock_cmd_sync_repos.assert_called_once()
 
-    def test_main_status_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_main_status_command(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test main with status command."""
         mock_cmd_status = Mock()
         monkeypatch.setattr("aps.main.cmd_status", mock_cmd_status)
@@ -115,7 +125,9 @@ class TestMain:
         mock_cmd_setup.assert_called_once()
 
     def test_main_no_command(
-        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Test main without a command shows help and exits with 2."""
         monkeypatch.setattr(sys, "argv", ["aps"])
@@ -128,7 +140,9 @@ class TestMain:
         assert "usage:" in captured.err
 
     def test_main_invalid_command(
-        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Test main with invalid command shows help and exits with 2."""
         monkeypatch.setattr(sys, "argv", ["aps", "invalid"])

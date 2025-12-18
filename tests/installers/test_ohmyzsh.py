@@ -27,7 +27,11 @@ class TestOhMyZshInstall:
     @patch("aps.installers.base.get_package_manager")
     @patch("shutil.which")
     def test_install_zsh_not_installed(
-        self, mock_which: Mock, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
+        self,
+        mock_which: Mock,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test install fails when zsh is not installed."""
         caplog.set_level("ERROR")
@@ -59,13 +63,21 @@ class TestOhMyZshInstall:
         mock_pm.return_value = mock_pm_instance
         mock_zshrc.return_value = Path.home() / ".zshrc"
 
-        with patch("pathlib.Path.exists", return_value=True), patch("shutil.copy2"):
-            with patch.object(OhMyZshInstaller, "_update_zshrc", return_value=True):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("shutil.copy2"),
+        ):
+            with patch.object(
+                OhMyZshInstaller, "_update_zshrc", return_value=True
+            ):
                 installer = OhMyZshInstaller()
                 result = installer.install()
 
                 assert result is True
-                assert "updating configuration" in caplog.text or "already installed" in caplog.text
+                assert (
+                    "updating configuration" in caplog.text
+                    or "already installed" in caplog.text
+                )
 
 
 class TestOhMyZshGetZshrcPath:
@@ -74,7 +86,9 @@ class TestOhMyZshGetZshrcPath:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     @patch.object(OhMyZshInstaller, "_get_zshrc_path")
-    def test_get_zshrc_path(self, mock_zshrc: Mock, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_get_zshrc_path(
+        self, mock_zshrc: Mock, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test _get_zshrc_path returns valid path."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_zshrc.return_value = Path.home() / ".zshrc"

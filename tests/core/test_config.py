@@ -28,7 +28,9 @@ class TestAPSConfigParser:
         multimedia_packages = parser.get_section_packages("multimedia")
         assert multimedia_packages == ["ffmpeg", "vlc", "gimp"]
 
-    def test_get_section_packages_nonexistent(self, sample_packages_ini: Path) -> None:
+    def test_get_section_packages_nonexistent(
+        self, sample_packages_ini: Path
+    ) -> None:
         """Test retrieving packages from nonexistent section."""
         parser = APSConfigParser(sample_packages_ini)
 
@@ -41,7 +43,10 @@ class TestAPSConfigParser:
 
         fedora_mappings = parser.get_package_mappings("pkgmap.fedora")
         assert "brave-browser" in fedora_mappings
-        assert fedora_mappings["brave-browser"] == "COPR:lecramyajiv/brave-browser:brave-browser"
+        assert (
+            fedora_mappings["brave-browser"]
+            == "COPR:lecramyajiv/brave-browser:brave-browser"
+        )
 
     def test_get_variables(self, tmp_path: Path) -> None:
         """Test retrieving variables from config."""
@@ -293,7 +298,9 @@ items2=item4
 class TestEnsureConfigFiles:
     """Test ensure_config_files functionality."""
 
-    def test_create_config_files(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_create_config_files(
+        self, tmp_path: Path, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test creating config files from examples."""
         config_dir = tmp_path / "config"
 
@@ -307,7 +314,9 @@ class TestEnsureConfigFiles:
         (examples_dir / "variables.ini").write_text("[variables]\ntest=value")
 
         # Mock the get_default_configs_dir function
-        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: examples_dir)
+        monkeypatch.setattr(
+            "aps.core.config.get_default_configs_dir", lambda: examples_dir
+        )
 
         results = ensure_config_files(config_dir)
 
@@ -321,7 +330,9 @@ class TestEnsureConfigFiles:
         assert (config_dir / "pkgmap.ini").exists()
         assert (config_dir / "variables.ini").exists()
 
-    def test_skip_existing_files(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_skip_existing_files(
+        self, tmp_path: Path, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test that existing files are not overwritten."""
         config_dir = tmp_path / "config"
         config_dir.mkdir()
@@ -340,7 +351,9 @@ class TestEnsureConfigFiles:
         (config_dir / "packages.ini").write_text(existing_content)
 
         # Mock the get_default_configs_dir function
-        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: examples_dir)
+        monkeypatch.setattr(
+            "aps.core.config.get_default_configs_dir", lambda: examples_dir
+        )
 
         results = ensure_config_files(config_dir)
 
@@ -353,13 +366,19 @@ class TestEnsureConfigFiles:
         # Existing file should not be overwritten
         assert (config_dir / "packages.ini").read_text() == existing_content
 
-    def test_missing_examples_directory(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_missing_examples_directory(
+        self, tmp_path: Path, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test error when examples directory is missing."""
         config_dir = tmp_path / "config"
 
         # Mock the get_default_configs_dir function to return non-existent directory
         nonexistent_dir = tmp_path / "nonexistent"
-        monkeypatch.setattr("aps.core.config.get_default_configs_dir", lambda: nonexistent_dir)
+        monkeypatch.setattr(
+            "aps.core.config.get_default_configs_dir", lambda: nonexistent_dir
+        )
 
-        with pytest.raises(FileNotFoundError, match="Config examples directory"):
+        with pytest.raises(
+            FileNotFoundError, match="Config examples directory"
+        ):
             ensure_config_files(config_dir)

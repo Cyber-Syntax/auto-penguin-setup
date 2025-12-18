@@ -32,7 +32,10 @@ class RepositoryConfig(BaseSystemConfig):
 
         # Get Fedora version
         version_result = subprocess.run(
-            ["rpm", "-E", "%fedora"], capture_output=True, text=True, check=False
+            ["rpm", "-E", "%fedora"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if version_result.returncode != 0:
             logger.error("Failed to detect Fedora version")
@@ -59,6 +62,7 @@ class RepositoryConfig(BaseSystemConfig):
         logger.info("RPM Fusion repositories enabled successfully")
         return True
 
+    # TODO: Implement enabling extra multilib repos for Arch Linux
     def _enable_arch_extras(self) -> bool:
         """Enable extra repositories on Arch Linux."""
         logger.info("Arch Linux uses AUR for additional packages")

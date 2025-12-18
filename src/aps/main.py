@@ -15,7 +15,7 @@ from aps.core.logger import get_logger, setup_logging
 
 
 def main() -> int:
-    """Main entry point for the aps CLI."""
+    """Main entry point for the APS CLI."""
     # Parse args first to get verbose flag
     parser = create_parser()
     args = parser.parse_args()

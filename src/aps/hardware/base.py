@@ -53,5 +53,7 @@ class BaseHardwareConfig(ABC):
             self.logger.info("Copied %s to %s", source, destination)
             return True
         except OSError as e:
-            self.logger.error("Failed to copy %s to %s: %s", source, destination, e)
+            self.logger.error(
+                "Failed to copy %s to %s: %s", source, destination, e
+            )
             return False

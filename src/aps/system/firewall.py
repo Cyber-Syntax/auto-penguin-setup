@@ -24,6 +24,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if configuration was successful, False otherwise.
+
         """
         logger.info("Setting up UFW firewall...")
 
@@ -54,6 +55,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True always (failure is acceptable as firewalld may not exist).
+
         """
         try:
             result = subprocess.run(
@@ -80,6 +82,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         logger.info("Disabling UFW if it's already enabled...")
 
@@ -100,6 +103,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         logger.info("Configuring SSH rules...")
 
@@ -140,6 +144,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         logger.info("Configuring UFW policies...")
 
@@ -167,6 +172,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         logger.info("Configuring Syncthing rules...")
 
@@ -194,6 +200,7 @@ class UFWConfig(BaseSystemConfig):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         logger.info("Enabling UFW...")
 

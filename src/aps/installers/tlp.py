@@ -21,6 +21,7 @@ class TLPInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up TLP for power management...")
 
@@ -43,7 +44,9 @@ class TLPInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to create /etc/tlp.d directory: %s", e.stderr)
+                logger.error(
+                    "Failed to create /etc/tlp.d directory: %s", e.stderr
+                )
                 return False
 
         # Backup existing configuration
@@ -105,7 +108,10 @@ class TLPInstaller(BaseInstaller):
                 logger.warning("%s service not found", service)
 
         # Mask rfkill services to allow TLP to handle radios
-        for rfkill_service in ["systemd-rfkill.service", "systemd-rfkill.socket"]:
+        for rfkill_service in [
+            "systemd-rfkill.service",
+            "systemd-rfkill.socket",
+        ]:
             try:
                 run_privileged(
                     ["systemctl", "mask", rfkill_service],
@@ -139,11 +145,15 @@ class TLPInstaller(BaseInstaller):
             except subprocess.CalledProcessError:
                 logger.warning("Failed to enable TLP radio device handling")
         else:
-            logger.warning("tlp-rdw command not available. Skipping radio device handling.")
+            logger.warning(
+                "tlp-rdw command not available. Skipping radio device handling."
+            )
 
         # Remove conflicting packages now that TLP is working
         if not self._remove_conflicting_packages():
-            logger.warning("TLP is working, but failed to remove conflicting packages")
+            logger.warning(
+                "TLP is working, but failed to remove conflicting packages"
+            )
 
         logger.info("TLP setup completed successfully.")
         return True
@@ -152,7 +162,12 @@ class TLPInstaller(BaseInstaller):
         """Disable services that conflict with TLP."""
         logger.info("Disabling services that conflict with TLP...")
 
-        services_to_check = ["tuned", "tuned-ppd", "power-profiles-daemon", "power-profile-daemon"]
+        services_to_check = [
+            "tuned",
+            "tuned-ppd",
+            "power-profiles-daemon",
+            "power-profile-daemon",
+        ]
         services_to_disable = []
 
         # Check which services exist
@@ -171,7 +186,10 @@ class TLPInstaller(BaseInstaller):
 
         # Disable found services
         if services_to_disable:
-            logger.info("Disabling conflicting services: %s", ", ".join(services_to_disable))
+            logger.info(
+                "Disabling conflicting services: %s",
+                ", ".join(services_to_disable),
+            )
             for service in services_to_disable:
                 try:
                     run_privileged(
@@ -191,7 +209,12 @@ class TLPInstaller(BaseInstaller):
         """Remove packages that conflict with TLP."""
         logger.info("Removing packages that conflict with TLP...")
 
-        packages_to_check = ["tuned", "tuned-ppd", "power-profiles-daemon", "power-profile-daemon"]
+        packages_to_check = [
+            "tuned",
+            "tuned-ppd",
+            "power-profiles-daemon",
+            "power-profile-daemon",
+        ]
         packages_to_remove = []
 
         # Check which packages are installed
@@ -201,10 +224,15 @@ class TLPInstaller(BaseInstaller):
 
         # Remove found packages
         if packages_to_remove:
-            logger.info("Removing conflicting packages: %s", ", ".join(packages_to_remove))
+            logger.info(
+                "Removing conflicting packages: %s",
+                ", ".join(packages_to_remove),
+            )
             success, error = self.pm.remove(packages_to_remove)
             if not success:
-                logger.error("Failed to remove conflicting packages: %s", error)
+                logger.error(
+                    "Failed to remove conflicting packages: %s", error
+                )
                 return False
             logger.info("Successfully removed conflicting packages")
         else:
@@ -217,5 +245,6 @@ class TLPInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         return self.pm.is_installed("tlp")

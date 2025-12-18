@@ -40,7 +40,9 @@ class TestSetupLogging:
         """Test that log file is created."""
         setup_logging()
 
-        log_file = mock_home / ".config" / "auto-penguin-setup" / "logs" / "aps.log"
+        log_file = (
+            mock_home / ".config" / "auto-penguin-setup" / "logs" / "aps.log"
+        )
         # File may not exist until first log, but parent directory should
         assert log_file.parent.exists()
 
@@ -70,12 +72,18 @@ class TestSetupLogging:
         assert "Test info message" in output
         assert "Test debug message" in output
 
-    def test_file_handler_configured_with_rotation(self, mock_home: Path) -> None:  # noqa: ARG002
+    def test_file_handler_configured_with_rotation(
+        self, mock_home: Path
+    ) -> None:  # noqa: ARG002
         """Test that file handler is configured with proper rotation."""
         setup_logging()
 
         root_logger = logging.getLogger()
-        file_handlers = [h for h in root_logger.handlers if isinstance(h, RotatingFileHandler)]
+        file_handlers = [
+            h
+            for h in root_logger.handlers
+            if isinstance(h, RotatingFileHandler)
+        ]
 
         assert len(file_handlers) == 1
         handler = file_handlers[0]
@@ -115,7 +123,9 @@ class TestSetupLogging:
     def test_file_output_format_is_detailed(self, mock_home: Path) -> None:
         """Test that file output includes timestamps and module names."""
         setup_logging(verbose=False)
-        log_file = mock_home / ".config" / "auto-penguin-setup" / "logs" / "aps.log"
+        log_file = (
+            mock_home / ".config" / "auto-penguin-setup" / "logs" / "aps.log"
+        )
 
         logger = logging.getLogger("test.module")
         logger.info("Detailed message")

@@ -24,7 +24,9 @@ def cmd_status(args: Namespace) -> None:  # noqa: ARG001
     # Count by source
     sources: dict[str, int] = {}
     for pkg in packages:
-        source_type = pkg.source.split(":")[0] if ":" in pkg.source else pkg.source
+        source_type = (
+            pkg.source.split(":")[0] if ":" in pkg.source else pkg.source
+        )
         sources[source_type] = sources.get(source_type, 0) + 1
 
     logger.info("By Source:")

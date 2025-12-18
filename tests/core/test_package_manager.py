@@ -50,13 +50,18 @@ class TestDnfManager:
         """Create a DnfManager instance for testing."""
         return DnfManager(fedora_distro)
 
-    def test_init(self, dnf_manager: DnfManager, fedora_distro: DistroInfo) -> None:
+    def test_init(
+        self, dnf_manager: DnfManager, fedora_distro: DistroInfo
+    ) -> None:
         """Test DnfManager initialization."""
         assert dnf_manager.distro == fedora_distro
 
     @patch("aps.core.package_manager.run_privileged")
     def test_install_single_package(
-        self, mock_run: Mock, dnf_manager: DnfManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        dnf_manager: DnfManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test installing a single package."""
         caplog.set_level("INFO")
@@ -69,7 +74,9 @@ class TestDnfManager:
         mock_run.assert_called_once()
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_install_multiple_packages(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_install_multiple_packages(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test installing multiple packages."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -83,7 +90,9 @@ class TestDnfManager:
         assert "neovim" in call_args
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_install_with_assume_yes(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_install_with_assume_yes(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test install with assume_yes flag."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -94,7 +103,10 @@ class TestDnfManager:
 
     @patch("aps.core.package_manager.run_privileged")
     def test_install_failure(
-        self, mock_run: Mock, dnf_manager: DnfManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        dnf_manager: DnfManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test install failure handling."""
         mock_run.return_value = Mock(returncode=1)
@@ -107,7 +119,10 @@ class TestDnfManager:
 
     @patch("aps.core.package_manager.run_privileged")
     def test_remove_single_package(
-        self, mock_run: Mock, dnf_manager: DnfManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        dnf_manager: DnfManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test removing a single package."""
         mock_run.return_value = Mock(returncode=0)
@@ -121,7 +136,9 @@ class TestDnfManager:
         assert "vim" in call_args
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_remove_multiple_packages(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_remove_multiple_packages(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test removing multiple packages."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -134,7 +151,10 @@ class TestDnfManager:
 
     @patch("aps.core.package_manager.run_privileged")
     def test_remove_failure(
-        self, mock_run: Mock, dnf_manager: DnfManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        dnf_manager: DnfManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test remove failure handling."""
         mock_run.return_value = Mock(returncode=1)
@@ -145,7 +165,9 @@ class TestDnfManager:
         assert "Failed to remove packages" in caplog.text
 
     @patch("subprocess.run")
-    def test_search_packages(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_search_packages(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test searching for packages."""
         mock_run.return_value = Mock(
             returncode=0,
@@ -159,7 +181,9 @@ class TestDnfManager:
         assert "nano.x86_64" in results
 
     @patch("subprocess.run")
-    def test_search_no_results(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_search_no_results(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test search with no results."""
         mock_run.return_value = Mock(returncode=1, stdout="")
 
@@ -168,28 +192,36 @@ class TestDnfManager:
         assert results == []
 
     @patch("subprocess.run")
-    def test_is_installed_true(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_is_installed_true(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test checking if installed package exists."""
         mock_run.return_value = Mock(returncode=0)
 
         assert dnf_manager.is_installed("vim") is True
 
     @patch("subprocess.run")
-    def test_is_installed_false(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_is_installed_false(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test checking if non-installed package exists."""
         mock_run.return_value = Mock(returncode=1)
 
         assert dnf_manager.is_installed("nonexistent") is False
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_update_cache(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_update_cache(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test updating package manager cache."""
         mock_run.return_value = Mock(returncode=0)
 
         assert dnf_manager.update_cache() is True
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_update_cache_failure(self, mock_run: Mock, dnf_manager: DnfManager) -> None:
+    def test_update_cache_failure(
+        self, mock_run: Mock, dnf_manager: DnfManager
+    ) -> None:
         """Test update cache failure."""
         mock_run.return_value = Mock(returncode=1)
 
@@ -203,7 +235,11 @@ class TestDnfManager:
         # First call: dnf repoquery (found)
         # Second call: dnf list (official, no copr)
         mock_run.side_effect = [
-            Mock(returncode=0, stdout="vim-1.0-1.fc39.x86_64\n", text="vim-1.0-1.fc39.x86_64"),
+            Mock(
+                returncode=0,
+                stdout="vim-1.0-1.fc39.x86_64\n",
+                text="vim-1.0-1.fc39.x86_64",
+            ),
             Mock(
                 returncode=0,
                 stdout="fedora     vim-1.0-1.fc39.x86_64",
@@ -222,7 +258,9 @@ class TestDnfManager:
         # Second call: dnf list (from COPR)
         mock_run.side_effect = [
             Mock(
-                returncode=0, stdout="package-1.0-1.fc39.x86_64\n", text="package-1.0-1.fc39.x86_64"
+                returncode=0,
+                stdout="package-1.0-1.fc39.x86_64\n",
+                text="package-1.0-1.fc39.x86_64",
             ),
             Mock(
                 returncode=0,
@@ -240,7 +278,9 @@ class TestDnfManager:
         """Test checking package not available in any repos."""
         mock_run.return_value = Mock(returncode=1, stdout="", text="")
 
-        assert dnf_manager.is_available_in_official_repos("nonexistent") is False
+        assert (
+            dnf_manager.is_available_in_official_repos("nonexistent") is False
+        )
 
 
 class TestPacmanManager:
@@ -263,14 +303,18 @@ class TestPacmanManager:
         """Create a PacmanManager instance for testing."""
         return PacmanManager(arch_distro)
 
-    def test_init(self, pacman_manager: PacmanManager, arch_distro: DistroInfo) -> None:
+    def test_init(
+        self, pacman_manager: PacmanManager, arch_distro: DistroInfo
+    ) -> None:
         """Test PacmanManager initialization."""
         assert pacman_manager.distro == arch_distro
 
     @patch("shutil.which")
     def test_detect_aur_helper_paru(self, mock_which: Mock) -> None:
         """Test AUR helper detection (paru found)."""
-        mock_which.side_effect = lambda cmd: "/usr/bin/paru" if cmd == "paru" else None
+        mock_which.side_effect = (
+            lambda cmd: "/usr/bin/paru" if cmd == "paru" else None
+        )
         manager = PacmanManager(
             DistroInfo(
                 id="arch",
@@ -286,7 +330,9 @@ class TestPacmanManager:
     @patch("shutil.which")
     def test_detect_aur_helper_yay(self, mock_which: Mock) -> None:
         """Test AUR helper detection (yay found)."""
-        mock_which.side_effect = lambda cmd: "/usr/bin/yay" if cmd == "yay" else None
+        mock_which.side_effect = (
+            lambda cmd: "/usr/bin/yay" if cmd == "yay" else None
+        )
         manager = PacmanManager(
             DistroInfo(
                 id="arch",
@@ -317,7 +363,10 @@ class TestPacmanManager:
 
     @patch("aps.core.package_manager.run_privileged")
     def test_install_single_package(
-        self, mock_run: Mock, pacman_manager: PacmanManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        pacman_manager: PacmanManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test installing a single package."""
         caplog.set_level("INFO")
@@ -329,7 +378,9 @@ class TestPacmanManager:
         assert error == ""
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_install_with_assume_yes(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_install_with_assume_yes(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test install with assume_yes flag."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -340,7 +391,10 @@ class TestPacmanManager:
 
     @patch("subprocess.run")
     def test_install_aur_packages(
-        self, mock_run: Mock, pacman_manager: PacmanManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        pacman_manager: PacmanManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test installing AUR packages."""
         caplog.set_level("INFO")
@@ -352,7 +406,9 @@ class TestPacmanManager:
         assert result is True
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_remove_single_package(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_remove_single_package(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test removing a single package."""
         mock_run.return_value = Mock(returncode=0, stderr="")
 
@@ -362,7 +418,9 @@ class TestPacmanManager:
         assert error == ""
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_remove_with_assume_yes(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_remove_with_assume_yes(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test remove with assume_yes flag."""
         mock_run.return_value = Mock(returncode=0, stderr="")
 
@@ -372,7 +430,9 @@ class TestPacmanManager:
         assert "--noconfirm" in call_args
 
     @patch("subprocess.run")
-    def test_search_packages(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_search_packages(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test searching for packages."""
         mock_run.return_value = Mock(
             returncode=0,
@@ -386,21 +446,27 @@ class TestPacmanManager:
         assert "vi" in results
 
     @patch("subprocess.run")
-    def test_is_installed_true(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_is_installed_true(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test checking if installed package exists."""
         mock_run.return_value = Mock(returncode=0)
 
         assert pacman_manager.is_installed("vim") is True
 
     @patch("subprocess.run")
-    def test_is_installed_false(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_is_installed_false(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test checking if non-installed package exists."""
         mock_run.return_value = Mock(returncode=1)
 
         assert pacman_manager.is_installed("nonexistent") is False
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_update_cache(self, mock_run: Mock, pacman_manager: PacmanManager) -> None:
+    def test_update_cache(
+        self, mock_run: Mock, pacman_manager: PacmanManager
+    ) -> None:
         """Test updating package manager cache."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -426,7 +492,10 @@ class TestPacmanManager:
         """Test checking non-existent package."""
         mock_run.return_value = Mock(returncode=1, stdout="", text="")
 
-        assert pacman_manager.is_available_in_official_repos("nonexistent") is False
+        assert (
+            pacman_manager.is_available_in_official_repos("nonexistent")
+            is False
+        )
 
 
 class TestAptManager:
@@ -449,13 +518,18 @@ class TestAptManager:
         """Create an AptManager instance for testing."""
         return AptManager(debian_distro)
 
-    def test_init(self, apt_manager: AptManager, debian_distro: DistroInfo) -> None:
+    def test_init(
+        self, apt_manager: AptManager, debian_distro: DistroInfo
+    ) -> None:
         """Test AptManager initialization."""
         assert apt_manager.distro == debian_distro
 
     @patch("aps.core.package_manager.run_privileged")
     def test_install_single_package(
-        self, mock_run: Mock, apt_manager: AptManager, caplog: LogCaptureFixture
+        self,
+        mock_run: Mock,
+        apt_manager: AptManager,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test installing a single package."""
         caplog.set_level("INFO")
@@ -467,7 +541,9 @@ class TestAptManager:
         assert error == ""
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_install_with_assume_yes(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_install_with_assume_yes(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test install with assume_yes flag."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -477,7 +553,9 @@ class TestAptManager:
         assert "-y" in call_args
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_remove_single_package(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_remove_single_package(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test removing a single package."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -487,7 +565,9 @@ class TestAptManager:
         assert error == ""
 
     @patch("subprocess.run")
-    def test_search_packages(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_search_packages(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test searching for packages."""
         mock_run.return_value = Mock(
             returncode=0,
@@ -501,21 +581,27 @@ class TestAptManager:
         assert "vim-common" in results
 
     @patch("subprocess.run")
-    def test_is_installed_true(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_is_installed_true(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test checking if installed package exists."""
         mock_run.return_value = Mock(returncode=0)
 
         assert apt_manager.is_installed("vim") is True
 
     @patch("subprocess.run")
-    def test_is_installed_false(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_is_installed_false(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test checking if non-installed package exists."""
         mock_run.return_value = Mock(returncode=1)
 
         assert apt_manager.is_installed("nonexistent") is False
 
     @patch("aps.core.package_manager.run_privileged")
-    def test_update_cache(self, mock_run: Mock, apt_manager: AptManager) -> None:
+    def test_update_cache(
+        self, mock_run: Mock, apt_manager: AptManager
+    ) -> None:
         """Test updating package manager cache."""
         mock_run.return_value = Mock(returncode=0)
 
@@ -545,7 +631,9 @@ class TestAptManager:
             text="Candidate: (none)\n",
         )
 
-        assert apt_manager.is_available_in_official_repos("nonexistent") is False
+        assert (
+            apt_manager.is_available_in_official_repos("nonexistent") is False
+        )
 
 
 class TestGetPackageManager:
@@ -605,5 +693,7 @@ class TestGetPackageManager:
         distro = MagicMock(spec=DistroInfo)
         distro.family = "unsupported"
 
-        with pytest.raises(ValueError, match="Unsupported distribution family"):
+        with pytest.raises(
+            ValueError, match="Unsupported distribution family"
+        ):
             get_package_manager(distro)

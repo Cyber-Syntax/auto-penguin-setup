@@ -66,7 +66,9 @@ class TestRemoveCommand:
         mock_tracker = Mock()
         mock_tracker_cls.return_value = mock_tracker
 
-        args = Namespace(packages=["vim", "git", "curl"], dry_run=False, noconfirm=False)
+        args = Namespace(
+            packages=["vim", "git", "curl"], dry_run=False, noconfirm=False
+        )
         cmd_remove(args)
 
         # Each package should be removed individually
@@ -192,7 +194,9 @@ class TestRemoveCommand:
         mock_tracker = Mock()
         mock_tracker_cls.return_value = mock_tracker
 
-        args = Namespace(packages=["vim", "git", "curl"], dry_run=False, noconfirm=False)
+        args = Namespace(
+            packages=["vim", "git", "curl"], dry_run=False, noconfirm=False
+        )
         cmd_remove(args)
 
         # Only successful removals should be tracked

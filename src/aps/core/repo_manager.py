@@ -6,7 +6,11 @@ import subprocess
 from typing import TYPE_CHECKING
 
 from aps.core.distro import DistroFamily, DistroInfo
-from aps.core.package_manager import PackageManager, PackageManagerError, PacmanManager
+from aps.core.package_manager import (
+    PackageManager,
+    PackageManagerError,
+    PacmanManager,
+)
 from aps.utils.privilege import run_privileged
 
 if TYPE_CHECKING:
@@ -16,7 +20,9 @@ if TYPE_CHECKING:
 class RepositoryManager:
     """Manages third-party repositories across different distributions."""
 
-    def __init__(self, distro: DistroInfo, package_manager: PackageManager) -> None:
+    def __init__(
+        self, distro: DistroInfo, package_manager: PackageManager
+    ) -> None:
         """
         Initialize repository manager.
 
@@ -42,7 +48,9 @@ class RepositoryManager:
             PackageManagerError: If not running on Fedora
         """
         if self.distro.family != DistroFamily.FEDORA:
-            raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
+            raise PackageManagerError(
+                f"COPR is only available on Fedora, not {self.distro.name}"
+            )
 
         self.logger.debug("Enabling COPR repository: %s", repo)
         cmd = ["dnf", "copr", "enable", "-y", repo]
@@ -65,7 +73,9 @@ class RepositoryManager:
             True if repository was disabled successfully
         """
         if self.distro.family != DistroFamily.FEDORA:
-            raise PackageManagerError(f"COPR is only available on Fedora, not {self.distro.name}")
+            raise PackageManagerError(
+                f"COPR is only available on Fedora, not {self.distro.name}"
+            )
 
         cmd = ["dnf", "copr", "disable", "-y", repo]
         result = run_privileged(cmd, capture_output=True, check=False)
@@ -86,7 +96,9 @@ class RepositoryManager:
 
         # List enabled repos and check if our COPR is present
         cmd = ["dnf", "repolist", "--enabled"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return False
@@ -156,7 +168,9 @@ class RepositoryManager:
             PackageManagerError: If not running on Arch or no AUR helper available
         """
         if self.distro.family != DistroFamily.ARCH:
-            raise PackageManagerError(f"AUR is only available on Arch, not {self.distro.name}")
+            raise PackageManagerError(
+                f"AUR is only available on Arch, not {self.distro.name}"
+            )
 
         if not isinstance(self.pm, PacmanManager):
             raise PackageManagerError("Package manager is not PacmanManager")
@@ -253,7 +267,9 @@ class RepositoryManager:
             return True
         raise PackageManagerError("flatpak installation verification failed")
 
-    def enable_flatpak_remote(self, remote_name: str, remote_url: str | None = None) -> bool:
+    def enable_flatpak_remote(
+        self, remote_name: str, remote_url: str | None = None
+    ) -> bool:
         """
         Enable Flatpak remote repository.
 
@@ -271,9 +287,17 @@ class RepositoryManager:
             remote_url = "https://flathub.org/repo/flathub.flatpakrepo"
 
         if remote_url is None:
-            raise ValueError(f"remote_url is required for remote: {remote_name}")
+            raise ValueError(
+                f"remote_url is required for remote: {remote_name}"
+            )
 
-        cmd = ["flatpak", "remote-add", "--if-not-exists", remote_name, remote_url]
+        cmd = [
+            "flatpak",
+            "remote-add",
+            "--if-not-exists",
+            remote_name,
+            remote_url,
+        ]
         result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -289,11 +313,15 @@ class RepositoryManager:
         """
         # Ensure flatpak is installed before checking remotes
         if not self.is_flatpak_installed():
-            self.logger.debug("flatpak not installed, remote cannot be enabled")
+            self.logger.debug(
+                "flatpak not installed, remote cannot be enabled"
+            )
             return False
 
         cmd = ["flatpak", "remotes"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return False

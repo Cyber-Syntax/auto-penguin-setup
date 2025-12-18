@@ -25,6 +25,7 @@ class AutoCPUFreqInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Installing auto-cpufreq...")
 
@@ -66,9 +67,15 @@ class AutoCPUFreqInstaller(BaseInstaller):
 
             # Run installer with automatic "Install" option
             logger.info("Running auto-cpufreq installer...")
-            logger.info("NOTE: The installer will ask for confirmation during installation.")
-            logger.info("Please respond to the prompts as needed (typically 'y' to proceed).")
-            logger.info("Installer output will be streamed directly from the script.")
+            logger.info(
+                "NOTE: The installer will ask for confirmation during installation."
+            )
+            logger.info(
+                "Please respond to the prompts as needed (typically 'y' to proceed)."
+            )
+            logger.info(
+                "Installer output will be streamed directly from the script."
+            )
 
             try:
                 # Pipe "I" into installer to automatically select Install option
@@ -93,5 +100,6 @@ class AutoCPUFreqInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         return shutil.which("auto-cpufreq") is not None

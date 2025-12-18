@@ -28,10 +28,14 @@ class NvidiaConfig(BaseHardwareConfig):
             True if NVIDIA GPU is detected
         """
         try:
-            result = subprocess.run(["lspci"], capture_output=True, text=True, check=False)
+            result = subprocess.run(
+                ["lspci"], capture_output=True, text=True, check=False
+            )
             return "nvidia" in result.stdout.lower()
         except FileNotFoundError:
-            self.logger.warning("lspci command not found, cannot detect NVIDIA GPU")
+            self.logger.warning(
+                "lspci command not found, cannot detect NVIDIA GPU"
+            )
             return False
 
     def setup_cuda(self) -> bool:
@@ -85,7 +89,12 @@ class NvidiaConfig(BaseHardwareConfig):
 
         self.logger.debug("Adding CUDA repository for Fedora %s...", version)
         result = run_privileged(
-            ["dnf", "config-manager", "addrepo", f"--from-repofile={cuda_repo}"],
+            [
+                "dnf",
+                "config-manager",
+                "addrepo",
+                f"--from-repofile={cuda_repo}",
+            ],
             check=False,
             capture_output=False,
         )
@@ -94,7 +103,9 @@ class NvidiaConfig(BaseHardwareConfig):
             return False
 
         self.logger.debug("Cleaning DNF cache...")
-        run_privileged(["dnf", "clean", "all"], check=False, capture_output=False)
+        run_privileged(
+            ["dnf", "clean", "all"], check=False, capture_output=False
+        )
 
         self.logger.debug("Disabling nvidia-driver module...")
         run_privileged(
@@ -178,13 +189,17 @@ class NvidiaConfig(BaseHardwareConfig):
                 check=False,
                 capture_output=False,
             )
-            subprocess.run(["rm", "-f", "cuda-keyring_1.1-1_all.deb"], check=False)
+            subprocess.run(
+                ["rm", "-f", "cuda-keyring_1.1-1_all.deb"], check=False
+            )
 
             if result.returncode != 0:
                 self.logger.error("Failed to install CUDA keyring")
                 return False
 
-            run_privileged(["apt-get", "update"], check=False, capture_output=False)
+            run_privileged(
+                ["apt-get", "update"], check=False, capture_output=False
+            )
 
         self.logger.debug("Installing CUDA toolkit...")
         result = run_privileged(
@@ -205,11 +220,15 @@ class NvidiaConfig(BaseHardwareConfig):
             True if nvcc is available
         """
         try:
-            subprocess.run(["nvcc", "--version"], capture_output=True, check=True)
+            subprocess.run(
+                ["nvcc", "--version"], capture_output=True, check=True
+            )
             self.logger.info("CUDA setup completed successfully")
             return True
         except (FileNotFoundError, subprocess.CalledProcessError):
-            self.logger.error("CUDA toolkit installation failed - nvcc not found")
+            self.logger.error(
+                "CUDA toolkit installation failed - nvcc not found"
+            )
             self.logger.info(
                 "You may need to add CUDA to your PATH: export PATH=/usr/local/cuda/bin:$PATH"
             )
@@ -228,7 +247,9 @@ class NvidiaConfig(BaseHardwareConfig):
             return False
 
         if os.geteuid() != 0:
-            self.logger.error("This function must be run as root or with sudo privileges")
+            self.logger.error(
+                "This function must be run as root or with sudo privileges"
+            )
             return False
 
         try:
@@ -257,23 +278,35 @@ class NvidiaConfig(BaseHardwareConfig):
             f.write("%_with_kmod_nvidia_open 1\n")
 
         current_kernel = os.uname().release
-        self.logger.debug("Rebuilding NVIDIA modules for kernel %s...", current_kernel)
+        self.logger.debug(
+            "Rebuilding NVIDIA modules for kernel %s...", current_kernel
+        )
 
         result = subprocess.run(
             ["akmods", "--kernels", current_kernel, "--rebuild"],
             check=False,
         )
         if result.returncode != 0:
-            self.logger.warning("Initial rebuild failed, attempting with --force...")
+            self.logger.warning(
+                "Initial rebuild failed, attempting with --force..."
+            )
             result = subprocess.run(
-                ["akmods", "--kernels", current_kernel, "--rebuild", "--force"],
+                [
+                    "akmods",
+                    "--kernels",
+                    current_kernel,
+                    "--rebuild",
+                    "--force",
+                ],
                 check=False,
             )
             if result.returncode != 0:
                 self.logger.error("Failed to rebuild NVIDIA modules")
                 return False
 
-        self.logger.debug("Disabling RPMFusion non-free NVIDIA driver repository...")
+        self.logger.debug(
+            "Disabling RPMFusion non-free NVIDIA driver repository..."
+        )
         run_privileged(
             ["dnf", "--disablerepo", "rpmfusion-nonfree-nvidia-driver"],
             check=False,
@@ -291,7 +324,13 @@ class NvidiaConfig(BaseHardwareConfig):
         """
         self.logger.info("Installing NVIDIA open source drivers for Arch...")
         result = run_privileged(
-            ["pacman", "-S", "--noconfirm", "nvidia-open-dkms", "nvidia-utils"],
+            [
+                "pacman",
+                "-S",
+                "--noconfirm",
+                "nvidia-open-dkms",
+                "nvidia-utils",
+            ],
             check=False,
             capture_output=False,
         )
@@ -315,7 +354,9 @@ class NvidiaConfig(BaseHardwareConfig):
             with open("/etc/apt/sources.list", encoding="utf-8") as f:
                 sources = f.read()
                 if "contrib" not in sources:
-                    self.logger.warning("Enabling contrib and non-free repositories...")
+                    self.logger.warning(
+                        "Enabling contrib and non-free repositories..."
+                    )
                     run_privileged(
                         ["add-apt-repository", "-y", "contrib"],
                         check=False,
@@ -326,7 +367,11 @@ class NvidiaConfig(BaseHardwareConfig):
                         check=False,
                         capture_output=False,
                     )
-                    run_privileged(["apt-get", "update"], check=False, capture_output=False)
+                    run_privileged(
+                        ["apt-get", "update"],
+                        check=False,
+                        capture_output=False,
+                    )
         except FileNotFoundError:
             pass
 
@@ -357,10 +402,16 @@ class NvidiaConfig(BaseHardwareConfig):
     def _log_open_driver_success_fedora(self) -> None:
         """Log success message for Fedora open driver installation."""
         self.logger.info("NVIDIA open source driver setup completed")
-        self.logger.info("Please wait 10-20 minutes for the NVIDIA modules to build, then reboot")
+        self.logger.info(
+            "Please wait 10-20 minutes for the NVIDIA modules to build, then reboot"
+        )
         self.logger.info("After reboot, verify installation with:")
-        self.logger.info("1. 'modinfo nvidia | grep license' - should show 'Dual MIT/GPL'")
-        self.logger.info("2. 'rpm -qa kmod-nvidia*' - should show kmod-nvidia-open package")
+        self.logger.info(
+            "1. 'modinfo nvidia | grep license' - should show 'Dual MIT/GPL'"
+        )
+        self.logger.info(
+            "2. 'rpm -qa kmod-nvidia*' - should show kmod-nvidia-open package"
+        )
 
     def setup_vaapi(self) -> bool:
         """Setup VA-API for NVIDIA RTX series (Fedora only).
@@ -375,7 +426,9 @@ class NvidiaConfig(BaseHardwareConfig):
             return False
 
         if self.distro != "fedora":
-            self.logger.error("VA-API setup is currently only supported on Fedora")
+            self.logger.error(
+                "VA-API setup is currently only supported on Fedora"
+            )
             return False
 
         packages = [
@@ -404,7 +457,9 @@ class NvidiaConfig(BaseHardwareConfig):
             "__GLX_VENDOR_LIBRARY_NAME=nvidia",
         ]
 
-        self.logger.debug("Setting up environment variables in %s...", env_file)
+        self.logger.debug(
+            "Setting up environment variables in %s...", env_file
+        )
 
         # Check if variables already exist
         existing_content = ""
@@ -420,10 +475,14 @@ class NvidiaConfig(BaseHardwareConfig):
                     if var not in existing_content:
                         f.write(f"{var}\n")
         else:
-            self.logger.debug("Environment variables already set in %s", env_file)
+            self.logger.debug(
+                "Environment variables already set in %s", env_file
+            )
 
         self.logger.info("VA-API setup completed successfully")
-        self.logger.debug("Note: You may need to reboot for changes to take effect")
+        self.logger.debug(
+            "Note: You may need to reboot for changes to take effect"
+        )
         return True
 
     def configure(self, **kwargs) -> bool:

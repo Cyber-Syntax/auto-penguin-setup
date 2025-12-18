@@ -97,7 +97,9 @@ def cmd_sync_repos(args: Namespace) -> None:
 
     # Compare tracked packages with config sources
     tracked_packages = tracker.get_tracked_packages()
-    changes: list[tuple[PackageRecord, str, str]] = []  # (record, old_source, new_source)
+    changes: list[
+        tuple[PackageRecord, str, str]
+    ] = []  # (record, old_source, new_source)
 
     for pkg in tracked_packages:
         # Skip Flatpak packages - they can't be migrated
@@ -120,10 +122,20 @@ def cmd_sync_repos(args: Namespace) -> None:
     # Display detected changes
     logger.info("Repository Changes Detected:")
     logger.info("=" * 80)
-    logger.info("%s %s %s", "Package".ljust(25), "Old Source".ljust(25), "New Source".ljust(25))
+    logger.info(
+        "%s %s %s",
+        "Package".ljust(25),
+        "Old Source".ljust(25),
+        "New Source".ljust(25),
+    )
     logger.info("-" * 80)
     for pkg, old_source, new_source in changes:
-        logger.info("%s %s %s", pkg.name.ljust(25), old_source.ljust(25), new_source.ljust(25))
+        logger.info(
+            "%s %s %s",
+            pkg.name.ljust(25),
+            old_source.ljust(25),
+            new_source.ljust(25),
+        )
     logger.info("=" * 80)
     logger.info("\nTotal packages to migrate: %s", len(changes))
 
@@ -140,26 +152,36 @@ def cmd_sync_repos(args: Namespace) -> None:
     failed_migrations: list[tuple[str, str]] = []  # (package, error)
 
     for pkg, old_source, new_source in changes:
-        logger.info("\nMigrating %s: %s -> %s", pkg.name, old_source, new_source)
+        logger.info(
+            "\nMigrating %s: %s -> %s", pkg.name, old_source, new_source
+        )
 
         # Get the actual package name to install/remove
         package_name = pkg.mapped_name if pkg.mapped_name else pkg.name
-        new_package_name = _extract_package_name(mappings.get(pkg.name, pkg.name))
+        new_package_name = _extract_package_name(
+            mappings.get(pkg.name, pkg.name)
+        )
 
         try:
             # Step 1: Remove from old source
             logger.info("  Removing from %s...", old_source)
-            success, error = pm.remove([package_name], assume_yes=args.noconfirm)
+            success, error = pm.remove(
+                [package_name], assume_yes=args.noconfirm
+            )
             if not success:
                 raise PackageManagerError(f"Failed to remove: {error}")
 
             # Step 2: Install from new source
             logger.info("  Installing from %s...", new_source)
-            success, error = pm.install([new_package_name], assume_yes=args.noconfirm)
+            success, error = pm.install(
+                [new_package_name], assume_yes=args.noconfirm
+            )
             if not success:
                 # Rollback: try to reinstall from old source
                 logger.warning("  Installation failed. Attempting rollback...")
-                rollback_success, _ = pm.install([package_name], assume_yes=args.noconfirm)
+                rollback_success, _ = pm.install(
+                    [package_name], assume_yes=args.noconfirm
+                )
                 if rollback_success:
                     raise PackageManagerError(
                         f"Failed to install from new source, rolled back to {old_source}"
@@ -174,7 +196,9 @@ def cmd_sync_repos(args: Namespace) -> None:
                 name=pkg.name,
                 source=new_source,
                 category=pkg.category,
-                mapped_name=new_package_name if new_package_name != pkg.name else None,
+                mapped_name=new_package_name
+                if new_package_name != pkg.name
+                else None,
             )
             tracker.track_install(new_record)
 
@@ -198,6 +222,8 @@ def cmd_sync_repos(args: Namespace) -> None:
         logger.info("\nFailed Migrations:")
         for pkg_name, error in failed_migrations:
             logger.info("  - %s: %s", pkg_name, error)
-        logger.info("\nPlease review the errors and try again or install manually.")
+        logger.info(
+            "\nPlease review the errors and try again or install manually."
+        )
     else:
         logger.info("\n✓ All packages migrated successfully!")

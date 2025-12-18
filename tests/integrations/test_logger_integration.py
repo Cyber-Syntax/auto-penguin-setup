@@ -30,7 +30,9 @@ class TestLoggingIntegration:
         output = stderr_capture.getvalue()
         assert output.count("Debug message") == 1
 
-    def test_multiple_loggers_use_same_configuration(self, tmp_path: Path) -> None:
+    def test_multiple_loggers_use_same_configuration(
+        self, tmp_path: Path
+    ) -> None:
         stderr_capture = StringIO()
         with patch.object(sys, "stderr", stderr_capture):
             setup_logging(verbose=False)

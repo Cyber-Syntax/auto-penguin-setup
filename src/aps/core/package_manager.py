@@ -28,7 +28,9 @@ class PackageManager(ABC):
         self.distro = distro
 
     @abstractmethod
-    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def install(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         """
         Install packages.
 
@@ -43,7 +45,9 @@ class PackageManager(ABC):
         pass
 
     @abstractmethod
-    def remove(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def remove(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         """
         Remove packages.
 
@@ -110,7 +114,9 @@ class PackageManager(ABC):
 class DnfManager(PackageManager):
     """Package manager for Fedora and RHEL-based distributions using dnf."""
 
-    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def install(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -128,7 +134,9 @@ class DnfManager(PackageManager):
         logger.error("Failed to install packages %s", packages)
         return False, "Package installation failed"
 
-    def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def remove(
+        self, packages: list[str], assume_yes: bool = True
+    ) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
@@ -148,7 +156,9 @@ class DnfManager(PackageManager):
 
     def search(self, query: str) -> list[str]:
         cmd: list[str] = ["dnf", "search", "--quiet", query]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return []
@@ -193,7 +203,9 @@ class DnfManager(PackageManager):
 
         # First check if package exists at all
         cmd = ["dnf", "repoquery", package]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0 or not result.stdout.strip():
             return False
@@ -201,12 +213,17 @@ class DnfManager(PackageManager):
         # Package found - verify it's not from an already-enabled COPR repo
         # by checking with dnf list to see which repo provides it
         list_cmd = ["dnf", "list", package]
-        list_result = subprocess.run(list_cmd, capture_output=True, text=True, check=False)
+        list_result = subprocess.run(
+            list_cmd, capture_output=True, text=True, check=False
+        )
 
         if list_result.returncode == 0:
             # Check if output contains "copr:" which indicates COPR repo
             if "copr:" in list_result.stdout.lower():
-                logger.debug("Package %s found but from COPR repo, not official", package)
+                logger.debug(
+                    "Package %s found but from COPR repo, not official",
+                    package,
+                )
                 return False
             return True
 
@@ -296,7 +313,9 @@ class PacmanManager(PackageManager):
         logger.error("paru installation verification failed")
         return False
 
-    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def install(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -314,7 +333,9 @@ class PacmanManager(PackageManager):
         logger.error("Failed to install packages %s", packages)
         return False, "Package installation failed"
 
-    def install_aur(self, packages: list[str], assume_yes: bool = False) -> bool:
+    def install_aur(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> bool:
         """
         Install packages from AUR using detected helper.
 
@@ -356,7 +377,9 @@ class PacmanManager(PackageManager):
         logger.error("Failed to install AUR packages")
         return False
 
-    def remove(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def remove(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         """Remove packages.
 
         Args:
@@ -373,15 +396,21 @@ class PacmanManager(PackageManager):
 
         logger = logging.getLogger(__name__)
         logger.debug("Executing command: %s", " ".join(cmd))
-        result = run_privileged(cmd, capture_output=True, text=True, check=False)
+        result = run_privileged(
+            cmd, capture_output=True, text=True, check=False
+        )
         if result.returncode == 0:
             return True, ""
-        logging.error("Failed to remove packages %s: %s", packages, result.stderr)
+        logging.error(
+            "Failed to remove packages %s: %s", packages, result.stderr
+        )
         return False, result.stderr
 
     def search(self, query: str) -> list[str]:
         cmd = ["pacman", "-Ss", query]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return []
@@ -419,7 +448,9 @@ class PacmanManager(PackageManager):
             True if package is available in official repos, False otherwise
         """
         cmd = ["pacman", "-Ss", f"^{package}$"]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return False
@@ -432,7 +463,12 @@ class PacmanManager(PackageManager):
                 repo = repo_pkg.split("/")[0]
                 pkg = repo_pkg.split("/")[1]
                 # Check if it's in official repos and matches exact package name
-                if pkg == package and repo in ["core", "extra", "community", "multilib"]:
+                if pkg == package and repo in [
+                    "core",
+                    "extra",
+                    "community",
+                    "multilib",
+                ]:
                     return True
         return False
 
@@ -440,7 +476,9 @@ class PacmanManager(PackageManager):
 class AptManager(PackageManager):
     """Package manager for Debian and Ubuntu-based distributions using apt."""
 
-    def install(self, packages: list[str], assume_yes: bool = False) -> tuple[bool, str]:
+    def install(
+        self, packages: list[str], assume_yes: bool = False
+    ) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
@@ -456,14 +494,18 @@ class AptManager(PackageManager):
 
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = run_privileged(cmd, env=env, check=False, capture_output=False)
+        result = run_privileged(
+            cmd, env=env, check=False, capture_output=False
+        )
         if result.returncode == 0:
             logger.info("Successfully installed packages")
             return True, ""
         logger.error("Failed to install packages %s", packages)
         return False, "Package installation failed"
 
-    def remove(self, packages: list[str], assume_yes: bool = True) -> tuple[bool, str]:
+    def remove(
+        self, packages: list[str], assume_yes: bool = True
+    ) -> tuple[bool, str]:
         logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
@@ -478,7 +520,9 @@ class AptManager(PackageManager):
 
         env = os.environ.copy()
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = run_privileged(cmd, env=env, check=False, capture_output=False)
+        result = run_privileged(
+            cmd, env=env, check=False, capture_output=False
+        )
         if result.returncode == 0:
             logger.info("Successfully removed packages")
             return True, ""
@@ -487,7 +531,9 @@ class AptManager(PackageManager):
 
     def search(self, query: str) -> list[str]:
         cmd = ["apt-cache", "search", query]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return []
@@ -524,7 +570,9 @@ class AptManager(PackageManager):
             True if package is available in official repos, False otherwise
         """
         cmd = ["apt-cache", "policy", package]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=False
+        )
 
         if result.returncode != 0:
             return False

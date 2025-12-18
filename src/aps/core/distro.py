@@ -39,7 +39,9 @@ class DistroInfo:
     family: DistroFamily
 
     @classmethod
-    def from_os_release(cls, os_release_path: Path = Path("/etc/os-release")) -> Self:
+    def from_os_release(
+        cls, os_release_path: Path = Path("/etc/os-release")
+    ) -> Self:
         """
         Detect distribution from /etc/os-release file.
 
@@ -54,7 +56,9 @@ class DistroInfo:
             ValueError: If required fields are missing
         """
         if not os_release_path.exists():
-            raise FileNotFoundError(f"OS release file not found: {os_release_path}")
+            raise FileNotFoundError(
+                f"OS release file not found: {os_release_path}"
+            )
 
         data = cls._parse_os_release(os_release_path)
 
@@ -97,7 +101,11 @@ class DistroInfo:
         for match in pattern.finditer(content):
             key = match.group(1)
             # Use quoted value if present, otherwise unquoted value
-            value = match.group(2) if match.group(2) is not None else match.group(3)
+            value = (
+                match.group(2)
+                if match.group(2) is not None
+                else match.group(3)
+            )
             data[key] = value
 
         return data
@@ -122,7 +130,9 @@ class DistroInfo:
         """
         # Fedora family (dnf-based)
         fedora_distros = {"fedora", "nobara", "rhel", "rocky", "almalinux"}
-        if distro_id in fedora_distros or any(parent in fedora_distros for parent in id_like):
+        if distro_id in fedora_distros or any(
+            parent in fedora_distros for parent in id_like
+        ):
             return PackageManagerType.DNF, DistroFamily.FEDORA
 
         # Arch family (pacman-based)
@@ -135,12 +145,23 @@ class DistroInfo:
             "garuda",
             "artix",
         }
-        if distro_id in arch_distros or any(parent in arch_distros for parent in id_like):
+        if distro_id in arch_distros or any(
+            parent in arch_distros for parent in id_like
+        ):
             return PackageManagerType.PACMAN, DistroFamily.ARCH
 
         # Debian family (apt-based)
-        debian_distros = {"debian", "ubuntu", "linuxmint", "pop", "elementary", "kali"}
-        if distro_id in debian_distros or any(parent in debian_distros for parent in id_like):
+        debian_distros = {
+            "debian",
+            "ubuntu",
+            "linuxmint",
+            "pop",
+            "elementary",
+            "kali",
+        }
+        if distro_id in debian_distros or any(
+            parent in debian_distros for parent in id_like
+        ):
             return PackageManagerType.APT, DistroFamily.DEBIAN
 
         return PackageManagerType.UNKNOWN, DistroFamily.UNKNOWN
@@ -245,7 +266,10 @@ def detect_distro() -> DistroInfo:
                 f"Unsupported distribution: {distro.id}. "
                 f"Supported families: Fedora (dnf), Arch (pacman), Debian (apt)"
             )
-    elif detected_pm not in (PackageManagerType.UNKNOWN, distro.package_manager):
+    elif detected_pm not in (
+        PackageManagerType.UNKNOWN,
+        distro.package_manager,
+    ):
         # If there's a mismatch between os-release and binary detection, prefer package manager
         logger = logging.getLogger(__name__)
         logger.warning(

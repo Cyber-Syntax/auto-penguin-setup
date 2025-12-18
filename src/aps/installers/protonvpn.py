@@ -21,6 +21,7 @@ class ProtonVPNInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Installing ProtonVPN...")
 
@@ -67,7 +68,9 @@ class ProtonVPNInstaller(BaseInstaller):
         if not repo_file.exists():
             logger.info("Downloading and installing ProtonVPN repository...")
 
-            with tempfile.NamedTemporaryFile(suffix=".rpm", delete=False) as tmp_rpm:
+            with tempfile.NamedTemporaryFile(
+                suffix=".rpm", delete=False
+            ) as tmp_rpm:
                 tmp_path = Path(tmp_rpm.name)
 
             try:
@@ -87,7 +90,9 @@ class ProtonVPNInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to setup ProtonVPN repository: %s", e.stderr)
+                logger.error(
+                    "Failed to setup ProtonVPN repository: %s", e.stderr
+                )
                 tmp_path.unlink(missing_ok=True)
                 return False
             finally:
@@ -107,7 +112,10 @@ class ProtonVPNInstaller(BaseInstaller):
         # Install ProtonVPN
         success, error = self.pm.install(["proton-vpn-gnome-desktop"])
         if not success:
-            logger.error("Failed to install ProtonVPN GNOME desktop integration: %s", error)
+            logger.error(
+                "Failed to install ProtonVPN GNOME desktop integration: %s",
+                error,
+            )
             return False
 
         logger.info("ProtonVPN installation completed successfully")
@@ -137,7 +145,9 @@ class ProtonVPNInstaller(BaseInstaller):
 
         repo_package = "protonvpn-stable-release_1.0.8_all.deb"
         repo_url = f"https://repo.protonvpn.com/debian/dists/stable/main/binary-all/{repo_package}"
-        expected_checksum = "0b14e71586b22e498eb20926c48c7b434b751149b1f2af9902ef1cfe6b03e180"
+        expected_checksum = (
+            "0b14e71586b22e498eb20926c48c7b434b751149b1f2af9902ef1cfe6b03e180"
+        )
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
@@ -153,7 +163,10 @@ class ProtonVPNInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to download ProtonVPN repository package: %s", e.stderr)
+                logger.error(
+                    "Failed to download ProtonVPN repository package: %s",
+                    e.stderr,
+                )
                 return False
 
             # Verify checksum
@@ -184,7 +197,10 @@ class ProtonVPNInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to install ProtonVPN repository package: %s", e.stderr)
+                logger.error(
+                    "Failed to install ProtonVPN repository package: %s",
+                    e.stderr,
+                )
                 return False
 
         # Update package lists
@@ -195,7 +211,10 @@ class ProtonVPNInstaller(BaseInstaller):
         # Install ProtonVPN
         success, error = self.pm.install(["proton-vpn-gnome-desktop"])
         if not success:
-            logger.error("Failed to install ProtonVPN GNOME desktop integration: %s", error)
+            logger.error(
+                "Failed to install ProtonVPN GNOME desktop integration: %s",
+                error,
+            )
             return False
 
         logger.info("ProtonVPN installation completed successfully")
@@ -206,6 +225,7 @@ class ProtonVPNInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         if self.distro == "fedora" or self.distro == "debian":
             return self.pm.is_installed("proton-vpn-gnome-desktop")
