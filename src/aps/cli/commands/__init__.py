@@ -16,12 +16,12 @@ from aps.cli.commands.sync_repos import (
 )
 
 __all__ = [
+    "_extract_package_name",
+    "_parse_package_source",
     "cmd_install",
     "cmd_list",
     "cmd_remove",
     "cmd_setup",
     "cmd_status",
     "cmd_sync_repos",
-    "_extract_package_name",
-    "_parse_package_source",
 ]
