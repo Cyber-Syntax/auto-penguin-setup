@@ -7,9 +7,11 @@ This file provides guidance to agents when working with code in this repository.
 1. KISS (Keep It Simple, Stupid): Aim for simplicity and clarity. Avoid unnecessary abstractions or metaprogramming.
 2. DRY (Don't Repeat Yourself): Reuse code appropriately but avoid over-engineering. Each command handler has single responsibility.
 3. Confirm understanding before making changes: If you're unsure about the purpose of a piece of code, ask for clarification rather than making assumptions.
-4. **ALWAYS** use `ruff check <filepath>` on each python file you modify to ensure proper formatting and linting.
-    - Use `ruff format <filepath>` on each python file you modify to ensure proper formatting.
-    - Use `ruff check --fix <filepath>` on each python file you modify to fix any fixable errors.
+4. ALWAYS use `ruff check <filepath>` on each Python file you modify to ensure proper linting and formatting:
+    - Use `ruff check --fix <filepath>` to automatically fix any fixable errors.
+    - Use `ruff format path/to/file.py` to format a specific file.
+    - Use `ruff format path/to/code/` to format all files in `path/to/code` (and any subdirectories).
+    - Use `ruff format` to format all files in the current directory.
 
 ## Code Style Guidelines
 
