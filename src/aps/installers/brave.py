@@ -156,7 +156,7 @@ class BraveInstaller(BaseInstaller):
         """
         standard_path = Path("/usr/share/applications/brave-browser.desktop")
 
-        if self.distro in ("fedora", "debian", "ubuntu"):
+        if self.distro == "fedora":
             return standard_path
 
         if self.distro in ("arch", "archlinux", "manjaro", "cachyos"):

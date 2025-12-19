@@ -38,11 +38,6 @@ class PackageMapping:
         return self.source.startswith("AUR:")
 
     @property
-    def is_ppa(self) -> bool:
-        """Check if package is from PPA (Debian/Ubuntu)."""
-        return self.source.startswith("PPA:")
-
-    @property
     def is_flatpak(self) -> bool:
         """Check if package is from Flatpak."""
         return self.source.startswith("flatpak:")
@@ -51,12 +46,12 @@ class PackageMapping:
         """Extract repository name from source prefix.
 
         Returns:
-            Repository name (e.g., "user/repo" for COPR/PPA) or None
+            Repository name (e.g., "user/repo" for COPR) or None
 
         """
-        if self.is_copr or self.is_ppa:
-            # Format: COPR:user/repo or PPA:user/repo
-            match = re.match(r"^(?:COPR|PPA):([^:]+)", self.source)
+        if self.is_copr:
+            # Format: COPR:user/repo
+            match = re.match(r"^COPR:([^:]+)", self.source)
             return match.group(1) if match else None
 
         if self.is_flatpak:
@@ -72,7 +67,6 @@ class PackageMapper:
     Handles prefix formats:
     - COPR:user/repo:package (Fedora)
     - AUR:package (Arch)
-    - PPA:user/repo:package (Debian/Ubuntu)
     - flatpak:remote:package (Flatpak)
     """
 
@@ -106,7 +100,6 @@ class PackageMapper:
         section_map = {
             DistroFamily.FEDORA: "pkgmap.fedora",
             DistroFamily.ARCH: "pkgmap.arch",
-            DistroFamily.DEBIAN: "pkgmap.debian",
         }
 
         section = section_map.get(self.distro.family)
@@ -132,7 +125,6 @@ class PackageMapper:
         - package_name (official repo)
         - COPR:user/repo:package_name
         - AUR:package_name
-        - PPA:user/repo:package_name
         - flatpak:remote:package_name
 
         Args:
@@ -163,16 +155,6 @@ class PackageMapper:
                 original_name=original_name,
                 mapped_name=package,
                 source=f"AUR:{package}",
-            )
-
-        # Check for PPA format: PPA:user/repo:package
-        ppa_match = re.match(r"^PPA:([^:]+):(.+)$", mapped_value)
-        if ppa_match:
-            repo, package = ppa_match.groups()
-            return PackageMapping(
-                original_name=original_name,
-                mapped_name=package,
-                source=f"PPA:{repo}",
             )
 
         # Check for Flatpak format: flatpak:remote:package

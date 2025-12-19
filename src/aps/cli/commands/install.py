@@ -94,11 +94,6 @@ def cmd_install(args: Namespace) -> None:
         if distro_info.family == DistroFamily.ARCH
         else []
     )
-    ppa_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_ppa]
-        if distro_info.family == DistroFamily.DEBIAN
-        else []
-    )
     flatpak_mapped: list[PackageMapping] = [
         m for m in mapped_system if m.is_flatpak
     ]
@@ -110,8 +105,6 @@ def cmd_install(args: Namespace) -> None:
         logger.debug("COPR packages: %s", [m.mapped_name for m in copr_pkgs])
     if distro_info.family == DistroFamily.ARCH:
         logger.debug("AUR packages: %s", [m.mapped_name for m in aur_pkgs])
-    if distro_info.family == DistroFamily.DEBIAN:
-        logger.debug("PPA packages: %s", [m.mapped_name for m in ppa_pkgs])
     logger.debug(
         "Flatpak mapped packages: %s", [m.mapped_name for m in flatpak_mapped]
     )
@@ -140,16 +133,6 @@ def cmd_install(args: Namespace) -> None:
                 else:
                     logger.info("COPR repo %s is already enabled", repo)
 
-    # Enable PPA repos (Debian/Ubuntu only)
-    if distro_info.family == DistroFamily.DEBIAN:
-        for m in ppa_pkgs:
-            repo = m.get_repo_name()
-            if repo:
-                logger.info("Adding PPA %s...", repo)
-                if not repo_mgr.add_ppa(repo):
-                    logger.error("Failed to add PPA %s", repo)
-                    return
-
     all_packages: list[str] = [
         m.original_name for m in mapped_system
     ] + flatpak_packages
@@ -161,7 +144,7 @@ def cmd_install(args: Namespace) -> None:
     else:
         # Install system packages
         system_to_install: list[str] = [
-            m.mapped_name for m in official_pkgs + copr_pkgs + ppa_pkgs
+            m.mapped_name for m in official_pkgs + copr_pkgs
         ]
         logger.debug("Installing system packages: %s", system_to_install)
         if system_to_install:
@@ -205,9 +188,7 @@ def cmd_install(args: Namespace) -> None:
                 return
 
         # Track packages
-        for m in (
-            official_pkgs + copr_pkgs + aur_pkgs + ppa_pkgs + flatpak_mapped
-        ):
+        for m in official_pkgs + copr_pkgs + aur_pkgs + flatpak_mapped:
             record = PackageRecord.create(
                 name=m.original_name,
                 source=m.source,

@@ -64,45 +64,6 @@ class TestBaseSystemConfigInit:
         assert config.distro == "arch"
         assert config.distro_info.family == DistroFamily.ARCH
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_init_with_debian(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization with Debian."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_distro.return_value = debian_distro
-        mock_pm.return_value = MagicMock()
-
-        config = ConcreteSystemConfig()
-
-        assert config.distro == "debian"
-        assert config.distro_info.family == DistroFamily.DEBIAN
-
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_init_with_ubuntu(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization with Ubuntu."""
-        ubuntu_distro = DistroInfo(
-            name="Ubuntu",
-            version="23.10",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_distro.return_value = ubuntu_distro
-        mock_pm.return_value = MagicMock()
-
-        config = ConcreteSystemConfig()
-
-        assert config.distro == "ubuntu"
-
 
 class TestBaseSystemConfigAbstractMethods:
     """Test abstract methods enforcement."""
@@ -174,26 +135,3 @@ class TestBaseSystemConfigPackageManager:
 
         assert config.pm == mock_pm_instance
         mock_get_pm.assert_called_once_with(arch_distro)
-
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_package_manager_debian(
-        self, mock_get_pm: Mock, mock_distro: Mock
-    ) -> None:
-        """Test that package manager is correctly initialized for Debian."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_distro.return_value = debian_distro
-        mock_pm_instance = MagicMock()
-        mock_get_pm.return_value = mock_pm_instance
-
-        config = ConcreteSystemConfig()
-
-        assert config.pm == mock_pm_instance
-        mock_get_pm.assert_called_once_with(debian_distro)

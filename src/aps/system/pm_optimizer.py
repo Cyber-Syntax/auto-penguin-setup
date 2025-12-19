@@ -28,8 +28,6 @@ class PackageManagerOptimizer(BaseSystemConfig):
             success = self._optimize_dnf()
         elif self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
             success = self._optimize_pacman()
-        elif self.distro in ("debian", "ubuntu", "linuxmint", "pop"):
-            success = self._optimize_apt()
         else:
             logger.error("Unsupported distribution: %s", self.distro)
             return False
@@ -94,42 +92,6 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         logger.info("Pacman configuration updated successfully")
         return True
-
-    def _optimize_apt(self) -> bool:
-        """Optimize APT configuration for Debian-based systems.
-
-        Returns:
-            bool: True if optimization was successful, False otherwise.
-
-        """
-        logger.info("Configuring APT for improved performance...")
-        apt_conf = Path("/etc/apt/apt.conf.d/99custom")
-
-        apt_config = """APT::Acquire::Queue-Mode "host";
-APT::Acquire::Retries "3";
-Acquire::http::Timeout "15";
-Acquire::https::Timeout "15";
-"""
-
-        try:
-            result = run_privileged(
-                ["tee", str(apt_conf)],
-                stdin_input=apt_config,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
-            if result.returncode != 0:
-                logger.error("Failed to create APT configuration file")
-                return False
-
-            logger.info("APT configuration updated successfully")
-            return True
-
-        except Exception as e:
-            logger.error("Error configuring APT: %s", e)
-            return False
 
     def _create_backup(self, config_file: Path) -> bool:
         """Create a backup of the configuration file if it doesn't exist.

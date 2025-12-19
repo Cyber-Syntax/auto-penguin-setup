@@ -17,7 +17,6 @@ class PackageManagerType(Enum):
 
     DNF = "dnf"
     PACMAN = "pacman"
-    APT = "apt"
     UNKNOWN = "unknown"
 
 
@@ -26,7 +25,6 @@ class DistroFamily(Enum):
 
     FEDORA = "fedora"
     ARCH = "arch"
-    DEBIAN = "debian"
     UNKNOWN = "unknown"
 
 
@@ -153,20 +151,6 @@ class DistroInfo:
         ):
             return PackageManagerType.PACMAN, DistroFamily.ARCH
 
-        # Debian family (apt-based)
-        debian_distros = {
-            "debian",
-            "ubuntu",
-            "linuxmint",
-            "pop",
-            "elementary",
-            "kali",
-        }
-        if distro_id in debian_distros or any(
-            parent in debian_distros for parent in id_like
-        ):
-            return PackageManagerType.APT, DistroFamily.DEBIAN
-
         return PackageManagerType.UNKNOWN, DistroFamily.UNKNOWN
 
 
@@ -189,10 +173,6 @@ def detect_package_manager() -> PackageManagerType:
     # Check for pacman (Arch family)
     if shutil.which("pacman"):
         return PackageManagerType.PACMAN
-
-    # Check for apt (Debian/Ubuntu family)
-    if shutil.which("apt"):
-        return PackageManagerType.APT
 
     return PackageManagerType.UNKNOWN
 
@@ -226,7 +206,6 @@ def detect_distro() -> DistroInfo:
         family = {
             PackageManagerType.DNF: DistroFamily.FEDORA,
             PackageManagerType.PACMAN: DistroFamily.ARCH,
-            PackageManagerType.APT: DistroFamily.DEBIAN,
         }.get(pm_type, DistroFamily.UNKNOWN)
 
         return DistroInfo(
@@ -254,18 +233,17 @@ def detect_distro() -> DistroInfo:
             distro.family = {
                 PackageManagerType.DNF: DistroFamily.FEDORA,
                 PackageManagerType.PACMAN: DistroFamily.ARCH,
-                PackageManagerType.APT: DistroFamily.DEBIAN,
             }.get(detected_pm, DistroFamily.UNKNOWN)
         else:
             logger.error(
                 "Could not detect distribution: os-release shows unsupported "
                 "distribution '%s' and no supported package manager found. "
-                "Supported: Fedora (dnf), Arch (pacman), Debian (apt)",
+                "Supported: Fedora (dnf), Arch (pacman)",
                 distro.id,
             )
             raise ValueError(
                 f"Unsupported distribution: {distro.id}. "
-                f"Supported: Fedora (dnf), Arch (pacman), Debian (apt)"
+                f"Supported: Fedora (dnf), Arch (pacman)"
             )
     elif detected_pm not in (
         PackageManagerType.UNKNOWN,
@@ -284,7 +262,6 @@ def detect_distro() -> DistroInfo:
         distro.family = {
             PackageManagerType.DNF: DistroFamily.FEDORA,
             PackageManagerType.PACMAN: DistroFamily.ARCH,
-            PackageManagerType.APT: DistroFamily.DEBIAN,
         }.get(detected_pm, DistroFamily.UNKNOWN)
 
     return distro

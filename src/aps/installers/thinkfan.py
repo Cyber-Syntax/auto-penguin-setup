@@ -41,7 +41,7 @@ class ThinkfanInstaller(BaseInstaller):
                     )
                     return False
             else:
-                # Debian/Fedora should have thinkfan in official repos
+                # Fedora should have thinkfan in official repos
                 success, error = self.pm.install(["thinkfan"])
                 if not success:
                     logger.error(

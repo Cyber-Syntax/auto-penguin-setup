@@ -128,13 +128,13 @@ class RepositoryManager:
         # Import here to avoid circular dependency
         from aps.core.package_mapper import PackageMapping
 
-        # Only check third-party mappings (COPR, AUR, PPA)
-        if not (mapping.is_copr or mapping.is_aur or mapping.is_ppa):
+        # Only check third-party mappings (COPR, AUR)
+        if not (mapping.is_copr or mapping.is_aur):
             return mapping
 
         # Check if available in official repos (BEFORE enabling COPR/AUR)
         if self.pm.is_available_in_official_repos(mapping.mapped_name):
-            source_type = mapping.source.split(":")[0]  # Extract COPR/AUR/PPA
+            source_type = mapping.source.split(":")[0]  # Extract COPR/AUR
             self.logger.warning(
                 "Package '%s' is mapped to %s in pkgmap.ini but is available "
                 "in official repositories. Installing from official repos instead. "
@@ -176,57 +176,6 @@ class RepositoryManager:
             raise PackageManagerError("Package manager is not PacmanManager")
 
         return self.pm.install_aur([package])
-
-    def add_ppa(self, ppa: str) -> bool:
-        """Add PPA repository (Ubuntu/Debian only).
-
-        Args:
-            ppa: PPA in format "user/repo"
-
-        Returns:
-            True if PPA was added successfully
-
-        Raises:
-            PackageManagerError: If not running on Ubuntu/Debian
-
-        """
-        if self.distro.family != DistroFamily.DEBIAN:
-            raise PackageManagerError(
-                f"PPA is only available on Debian/Ubuntu, not {self.distro.name}"
-            )
-
-        self.logger.info("Adding PPA repository: %s", ppa)
-        cmd = ["add-apt-repository", "-y", f"ppa:{ppa}"]
-        # Don't capture output - let it display to user
-        result = run_privileged(cmd, check=False, capture_output=False)
-
-        if result.returncode == 0:
-            self.logger.info("Successfully added PPA repository: %s", ppa)
-            # Update apt cache after adding PPA
-            self.pm.update_cache()
-            return True
-        self.logger.error("Failed to add PPA repository: %s", ppa)
-
-        return False
-
-    def remove_ppa(self, ppa: str) -> bool:
-        """Remove PPA repository (Ubuntu/Debian only).
-
-        Args:
-            ppa: PPA in format "user/repo"
-
-        Returns:
-            True if PPA was removed successfully
-
-        """
-        if self.distro.family != DistroFamily.DEBIAN:
-            raise PackageManagerError(
-                f"PPA is only available on Debian/Ubuntu, not {self.distro.name}"
-            )
-
-        cmd = ["add-apt-repository", "-y", "--remove", f"ppa:{ppa}"]
-        result = run_privileged(cmd, capture_output=True, check=False)
-        return result.returncode == 0
 
     def is_flatpak_installed(self) -> bool:
         """Check if flatpak command is available.

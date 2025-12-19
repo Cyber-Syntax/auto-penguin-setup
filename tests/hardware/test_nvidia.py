@@ -20,11 +20,6 @@ class TestNvidiaConfigInit:
         config = NvidiaConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = NvidiaConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestNvidiaConfigDetection:
     """Test NVIDIA GPU detection."""
@@ -110,19 +105,6 @@ class TestNvidiaConfigSetupCuda:
         assert result is True
         mock_setup.assert_called_once()
 
-    @patch("aps.hardware.nvidia.NvidiaConfig._setup_cuda_debian")
-    @patch("aps.hardware.nvidia.NvidiaConfig._has_nvidia_gpu")
-    def test_setup_cuda_debian(self, mock_gpu: Mock, mock_setup: Mock) -> None:
-        """Test CUDA setup on Debian."""
-        mock_gpu.return_value = True
-        mock_setup.return_value = True
-        config = NvidiaConfig("debian")
-
-        result = config.setup_cuda()
-
-        assert result is True
-        mock_setup.assert_called_once()
-
     @patch("aps.hardware.nvidia.NvidiaConfig._has_nvidia_gpu")
     def test_setup_cuda_unsupported_distro(
         self, mock_gpu: Mock, caplog: LogCaptureFixture
@@ -184,31 +166,6 @@ class TestNvidiaConfigSetupCudaDetailed:
         ]
 
         config = NvidiaConfig("arch")
-        result = config.setup_cuda()
-
-        assert result is True
-
-    @patch("subprocess.run")
-    @patch("os.path.exists")
-    @patch("aps.hardware.nvidia.NvidiaConfig._has_nvidia_gpu")
-    def test_setup_cuda_debian_detailed(
-        self,
-        mock_gpu: Mock,
-        mock_exists: Mock,
-        mock_run: Mock,
-        caplog: LogCaptureFixture,
-    ) -> None:
-        """Test detailed CUDA setup on Debian with subprocess calls."""
-        caplog.set_level("INFO")
-        mock_gpu.return_value = True
-        mock_exists.return_value = True  # Keyring already exists
-        mock_run.side_effect = [
-            Mock(returncode=0),  # apt install
-            # nvcc --version
-            Mock(returncode=0, stdout="nvcc: NVIDIA (R) Cuda compiler\n"),
-        ]
-
-        config = NvidiaConfig("debian")
         result = config.setup_cuda()
 
         assert result is True

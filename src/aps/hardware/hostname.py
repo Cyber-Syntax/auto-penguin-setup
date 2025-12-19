@@ -15,7 +15,7 @@ class HostnameConfig(BaseHardwareConfig):
         """Initialize hostname configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
 
         """
         super().__init__(distro)

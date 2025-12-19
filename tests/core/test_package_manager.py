@@ -7,7 +7,6 @@ from pytest import LogCaptureFixture
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
 from aps.core.package_manager import (
-    AptManager,
     DnfManager,
     PackageManagerError,
     PacmanManager,
@@ -498,144 +497,6 @@ class TestPacmanManager:
         )
 
 
-class TestAptManager:
-    """Test AptManager for Debian-based distributions."""
-
-    @pytest.fixture
-    def debian_distro(self) -> DistroInfo:
-        """Create a Debian DistroInfo for testing."""
-        return DistroInfo(
-            id="debian",
-            id_like=[],
-            name="Debian GNU/Linux",
-            version="12",
-            family=DistroFamily.DEBIAN,
-            package_manager=PackageManagerType.APT,
-        )
-
-    @pytest.fixture
-    def apt_manager(self, debian_distro: DistroInfo) -> AptManager:
-        """Create an AptManager instance for testing."""
-        return AptManager(debian_distro)
-
-    def test_init(
-        self, apt_manager: AptManager, debian_distro: DistroInfo
-    ) -> None:
-        """Test AptManager initialization."""
-        assert apt_manager.distro == debian_distro
-
-    @patch("aps.core.package_manager.run_privileged")
-    def test_install_single_package(
-        self,
-        mock_run: Mock,
-        apt_manager: AptManager,
-        caplog: LogCaptureFixture,
-    ) -> None:
-        """Test installing a single package."""
-        caplog.set_level("INFO")
-        mock_run.return_value = Mock(returncode=0)
-
-        success, error = apt_manager.install(["vim"])
-
-        assert success is True
-        assert error == ""
-
-    @patch("aps.core.package_manager.run_privileged")
-    def test_install_with_assume_yes(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test install with assume_yes flag."""
-        mock_run.return_value = Mock(returncode=0)
-
-        apt_manager.install(["vim"], assume_yes=True)
-
-        call_args = mock_run.call_args[0][0]
-        assert "-y" in call_args
-
-    @patch("aps.core.package_manager.run_privileged")
-    def test_remove_single_package(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test removing a single package."""
-        mock_run.return_value = Mock(returncode=0)
-
-        success, error = apt_manager.remove(["vim"])
-
-        assert success is True
-        assert error == ""
-
-    @patch("subprocess.run")
-    def test_search_packages(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test searching for packages."""
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="vim - Vi IMproved\nvim-common - Common files\n",
-            text="vim - Vi IMproved\nvim-common - Common files\n",
-        )
-
-        results = apt_manager.search("vim")
-
-        assert "vim" in results
-        assert "vim-common" in results
-
-    @patch("subprocess.run")
-    def test_is_installed_true(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test checking if installed package exists."""
-        mock_run.return_value = Mock(returncode=0)
-
-        assert apt_manager.is_installed("vim") is True
-
-    @patch("subprocess.run")
-    def test_is_installed_false(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test checking if non-installed package exists."""
-        mock_run.return_value = Mock(returncode=1)
-
-        assert apt_manager.is_installed("nonexistent") is False
-
-    @patch("aps.core.package_manager.run_privileged")
-    def test_update_cache(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test updating package manager cache."""
-        mock_run.return_value = Mock(returncode=0)
-
-        assert apt_manager.update_cache() is True
-
-    @patch("subprocess.run")
-    def test_is_available_in_official_repos_true(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test checking package availability in official repos."""
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="Candidate: 9.0.1000-1\n",
-            text="Candidate: 9.0.1000-1\n",
-        )
-
-        assert apt_manager.is_available_in_official_repos("vim") is True
-
-    @patch("subprocess.run")
-    def test_is_available_in_official_repos_false(
-        self, mock_run: Mock, apt_manager: AptManager
-    ) -> None:
-        """Test checking non-existent package."""
-        mock_run.return_value = Mock(
-            returncode=0,
-            stdout="Candidate: (none)\n",
-            text="Candidate: (none)\n",
-        )
-
-        assert (
-            apt_manager.is_available_in_official_repos("nonexistent") is False
-        )
-
-
 class TestGetPackageManager:
     """Test get_package_manager factory function."""
 
@@ -669,22 +530,6 @@ class TestGetPackageManager:
         manager = get_package_manager(distro)
 
         assert isinstance(manager, PacmanManager)
-        assert manager.distro == distro
-
-    def test_get_apt_manager(self) -> None:
-        """Test factory returns AptManager for Debian."""
-        distro = DistroInfo(
-            id="debian",
-            id_like=[],
-            name="Debian GNU/Linux",
-            version="12",
-            family=DistroFamily.DEBIAN,
-            package_manager=PackageManagerType.APT,
-        )
-
-        manager = get_package_manager(distro)
-
-        assert isinstance(manager, AptManager)
         assert manager.distro == distro
 
     def test_get_unsupported_distro(self) -> None:

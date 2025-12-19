@@ -72,30 +72,6 @@ class TestThinkfanInstall:
 
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    @patch("shutil.which", return_value="/usr/bin/thinkfan")
-    @patch("pathlib.Path.open", new_callable=mock_open)
-    def test_install_debian(
-        self,
-        mock_open_file: Mock,
-        mock_which: Mock,
-        mock_pm: Mock,
-        mock_distro: Mock,
-    ) -> None:
-        """Test install on Debian."""
-        mock_distro.return_value = MagicMock(id="debian")
-        mock_pm_instance = MagicMock()
-        mock_pm_instance.install.return_value = (True, None)
-        mock_pm.return_value = mock_pm_instance
-
-        installer = ThinkfanInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            with patch("shutil.copy2"):
-                with patch("pathlib.Path.exists", return_value=True):
-                    result = installer.install()
-                    assert result is True
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
     def test_install_unsupported_distro(
         self, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
     ) -> None:

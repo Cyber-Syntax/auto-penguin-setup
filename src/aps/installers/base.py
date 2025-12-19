@@ -103,38 +103,12 @@ class BaseInstaller(ABC):
             bool: True if key was imported successfully, False otherwise.
 
         """
-        import subprocess
-
         logger.debug("Importing GPG key from: %s", key_url)
 
         try:
             if self.distro in ("fedora", "rhel", "centos"):
                 result = run_privileged(
                     ["rpm", "--import", key_url],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-            elif self.distro in ("debian", "ubuntu"):
-                # Download key and add to apt keyring
-                result = subprocess.run(
-                    ["curl", "-fsSL", key_url],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                if result.returncode != 0:
-                    return False
-
-                key_content = result.stdout
-                result = run_privileged(
-                    [
-                        "gpg",
-                        "--dearmor",
-                        "-o",
-                        "/usr/share/keyrings/aps-temp.gpg",
-                    ],
-                    stdin_input=key_content,
                     capture_output=True,
                     text=True,
                     check=False,
@@ -165,10 +139,6 @@ class BaseInstaller(ABC):
         try:
             if self.distro in ("fedora", "rhel", "centos"):
                 Path(f"/etc/yum.repos.d/{repo_name}.repo")
-                # Implementation specific to each installer
-                return True
-            if self.distro in ("debian", "ubuntu"):
-                Path(f"/etc/apt/sources.list.d/{repo_name}.list")
                 # Implementation specific to each installer
                 return True
             logger.warning(

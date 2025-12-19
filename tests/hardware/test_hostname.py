@@ -22,11 +22,6 @@ class TestHostnameConfigInit:
         config = HostnameConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = HostnameConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestHostnameConfigSetHostname:
     """Test set_hostname functionality."""

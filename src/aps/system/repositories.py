@@ -21,8 +21,6 @@ class RepositoryConfig(BaseSystemConfig):
             return self._enable_rpm_fusion()
         if self.distro == "arch":
             return self._enable_arch_extras()
-        if self.distro == "debian":
-            return self._enable_debian_nonfree()
         logger.warning("Unsupported distribution: %s", self.distro)
         return False
 
@@ -62,52 +60,8 @@ class RepositoryConfig(BaseSystemConfig):
         logger.info("RPM Fusion repositories enabled successfully")
         return True
 
-    # TODO: Implement enabling extra multilib repos for Arch Linux
     def _enable_arch_extras(self) -> bool:
         """Enable extra repositories on Arch Linux."""
         logger.info("Arch Linux uses AUR for additional packages")
         logger.info("No additional repositories needed (using AUR helper)")
         return True
-
-    def _enable_debian_nonfree(self) -> bool:
-        """Enable contrib and non-free repositories on Debian."""
-        logger.info("Enabling contrib and non-free repositories for Debian")
-
-        success = True
-
-        # Add contrib repository
-        result = run_privileged(
-            ["add-apt-repository", "-y", "contrib"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.warning("Failed to add contrib repository")
-            success = False
-
-        # Add non-free repository
-        result = run_privileged(
-            ["add-apt-repository", "-y", "non-free"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.warning("Failed to add non-free repository")
-            success = False
-
-        # Update package lists
-        result = run_privileged(
-            ["apt-get", "update"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.error("Failed to update package lists")
-            return False
-
-        if success:
-            logger.info("Debian non-free repositories enabled successfully")
-        return success

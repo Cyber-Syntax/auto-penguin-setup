@@ -469,117 +469,6 @@ class PacmanManager(PackageManager):
         return False
 
 
-class AptManager(PackageManager):
-    """Package manager for Debian and Ubuntu-based distributions using apt."""
-
-    def install(
-        self, packages: list[str], assume_yes: bool = False
-    ) -> tuple[bool, str]:
-        logger.info("Installing packages: %s", ", ".join(packages))
-
-        cmd = ["apt-get", "install"]
-        if assume_yes:
-            cmd.append("-y")
-        cmd.extend(packages)
-
-        logger.debug("Executing command: %s", " ".join(cmd))
-        # Set DEBIAN_FRONTEND to avoid interactive prompts
-        # Don't capture output - let it display to user
-        import os
-
-        env = os.environ.copy()
-        env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = run_privileged(
-            cmd, env=env, check=False, capture_output=False
-        )
-        if result.returncode == 0:
-            logger.info("Successfully installed packages")
-            return True, ""
-        logger.error("Failed to install packages %s", packages)
-        return False, "Package installation failed"
-
-    def remove(
-        self, packages: list[str], assume_yes: bool = True
-    ) -> tuple[bool, str]:
-        logger.info("Removing packages: %s", ", ".join(packages))
-
-        cmd = ["apt-get", "remove"]
-        if assume_yes:
-            cmd.append("-y")
-        cmd.extend(packages)
-
-        logger.debug("Executing command: %s", " ".join(cmd))
-        # Don't capture output - let it display to user
-        import os
-
-        env = os.environ.copy()
-        env["DEBIAN_FRONTEND"] = "noninteractive"
-        result = run_privileged(
-            cmd, env=env, check=False, capture_output=False
-        )
-        if result.returncode == 0:
-            logger.info("Successfully removed packages")
-            return True, ""
-        logger.error("Failed to remove packages %s", packages)
-        return False, "Package removal failed"
-
-    def search(self, query: str) -> list[str]:
-        cmd = ["apt-cache", "search", query]
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, check=False
-        )
-
-        if result.returncode != 0:
-            return []
-
-        packages = []
-        for line in result.stdout.splitlines():
-            # Format: "package - description"
-            if " - " in line:
-                package = line.split(" - ")[0].strip()
-                packages.append(package)
-
-        return packages
-
-    def is_installed(self, package: str) -> bool:
-        cmd = ["dpkg", "-s", package]
-        result = subprocess.run(cmd, capture_output=True, check=False)
-        return result.returncode == 0
-
-    def update_cache(self) -> bool:
-        cmd = ["apt-get", "update"]
-        result = run_privileged(cmd, capture_output=True, check=False)
-        return result.returncode == 0
-
-    def is_available_in_official_repos(self, package: str) -> bool:
-        """Check if package is available in official Debian/Ubuntu repositories.
-
-        Uses 'apt-cache policy' to check package availability.
-
-        Args:
-            package: Package name to check
-
-        Returns:
-            True if package is available in official repos, False otherwise
-
-        """
-        cmd = ["apt-cache", "policy", package]
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, check=False
-        )
-
-        if result.returncode != 0:
-            return False
-
-        # Check if package has available versions from non-PPA sources
-        # Look for "Candidate:" line that's not "(none)"
-        for line in result.stdout.splitlines():
-            if line.strip().startswith("Candidate:"):
-                candidate = line.split(":", 1)[1].strip()
-                return candidate != "(none)"
-        return False
-
-
 def get_package_manager(distro: DistroInfo) -> PackageManager:
     """Factory function to get appropriate package manager for distribution.
 
@@ -598,10 +487,8 @@ def get_package_manager(distro: DistroInfo) -> PackageManager:
             return DnfManager(distro)
         case DistroFamily.ARCH:
             return PacmanManager(distro)
-        case DistroFamily.DEBIAN:
-            return AptManager(distro)
         case _:
             raise ValueError(
                 f"Unsupported distribution family: {distro.family}. "
-                f"Supported families: Fedora, Arch, Debian"
+                f"Supported families: Fedora, Arch"
             )

@@ -1,6 +1,5 @@
 """ProtonVPN installer with distro-specific repository setup."""
 
-import hashlib
 import subprocess
 import tempfile
 from pathlib import Path
@@ -29,8 +28,6 @@ class ProtonVPNInstaller(BaseInstaller):
             return self._install_fedora()
         if self.distro == "arch":
             return self._install_arch()
-        if self.distro == "debian":
-            return self._install_debian()
         logger.error("Unsupported distribution: %s", self.distro)
         return False
 
@@ -133,93 +130,6 @@ class ProtonVPNInstaller(BaseInstaller):
         logger.info("ProtonVPN installation completed successfully")
         return True
 
-    def _install_debian(self) -> bool:
-        """Install ProtonVPN on Debian/Ubuntu."""
-        logger.info("Installing ProtonVPN for Debian...")
-
-        # Install prerequisites
-        success, error = self.pm.install(["wget"])
-        if not success:
-            logger.error("Failed to install prerequisites: %s", error)
-            return False
-
-        repo_package = "protonvpn-stable-release_1.0.8_all.deb"
-        repo_url = f"https://repo.protonvpn.com/debian/dists/stable/main/binary-all/{repo_package}"
-        expected_checksum = (
-            "0b14e71586b22e498eb20926c48c7b434b751149b1f2af9902ef1cfe6b03e180"
-        )
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-            deb_file = tmp_path / repo_package
-
-            # Download repository package
-            logger.info("Downloading ProtonVPN repository package...")
-            try:
-                subprocess.run(
-                    ["wget", "-O", str(deb_file), repo_url],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-            except subprocess.CalledProcessError as e:
-                logger.error(
-                    "Failed to download ProtonVPN repository package: %s",
-                    e.stderr,
-                )
-                return False
-
-            # Verify checksum
-            logger.info("Verifying package checksum...")
-            try:
-                sha256_hash = hashlib.sha256()
-                with deb_file.open("rb") as f:
-                    for chunk in iter(lambda: f.read(4096), b""):
-                        sha256_hash.update(chunk)
-                actual_checksum = sha256_hash.hexdigest()
-
-                if actual_checksum != expected_checksum:
-                    logger.error("Checksum verification failed")
-                    logger.error("Expected: %s", expected_checksum)
-                    logger.error("Actual: %s", actual_checksum)
-                    return False
-            except OSError as e:
-                logger.error("Failed to verify checksum: %s", e)
-                return False
-
-            # Install repository package
-            logger.info("Installing ProtonVPN repository...")
-            try:
-                run_privileged(
-                    ["dpkg", "-i", str(deb_file)],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-            except subprocess.CalledProcessError as e:
-                logger.error(
-                    "Failed to install ProtonVPN repository package: %s",
-                    e.stderr,
-                )
-                return False
-
-        # Update package lists
-        if not self.pm.update_cache():
-            logger.error("Failed to update package lists")
-            return False
-
-        # Install ProtonVPN
-        success, error = self.pm.install(["proton-vpn-gnome-desktop"])
-        if not success:
-            logger.error(
-                "Failed to install ProtonVPN GNOME desktop integration: %s",
-                error,
-            )
-            return False
-
-        logger.info("ProtonVPN installation completed successfully")
-        return True
-
     def is_installed(self) -> bool:
         """Check if ProtonVPN is installed.
 
@@ -227,7 +137,7 @@ class ProtonVPNInstaller(BaseInstaller):
             True if installed, False otherwise
 
         """
-        if self.distro == "fedora" or self.distro == "debian":
+        if self.distro == "fedora":
             return self.pm.is_installed("proton-vpn-gnome-desktop")
         if self.distro == "arch":
             return self.pm.is_installed("proton-vpn-gtk-app")

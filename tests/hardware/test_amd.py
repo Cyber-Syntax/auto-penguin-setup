@@ -22,11 +22,6 @@ class TestAMDConfigInit:
         config = AMDConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = AMDConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestAMDConfigDetection:
     """Test AMD CPU and module detection."""

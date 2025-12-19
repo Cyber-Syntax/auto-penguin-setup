@@ -17,7 +17,6 @@ class TestPackageMapping:
         assert mapping.is_official
         assert not mapping.is_copr
         assert not mapping.is_aur
-        assert not mapping.is_ppa
 
     def test_is_copr(self) -> None:
         """Test COPR package detection."""
@@ -41,27 +40,10 @@ class TestPackageMapping:
         assert not mapping.is_official
         assert not mapping.is_copr
 
-    def test_is_ppa(self) -> None:
-        """Test PPA package detection."""
-        mapping = PackageMapping(
-            original_name="test",
-            mapped_name="test-pkg",
-            source="PPA:user/repo",
-        )
-        assert mapping.is_ppa
-        assert not mapping.is_official
-
     def test_get_repo_name_copr(self) -> None:
         """Test extracting COPR repo name."""
         mapping = PackageMapping(
             original_name="test", mapped_name="test", source="COPR:user/repo"
-        )
-        assert mapping.get_repo_name() == "user/repo"
-
-    def test_get_repo_name_ppa(self) -> None:
-        """Test extracting PPA repo name."""
-        mapping = PackageMapping(
-            original_name="test", mapped_name="test", source="PPA:user/repo"
         )
         assert mapping.get_repo_name() == "user/repo"
 
@@ -102,14 +84,6 @@ class TestPackageMapper:
         brave = mapper.mappings["brave-browser"]
         assert brave.mapped_name == "brave-bin"
         assert brave.is_aur
-
-    def test_load_debian_mappings(
-        self, sample_pkgmap_ini: Path, debian_distro: DistroInfo
-    ) -> None:
-        """Test loading Debian package mappings."""
-        mapper = PackageMapper(sample_pkgmap_ini, debian_distro)
-
-        assert "brave-browser" in mapper.mappings
 
     def test_map_package_with_mapping(
         self, sample_pkgmap_ini: Path, fedora_distro: DistroInfo
@@ -185,20 +159,6 @@ class TestPackageMapper:
         mapping = mapper._parse_mapping("test", "AUR:package-bin")
         assert mapping.source == "AUR:package-bin"
         assert mapping.mapped_name == "package-bin"
-
-    def test_parse_ppa_mapping(
-        self, tmp_path: Path, debian_distro: DistroInfo
-    ) -> None:
-        """Test parsing PPA mapping format."""
-        # Create empty pkgmap for mapper initialization
-        empty_pkgmap = tmp_path / "empty.ini"
-        empty_pkgmap.write_text("")
-
-        mapper = PackageMapper(empty_pkgmap, debian_distro)
-
-        mapping = mapper._parse_mapping("test", "PPA:user/repo:package")
-        assert mapping.source == "PPA:user/repo"
-        assert mapping.mapped_name == "package"
 
     def test_parse_flatpak_mapping(
         self, tmp_path: Path, fedora_distro: DistroInfo

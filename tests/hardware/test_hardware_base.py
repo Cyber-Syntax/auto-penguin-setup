@@ -31,11 +31,6 @@ class TestBaseHardwareConfigInit:
         config = ConcreteHardwareConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_with_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = ConcreteHardwareConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestBaseHardwareConfigAbstractMethods:
     """Test abstract methods enforcement."""

@@ -39,18 +39,6 @@ class TestDistroInfo:
         assert distro.package_manager == PackageManagerType.PACMAN
         assert distro.family == DistroFamily.ARCH
 
-    def test_from_os_release_debian(
-        self, sample_os_release_debian: Path
-    ) -> None:
-        """Test parsing Debian os-release."""
-        distro = DistroInfo.from_os_release(sample_os_release_debian)
-
-        assert distro.id == "debian"
-        assert distro.name == "Debian GNU/Linux"
-        assert distro.version == "12"
-        assert distro.package_manager == PackageManagerType.APT
-        assert distro.family == DistroFamily.DEBIAN
-
     def test_from_os_release_missing_file(self, tmp_path: Path) -> None:
         """Test handling of missing os-release file."""
         with pytest.raises(FileNotFoundError):
@@ -84,21 +72,6 @@ ID_LIKE=arch
         distro = DistroInfo.from_os_release(os_release)
         assert distro.family == DistroFamily.ARCH
         assert distro.package_manager == PackageManagerType.PACMAN
-
-    def test_derivative_distro_ubuntu(self, tmp_path: Path) -> None:
-        """Test detection of Ubuntu (Debian derivative)."""
-        content = """
-NAME="Ubuntu"
-ID=ubuntu
-ID_LIKE=debian
-VERSION_ID=22.04
-"""
-        os_release = tmp_path / "os-release-ubuntu"
-        os_release.write_text(content)
-
-        distro = DistroInfo.from_os_release(os_release)
-        assert distro.family == DistroFamily.DEBIAN
-        assert distro.package_manager == PackageManagerType.APT
 
     def test_from_os_release_unknown(self, tmp_path: Path) -> None:
         """Test parsing unknown distribution os-release."""
@@ -176,13 +149,6 @@ class TestPackageManagerDetection:
         assert result == PackageManagerType.PACMAN
 
     @patch("shutil.which")
-    def test_detect_package_manager_apt(self, mock_which: Mock) -> None:
-        """Test detection of apt package manager."""
-        mock_which.side_effect = lambda cmd: cmd == "apt"
-        result = detect_package_manager()
-        assert result == PackageManagerType.APT
-
-    @patch("shutil.which")
     def test_detect_package_manager_unknown(self, mock_which: Mock) -> None:
         """Test detection when no supported package manager is found."""
         mock_which.return_value = None
@@ -192,7 +158,7 @@ class TestPackageManagerDetection:
     @patch("shutil.which")
     def test_detect_package_manager_priority(self, mock_which: Mock) -> None:
         """Test that dnf is detected first when multiple are available."""
-        mock_which.side_effect = lambda cmd: cmd in ["dnf", "pacman", "apt"]
+        mock_which.side_effect = lambda cmd: cmd in ["dnf", "pacman"]
         result = detect_package_manager()
         assert result == PackageManagerType.DNF
 

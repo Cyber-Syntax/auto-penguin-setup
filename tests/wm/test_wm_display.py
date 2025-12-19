@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.display.lightdm import LightDMConfig
 from aps.display.sddm import SDDMConfig
 from aps.wm.qtile import QtileConfig
 
@@ -177,103 +176,5 @@ class TestSDDMConfig:
 
         sddm = SDDMConfig()
         result = sddm.configure_autologin("testuser", "qtile")
-
-        assert result is True
-
-
-class TestLightDMConfig:
-    """Tests for LightDM display manager configuration."""
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    def test_install_success(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test successful LightDM installation."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_detect_distro.return_value = debian_distro
-        mock_pm = MagicMock()
-        mock_pm.install.return_value = (True, "Success")
-        mock_get_pm.return_value = mock_pm
-
-        lightdm = LightDMConfig()
-        result = lightdm.install()
-
-        assert result is True
-        mock_pm.install.assert_called_once_with(["lightdm"])
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.lightdm.run_privileged")
-    def test_switch_to_lightdm(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test switching to LightDM."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_detect_distro.return_value = debian_distro
-        mock_pm = MagicMock()
-        mock_pm.install.return_value = (True, "Success")
-        mock_get_pm.return_value = mock_pm
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-
-        lightdm = LightDMConfig()
-        result = lightdm.switch_to_lightdm()
-
-        assert result is True
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.lightdm.run_privileged")
-    @patch("aps.display.lightdm.Path.exists", return_value=True)
-    def test_configure_autologin(
-        self,
-        mock_exists: Mock,
-        mock_run: Mock,
-        mock_get_pm: Mock,
-        mock_detect_distro: Mock,
-    ) -> None:
-        """Test LightDM autologin configuration."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_detect_distro.return_value = debian_distro
-        mock_get_pm.return_value = MagicMock()
-
-        # Mock config file content
-        config_content = """[LightDM]
-run-directory=/run/lightdm
-
-[Seat:*]
-#autologin-user=
-#autologin-session=
-"""
-
-        mock_run.side_effect = [
-            Mock(returncode=0, stdout="", stderr=""),  # cp (backup)
-            Mock(returncode=0, stdout=config_content, stderr=""),  # cat
-            Mock(returncode=0, stdout="", stderr=""),  # tee
-        ]
-
-        lightdm = LightDMConfig()
-        result = lightdm.configure_autologin("testuser", "qtile")
 
         assert result is True

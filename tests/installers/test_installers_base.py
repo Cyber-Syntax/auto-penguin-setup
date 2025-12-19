@@ -44,14 +44,6 @@ class TestBaseInstallerInit:
         installer = ConcreteInstaller()
         assert installer.distro == "arch"
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init_with_debian(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization with debian distro."""
-        mock_distro.return_value = MagicMock(id="debian")
-        installer = ConcreteInstaller()
-        assert installer.distro == "debian"
-
 
 class TestBaseInstallerAbstractMethods:
     """Test abstract methods enforcement."""
@@ -225,27 +217,6 @@ class TestImportGpgKey:
     @patch("aps.installers.base.run_privileged")
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_import_gpg_key_debian(
-        self, mock_pm: Mock, mock_distro: Mock, mock_run_priv: Mock
-    ) -> None:
-        """Test GPG key import on Debian."""
-        mock_distro.return_value = MagicMock(id="debian")
-        mock_result = MagicMock(returncode=0)
-        mock_run_priv.return_value = mock_result
-
-        with patch("subprocess.run") as mock_subprocess:
-            mock_subprocess.return_value = MagicMock(
-                returncode=0, stdout="key content"
-            )
-
-            installer = ConcreteInstaller()
-            result = installer._import_gpg_key("https://example.com/key.gpg")
-
-            assert result is True
-
-    @patch("aps.installers.base.run_privileged")
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
     def test_import_gpg_key_unsupported_distro(
         self,
         mock_pm: Mock,
@@ -295,21 +266,6 @@ class TestAddRepoFile:
     ) -> None:
         """Test adding repo file on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
-        installer = ConcreteInstaller()
-
-        result = installer._add_repo_file(
-            "https://example.com/repo", "example"
-        )
-
-        assert result is True
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_add_repo_file_debian(
-        self, mock_pm: Mock, mock_distro: Mock
-    ) -> None:
-        """Test adding repo file on Debian."""
-        mock_distro.return_value = MagicMock(id="debian")
         installer = ConcreteInstaller()
 
         result = installer._add_repo_file(

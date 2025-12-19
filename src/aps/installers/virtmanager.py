@@ -26,8 +26,6 @@ class VirtManagerInstaller(BaseInstaller):
             return self._install_fedora()
         if self.distro == "arch":
             return self._install_arch()
-        if self.distro == "debian":
-            return self._install_debian()
         logger.error("Unsupported distribution: %s", self.distro)
         return False
 
@@ -97,27 +95,6 @@ class VirtManagerInstaller(BaseInstaller):
         except subprocess.CalledProcessError as e:
             logger.error(
                 "Failed to install virtualization packages: %s", e.stderr
-            )
-            return False
-
-        return self._configure_libvirt()
-
-    def _install_debian(self) -> bool:
-        """Install virtualization packages on Debian/Ubuntu."""
-        logger.info("Installing virtualization packages for Debian/Ubuntu")
-
-        deb_pkgs = [
-            "libvirt-daemon-system",
-            "libvirt-clients",
-            "qemu-kvm",
-            "virt-manager",
-            "bridge-utils",
-        ]
-
-        success, error = self.pm.install(deb_pkgs)
-        if not success:
-            logger.error(
-                "Failed to install virtualization packages: %s", error
             )
             return False
 

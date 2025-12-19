@@ -23,11 +23,6 @@ class TestIntelConfigInit:
         config = IntelConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = IntelConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestIntelConfigSetupXorg:
     """Test Xorg setup functionality."""

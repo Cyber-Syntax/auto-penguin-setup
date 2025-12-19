@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.core.package_manager import AptManager, DnfManager, PacmanManager
+from aps.core.package_manager import DnfManager, PacmanManager
 
 
 class TestOfficialReposPriority:
@@ -159,68 +159,3 @@ class TestOfficialReposPriority:
             result = pm.is_available_in_official_repos("linux")
 
         assert result is True
-
-    def test_apt_is_available_in_official_repos_found(self) -> None:
-        """Test AptManager finds package in official repos."""
-        distro = DistroInfo(
-            name="Ubuntu",
-            version="22.04",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        pm = AptManager(distro)
-
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="git:\n  Installed: (none)\n  Candidate: 1:2.34.1-1ubuntu1.10\n",
-            )
-            result = pm.is_available_in_official_repos("git")
-
-        assert result is True
-        mock_run.assert_called_once()
-        cmd = mock_run.call_args[0][0]
-        assert "apt-cache" in cmd
-        assert "policy" in cmd
-        assert "git" in cmd
-
-    def test_apt_is_available_in_official_repos_not_found(self) -> None:
-        """Test AptManager doesn't find package."""
-        distro = DistroInfo(
-            name="Ubuntu",
-            version="22.04",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        pm = AptManager(distro)
-
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="nonexistent:\n  Installed: (none)\n  Candidate: (none)\n",
-            )
-            result = pm.is_available_in_official_repos("nonexistent")
-
-        assert result is False
-
-    def test_apt_is_available_in_official_repos_error(self) -> None:
-        """Test AptManager handles errors gracefully."""
-        distro = DistroInfo(
-            name="Ubuntu",
-            version="22.04",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        pm = AptManager(distro)
-
-        with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(returncode=1, stdout="")
-            result = pm.is_available_in_official_repos("test")
-
-        assert result is False

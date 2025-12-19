@@ -40,18 +40,6 @@ class TestRepositoryManager:
             family=DistroFamily.ARCH,
         )
 
-    @pytest.fixture
-    def debian_distro(self) -> DistroInfo:
-        """Create a Debian distro info instance."""
-        return DistroInfo(
-            name="ubuntu",
-            version="22.04",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-
     def test_init(self, fedora_distro: DistroInfo) -> None:
         """Test repository manager initialization."""
         pm = Mock(spec=PackageManager)
@@ -117,16 +105,6 @@ class TestRepositoryManager:
                 capture_output=True,
                 check=False,
             )
-
-    def test_disable_copr_non_fedora(self, debian_distro: DistroInfo) -> None:
-        """Test disabling COPR on non-Fedora raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with pytest.raises(
-            PackageManagerError, match="COPR is only available on Fedora"
-        ):
-            repo_mgr.disable_copr("user/repo")
 
     def test_is_copr_enabled_true(self, fedora_distro: DistroInfo) -> None:
         """Test checking if COPR is enabled returns True."""
@@ -286,71 +264,6 @@ class TestRepositoryManager:
             PackageManagerError, match="Package manager is not PacmanManager"
         ):
             repo_mgr.install_aur_package("yay")
-
-    def test_add_ppa_success(self, debian_distro: DistroInfo) -> None:
-        """Test adding PPA successfully."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=0)
-            result = repo_mgr.add_ppa("user/repo")
-
-            assert result is True
-            mock_run.assert_called_once_with(
-                ["add-apt-repository", "-y", "ppa:user/repo"],
-                check=False,
-                capture_output=False,
-            )
-            pm.update_cache.assert_called_once()
-
-    def test_add_ppa_failure(self, debian_distro: DistroInfo) -> None:
-        """Test adding PPA failure."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=1)
-            result = repo_mgr.add_ppa("user/repo")
-
-            assert result is False
-            pm.update_cache.assert_not_called()
-
-    def test_add_ppa_non_debian(self, fedora_distro: DistroInfo) -> None:
-        """Test adding PPA on non-Debian raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(fedora_distro, pm)
-
-        with pytest.raises(
-            PackageManagerError, match="PPA is only available on Debian/Ubuntu"
-        ):
-            repo_mgr.add_ppa("user/repo")
-
-    def test_remove_ppa_success(self, debian_distro: DistroInfo) -> None:
-        """Test removing PPA successfully."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=0)
-            result = repo_mgr.remove_ppa("user/repo")
-
-            assert result is True
-            mock_run.assert_called_once_with(
-                ["add-apt-repository", "-y", "--remove", "ppa:user/repo"],
-                capture_output=True,
-                check=False,
-            )
-
-    def test_remove_ppa_non_debian(self, arch_distro: DistroInfo) -> None:
-        """Test removing PPA on non-Debian raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(arch_distro, pm)
-
-        with pytest.raises(
-            PackageManagerError, match="PPA is only available on Debian/Ubuntu"
-        ):
-            repo_mgr.remove_ppa("user/repo")
 
     def test_enable_flatpak_remote_flathub(
         self, fedora_distro: DistroInfo

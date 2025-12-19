@@ -28,31 +28,9 @@ class TestSSHConfig:
         mock_get_pm.return_value = MagicMock()
 
         ssh = SSHConfig()
-        service_name = ssh._get_ssh_service_name()  # noqa: SLF001
+        service_name = ssh._get_ssh_service_name()
 
         assert service_name == "sshd"
-
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_get_ssh_service_name_debian(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test SSH service name detection for Debian."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_detect_distro.return_value = debian_distro
-        mock_get_pm.return_value = MagicMock()
-
-        ssh = SSHConfig()
-        service_name = ssh._get_ssh_service_name()  # noqa: SLF001
-
-        assert service_name == "ssh"
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
@@ -72,7 +50,7 @@ class TestSSHConfig:
         mock_get_pm.return_value = MagicMock()
 
         ssh = SSHConfig()
-        user, ip, port = ssh._parse_remote_host("alice@192.168.1.10:22")  # noqa: SLF001
+        user, ip, port = ssh._parse_remote_host("alice@192.168.1.10:22")
 
         assert user == "alice"
         assert ip == "192.168.1.10"
@@ -98,7 +76,7 @@ class TestSSHConfig:
         ssh = SSHConfig()
 
         try:
-            ssh._parse_remote_host("invalid-format")  # noqa: SLF001
+            ssh._parse_remote_host("invalid-format")
             raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "Invalid host format" in str(e)

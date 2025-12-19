@@ -17,7 +17,7 @@ class NvidiaConfig(BaseHardwareConfig):
         """Initialize NVIDIA configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
 
         """
         super().__init__(distro)
@@ -60,8 +60,6 @@ class NvidiaConfig(BaseHardwareConfig):
                 return self._setup_cuda_fedora(arch)
             if self.distro == "arch":
                 return self._setup_cuda_arch()
-            if self.distro == "debian":
-                return self._setup_cuda_debian()
             self.logger.error("Unsupported distribution: %s", self.distro)
             return False
         except Exception as e:
@@ -165,60 +163,6 @@ class NvidiaConfig(BaseHardwareConfig):
 
         return self._verify_cuda_installation()
 
-    def _setup_cuda_debian(self) -> bool:
-        """Setup CUDA on Debian/Ubuntu.
-
-        Returns:
-            True if successful
-
-        """
-        keyring_path = "/usr/share/keyrings/cuda-archive-keyring.gpg"
-
-        if not os.path.exists(keyring_path):
-            self.logger.debug("Downloading CUDA keyring...")
-            # Download keyring package
-            result = subprocess.run(
-                [
-                    "wget",
-                    "https://developer.download.nvidia.com/compute/cuda/repos/"
-                    "ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb",
-                ],
-                check=False,
-            )
-            if result.returncode != 0:
-                self.logger.error("Failed to download CUDA keyring")
-                return False
-
-            # Install keyring
-            result = run_privileged(
-                ["dpkg", "-i", "cuda-keyring_1.1-1_all.deb"],
-                check=False,
-                capture_output=False,
-            )
-            subprocess.run(
-                ["rm", "-f", "cuda-keyring_1.1-1_all.deb"], check=False
-            )
-
-            if result.returncode != 0:
-                self.logger.error("Failed to install CUDA keyring")
-                return False
-
-            run_privileged(
-                ["apt-get", "update"], check=False, capture_output=False
-            )
-
-        self.logger.debug("Installing CUDA toolkit...")
-        result = run_privileged(
-            ["apt-get", "install", "-y", "cuda-toolkit"],
-            check=False,
-            capture_output=False,
-        )
-        if result.returncode != 0:
-            self.logger.error("Failed to install CUDA toolkit")
-            return False
-
-        return self._verify_cuda_installation()
-
     def _verify_cuda_installation(self) -> bool:
         """Verify CUDA installation.
 
@@ -265,8 +209,6 @@ class NvidiaConfig(BaseHardwareConfig):
                 return self._switch_to_open_fedora()
             if self.distro == "arch":
                 return self._switch_to_open_arch()
-            if self.distro == "debian":
-                return self._switch_to_open_debian()
             self.logger.error("Unsupported distribution: %s", self.distro)
             return False
         except Exception as e:
@@ -343,58 +285,6 @@ class NvidiaConfig(BaseHardwareConfig):
             ],
             check=False,
             capture_output=False,
-        )
-        if result.returncode != 0:
-            self.logger.error("Failed to install NVIDIA open drivers")
-            return False
-
-        self._log_open_driver_success()
-        return True
-
-    def _switch_to_open_debian(self) -> bool:
-        """Switch to open driver on Debian.
-
-        Returns:
-            True if successful
-
-        """
-        self.logger.info("Installing NVIDIA open source drivers for Debian...")
-
-        # Check if contrib/non-free are enabled
-        try:
-            with open("/etc/apt/sources.list", encoding="utf-8") as f:
-                sources = f.read()
-                if "contrib" not in sources:
-                    self.logger.warning(
-                        "Enabling contrib and non-free repositories..."
-                    )
-                    run_privileged(
-                        ["add-apt-repository", "-y", "contrib"],
-                        check=False,
-                        capture_output=False,
-                    )
-                    run_privileged(
-                        ["add-apt-repository", "-y", "non-free"],
-                        check=False,
-                        capture_output=False,
-                    )
-                    run_privileged(
-                        ["apt-get", "update"],
-                        check=False,
-                        capture_output=False,
-                    )
-        except FileNotFoundError:
-            pass
-
-        result = run_privileged(
-            [
-                "apt-get",
-                "install",
-                "-y",
-                "nvidia-driver",
-                "nvidia-kernel-open-dkms",
-            ],
-            check=False,
         )
         if result.returncode != 0:
             self.logger.error("Failed to install NVIDIA open drivers")

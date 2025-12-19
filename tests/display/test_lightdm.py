@@ -29,25 +29,6 @@ class TestLightDMConfigInit:
         assert config.distro == "fedora"
         assert config.distro_info == fedora_distro
 
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    def test_init_debian(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test LightDMConfig initialization on Debian."""
-        debian_distro = DistroInfo(
-            name="Debian GNU/Linux",
-            version="12",
-            id="debian",
-            id_like=[],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
-        )
-        mock_distro.return_value = debian_distro
-        mock_pm.return_value = MagicMock()
-
-        config = LightDMConfig()
-
-        assert config.distro == "debian"
-
 
 class TestLightDMConfigInstall:
     """Test LightDMConfig install method."""

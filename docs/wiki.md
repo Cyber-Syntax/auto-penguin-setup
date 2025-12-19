@@ -64,9 +64,6 @@ gh=github-cli
 [pkgmap.fedora]
 qtile-extras=COPR:frostyx/qtile
 gh=gh
-
-[pkgmap.debian]
-gh=gh
 ```
 
 ---
@@ -80,7 +77,6 @@ auto-penguin-setup uses `pkgmap.ini` to translate generic package names (used in
 - **Official:** No prefix, uses the distro’s default repo.
 - **AUR:** `AUR:package` (Arch User Repository)
 - **COPR:** `COPR:user/repo` (Fedora COPR)
-- **PPA:** `PPA:user/repo` (Debian/Ubuntu PPA)
 
 **How It Works:**
 
@@ -112,9 +108,6 @@ ufw
 curl=curl
 
 [pkgmap.fedora]
-curl=curl
-
-[pkgmap.debian]
 curl=curl
 ```
 

@@ -14,7 +14,7 @@ class BaseHardwareConfig(ABC):
         """Initialize hardware configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
 
         """
         self.distro = distro

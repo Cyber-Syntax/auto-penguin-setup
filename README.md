@@ -3,7 +3,7 @@
 > - This project is still under active development and not all features are fully tested.
 > - **IMPORTANT:** I am not responsible for any damage caused by this script. Use at your own risk.
 > - **WARNING:** Follow the instructions in the **Releases section** when updating the script.
-> - **OS:** Linux distributions only (Fedora, Arch Linux, Debian/Ubuntu).
+> - **OS:** Linux (Fedora, Arch Linux based distros).
 
 # auto-penguin-setup 🐧
 
@@ -21,9 +21,9 @@
 ### Cross-Distribution Support
 
 - **Automatic Detection**: Detects your distribution and adapts package manager commands
-- **Unified Interface**: Same commands work on Fedora (dnf), Arch (pacman/paru), and Debian (apt)
+- **Unified Interface**: Same commands work on Fedora (dnf) and Arch (pacman/paru)
 - **Smart Mapping**: Automatically maps package names that differ across distributions
-- **Repository Management**: Supports COPR (Fedora), AUR (Arch), and PPA (Debian)
+- **Repository Management**: Supports COPR (Fedora) and AUR (Arch)
 
 ## 🚀 Quick Start
 

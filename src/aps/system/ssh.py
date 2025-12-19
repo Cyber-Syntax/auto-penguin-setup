@@ -35,7 +35,7 @@ class SSHConfig(BaseSystemConfig):
         """Get the SSH service name for the current distribution.
 
         Returns:
-            Service name ("sshd" for Fedora/Arch, "ssh" for Debian)
+            Service name ("sshd" for Fedora/Arch)
 
         Raises:
             RuntimeError: If SSH service cannot be determined
@@ -45,8 +45,6 @@ class SSHConfig(BaseSystemConfig):
 
         if distro in ["fedora", "arch"]:
             return "sshd"
-        if distro == "debian":
-            return "ssh"
 
         # Fallback detection
         result = subprocess.run(
