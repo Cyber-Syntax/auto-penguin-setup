@@ -3,7 +3,7 @@
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from aps.core.distro import DistroInfo, PackageManagerType
 from aps.core.logger import get_logger
@@ -50,7 +50,7 @@ class SetupManager:
     """Manages setup operations for AUR helpers, ollama, and other components."""
 
     # Registry of available setup components
-    COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
+    COMPONENT_REGISTRY: ClassVar[dict[str, dict[str, Any]]] = {
         "aur-helper": {
             "description": "Install paru AUR helper (Arch Linux only)",
             "installer": None,  # Built-in method
