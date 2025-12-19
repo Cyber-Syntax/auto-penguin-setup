@@ -9,7 +9,6 @@
 #
 # Usage:
 #   ./setup.sh install       # Install aps and autocomplete
-#   ./setup.sh update        # Update aps to latest version
 #   ./setup.sh autocomplete  # Install autocomplete only
 #
 # Exit immediately if:
@@ -100,22 +99,16 @@ ensure_uv() {
   fi
 }
 
-# Install or update aps using uv tool install
+# Install aps using uv tool install
 install_aps_cli() {
-  local action="${1:-install}"
-  echo "📦 ${action^}ing ${CLI_NAME} CLI..."
+  echo "📦 Installing ${CLI_NAME} CLI..."
   if has_uv; then
     uv tool install git+https://github.com/Cyber-Syntax/auto-penguin-setup
-    echo "✅ ${CLI_NAME} ${action}ed successfully"
+    echo "✅ ${CLI_NAME} installed successfully"
   else
-    echo "❌ UV not found. Cannot ${action} ${CLI_NAME}"
+    echo "❌ UV not found. Cannot install ${CLI_NAME}"
     exit 1
   fi
-}
-
-# Update aps by delegating to install_aps_cli
-update_aps_cli() {
-  install_aps_cli "update"
 }
 
 # Set up shell autocomplete by delegating to autocomplete.bash
@@ -147,20 +140,8 @@ install_auto_penguin() {
   echo "  ${CLI_NAME} install @core       # Install core packages"
   echo "  ${CLI_NAME} status              # Show installation status"
   echo ""
-  echo "To update later, run:"
-  echo "  ./setup.sh update"
-  echo ""
   echo "To uninstall, run:"
   echo "  uv tool uninstall ${PROJECT_NAME}"
-}
-
-# Update process
-update_auto_penguin() {
-  echo "=== Updating ${PROJECT_NAME} (${CLI_NAME}) ==="
-  ensure_uv
-  update_aps_cli
-  setup_autocomplete
-  echo "✅ Update complete!"
 }
 
 # Standalone autocomplete installation
@@ -182,19 +163,16 @@ install_autocomplete() {
 # -- Entry point -------------------------------------------------------------
 case "${1-}" in
 install | "") install_auto_penguin ;;
-update) update_auto_penguin ;;
 autocomplete) install_autocomplete ;;
 *)
   cat <<EOF
-Usage: $(basename "$0") [install|update|autocomplete]
+Usage: $(basename "$0") [install|autocomplete]
 
   install       Full installation with uv tool and autocomplete (default)
-  update        Update aps CLI to latest version
   autocomplete  Install shell completion only
 
 Examples:
   $(basename "$0") install            # Full installation (default)
-  $(basename "$0") update             # Update to latest version
   $(basename "$0") autocomplete       # Install completion for current shell
 
 Note: This script uses 'uv tool install' to manage the aps CLI.
