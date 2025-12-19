@@ -100,29 +100,22 @@ ensure_uv() {
   fi
 }
 
-# Install aps using uv tool install
+# Install or update aps using uv tool install
 install_aps_cli() {
-  echo "📦 Installing ${CLI_NAME} CLI..."
+  local action="${1:-install}"
+  echo "📦 ${action^}ing ${CLI_NAME} CLI..."
   if has_uv; then
-    uv tool install .
-    echo "✅ ${CLI_NAME} installed successfully"
+    uv tool install git+https://github.com/Cyber-Syntax/auto-penguin-setup
+    echo "✅ ${CLI_NAME} ${action}ed successfully"
   else
-    echo "❌ UV not found. Cannot install ${CLI_NAME}"
+    echo "❌ UV not found. Cannot ${action} ${CLI_NAME}"
     exit 1
   fi
 }
 
-# Update aps using --reinstall
-# With reinstall, we make sure to caches/sources are updated too
+# Update aps by delegating to install_aps_cli
 update_aps_cli() {
-  echo "🔄 Updating ${CLI_NAME} CLI..."
-  if has_uv; then
-    uv tool install . --reinstall
-    echo "✅ ${CLI_NAME} updated successfully"
-  else
-    echo "❌ UV not found. Cannot update ${CLI_NAME}"
-    exit 1
-  fi
+  install_aps_cli "update"
 }
 
 # Set up shell autocomplete by delegating to autocomplete.bash
