@@ -9,6 +9,7 @@ from aps.cli.commands import (
     cmd_setup,
     cmd_status,
     cmd_sync_repos,
+    cmd_upgrade,
 )
 from aps.cli.parser import create_parser
 from aps.core.logger import get_logger, setup_logging
@@ -33,6 +34,7 @@ def main() -> int:
         "sync-repos": cmd_sync_repos,
         "status": cmd_status,
         "setup": cmd_setup,
+        "upgrade": cmd_upgrade,
     }
 
     # Check if command was provided

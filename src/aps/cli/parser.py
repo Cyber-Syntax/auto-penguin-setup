@@ -108,6 +108,16 @@ Examples:
         help="Enable verbose output (show debug messages)",
     )
 
+    # aps upgrade
+    upgrade_parser = subparsers.add_parser(
+        "upgrade", help="Upgrade aps CLI to latest version"
+    )
+    upgrade_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output (show debug messages)",
+    )
+
     # aps setup - dynamically build component list
     available_components = SetupManager.get_available_components()
     component_list = "\n".join(

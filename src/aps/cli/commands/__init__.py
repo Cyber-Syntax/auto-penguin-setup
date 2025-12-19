@@ -14,6 +14,7 @@ from aps.cli.commands.sync_repos import (
     _parse_package_source,
     cmd_sync_repos,
 )
+from aps.cli.commands.upgrade import cmd_upgrade
 
 __all__ = [
     "_extract_package_name",
@@ -24,4 +25,5 @@ __all__ = [
     "cmd_setup",
     "cmd_status",
     "cmd_sync_repos",
+    "cmd_upgrade",
 ]
