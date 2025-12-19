@@ -252,9 +252,7 @@ class TestDetectDistro:
 
             # Should log warning about mismatch
             assert "Package manager mismatch detected" in caplog.text
-            assert (
-                "Preferring package manager detection (pacman)" in caplog.text
-            )
+            assert "Preferring PM detection (pacman)" in caplog.text
 
     @patch("aps.core.distro.detect_package_manager")
     def test_detect_distro_unknown_os_release_fallback_to_pm(
@@ -284,12 +282,10 @@ class TestDetectDistro:
 
             # Should log warning about fallback
             assert (
-                "Distribution family could not be determined from os-release"
+                "Distribution family not determined from os-release"
                 in caplog.text
             )
-            assert (
-                "Using package manager detection (dnf) instead" in caplog.text
-            )
+            assert "Using PM detection (dnf)" in caplog.text
 
     @patch("aps.core.distro.detect_package_manager")
     def test_detect_distro_both_unknown_raises_error(

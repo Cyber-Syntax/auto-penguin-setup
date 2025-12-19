@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, Mock, patch
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
 from aps.display.lightdm import LightDMConfig
 from aps.display.sddm import SDDMConfig
-from aps.wm.i3 import I3Config
 from aps.wm.qtile import QtileConfig
 
 
@@ -60,9 +59,7 @@ class TestQtileConfig:
         qtile = QtileConfig()
 
         with patch.object(Path, "exists", return_value=True):
-            result = qtile.setup_backlight_rules(
-                "/tmp/qtile.rules", "/tmp/backlight.conf"
-            )
+            result = qtile.setup_backlight_rules()
 
         assert result is True
 
@@ -85,57 +82,6 @@ class TestQtileConfig:
 
         qtile = QtileConfig()
         result = qtile.configure()
-
-        assert result is True
-
-
-class TestI3Config:
-    """Tests for i3 window manager configuration."""
-
-    @patch("aps.wm.base.detect_distro")
-    @patch("aps.wm.base.get_package_manager")
-    def test_install_success(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test successful i3 installation."""
-        arch_distro = DistroInfo(
-            name="Arch Linux",
-            version="rolling",
-            id="arch",
-            id_like=["archlinux"],
-            package_manager=PackageManagerType.PACMAN,
-            family=DistroFamily.ARCH,
-        )
-        mock_detect_distro.return_value = arch_distro
-        mock_pm = MagicMock()
-        mock_pm.install.return_value = (True, "Success")
-        mock_get_pm.return_value = mock_pm
-
-        i3 = I3Config()
-        result = i3.install(["i3-wm", "i3status"])
-
-        assert result is True
-        mock_pm.install.assert_called_once_with(["i3-wm", "i3status"])
-
-    @patch("aps.wm.base.detect_distro")
-    @patch("aps.wm.base.get_package_manager")
-    def test_configure(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test i3 configuration."""
-        arch_distro = DistroInfo(
-            name="Arch Linux",
-            version="rolling",
-            id="arch",
-            id_like=["archlinux"],
-            package_manager=PackageManagerType.PACMAN,
-            family=DistroFamily.ARCH,
-        )
-        mock_detect_distro.return_value = arch_distro
-        mock_get_pm.return_value = MagicMock()
-
-        i3 = I3Config()
-        result = i3.configure()
 
         assert result is True
 

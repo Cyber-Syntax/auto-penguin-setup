@@ -266,10 +266,8 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.detect_distro")
     @patch("aps.cli.commands.sync_repos.PackageTracker")
     @patch("aps.cli.commands.sync_repos.APSConfigParser")
-    @patch("aps.cli.commands.sync_repos.logging")
     def test_successful_migration_with_auto_flag(
         self,
-        mock_logging: Mock,
         mock_parser_class: Mock,
         mock_tracker_class: Mock,
         mock_detect_distro: Mock,
@@ -341,10 +339,8 @@ class TestCmdSyncRepos:
     @patch("aps.cli.commands.sync_repos.detect_distro")
     @patch("aps.cli.commands.sync_repos.PackageTracker")
     @patch("aps.cli.commands.sync_repos.APSConfigParser")
-    @patch("aps.cli.commands.sync_repos.logging")
     def test_migration_failure_with_rollback(
         self,
-        mock_logging: Mock,
         mock_parser_class: Mock,
         mock_tracker_class: Mock,
         mock_detect_distro: Mock,
@@ -368,7 +364,8 @@ class TestCmdSyncRepos:
         mock_distro.name = "Fedora"
         mock_detect_distro.return_value = mock_distro
 
-        # Package manager mock - removal succeeds, install fails, rollback succeeds
+        # Package manager mock - removal succeeds,
+        # install fails, rollback succeeds
         mock_pm = Mock()
         mock_pm.remove.return_value = (True, "")
         mock_pm.install.side_effect = [
