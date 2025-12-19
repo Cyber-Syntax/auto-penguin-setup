@@ -32,8 +32,7 @@ class PackageRecord:
         category: str | None = None,
         mapped_name: str | None = None,
     ) -> Self:
-        """
-        Create a new package record with current timestamp.
+        """Create a new package record with current timestamp.
 
         Args:
             name: Package name (original/generic name)
@@ -43,6 +42,7 @@ class PackageRecord:
 
         Returns:
             New PackageRecord instance
+
         """
         timestamp = (
             datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
@@ -66,8 +66,7 @@ class PackageRecord:
 
 
 class PackageTracker:
-    """
-    Tracks installed packages using JSONL (JSON Lines) format.
+    """Tracks installed packages using JSONL (JSON Lines) format.
 
     JSONL provides:
     - Simple append-only operations
@@ -77,12 +76,12 @@ class PackageTracker:
     """
 
     def __init__(self, db_path: Path | None = None) -> None:
-        """
-        Initialize package tracker with database path.
+        """Initialize package tracker with database path.
 
         Args:
             db_path: Path to JSONL tracking database
                     (default: ~/.config/auto-penguin-setup/metadata.jsonl)
+
         """
         if db_path is None:
             config_dir = Path.home() / ".config" / "auto-penguin-setup"
@@ -98,8 +97,7 @@ class PackageTracker:
             self.db_path.touch()
 
     def track_install(self, record: PackageRecord) -> None:
-        """
-        Track a package installation, preventing duplicates.
+        """Track a package installation, preventing duplicates.
 
         If package already tracked:
         - Same source → Update timestamp only
@@ -108,6 +106,7 @@ class PackageTracker:
 
         Args:
             record: PackageRecord to track
+
         """
         # Load all existing packages
         packages = self.get_tracked_packages()
@@ -134,8 +133,7 @@ class PackageTracker:
         self._write_all_packages(packages)
 
     def track_multiple(self, records: list[PackageRecord]) -> None:
-        """
-        Track multiple package installations at once, preventing duplicates.
+        """Track multiple package installations at once, preventing duplicates.
 
         For each record:
         - If package exists → Update existing record
@@ -143,6 +141,7 @@ class PackageTracker:
 
         Args:
             records: List of PackageRecord objects to track
+
         """
         if not records:
             return
@@ -187,11 +186,11 @@ class PackageTracker:
         self._write_all_packages(packages)
 
     def get_tracked_packages(self) -> list[PackageRecord]:
-        """
-        Load all tracked packages from JSONL database.
+        """Load all tracked packages from JSONL database.
 
         Returns:
             List of all tracked PackageRecord objects
+
         """
         if not self.db_path.exists() or self.db_path.stat().st_size == 0:
             return []
@@ -208,8 +207,7 @@ class PackageTracker:
         return packages
 
     def get_package(self, name: str) -> PackageRecord | None:
-        """
-        Get a specific package record by name.
+        """Get a specific package record by name.
 
         Returns the most recent record if multiple exist.
 
@@ -218,6 +216,7 @@ class PackageTracker:
 
         Returns:
             PackageRecord if found, None otherwise
+
         """
         packages = self.get_tracked_packages()
 
@@ -229,20 +228,19 @@ class PackageTracker:
         return None
 
     def is_tracked(self, name: str) -> bool:
-        """
-        Check if a package is currently tracked.
+        """Check if a package is currently tracked.
 
         Args:
             name: Package name to check
 
         Returns:
             True if package is tracked, False otherwise
+
         """
         return self.get_package(name) is not None
 
     def remove_package(self, name: str) -> bool:
-        """
-        Remove a package from tracking.
+        """Remove a package from tracking.
 
         Rewrites the entire JSONL file without the specified package.
 
@@ -251,6 +249,7 @@ class PackageTracker:
 
         Returns:
             True if package was found and removed, False otherwise
+
         """
         packages = self.get_tracked_packages()
         original_count = len(packages)
@@ -268,14 +267,14 @@ class PackageTracker:
         return True
 
     def remove_multiple(self, names: list[str]) -> int:
-        """
-        Remove multiple packages from tracking.
+        """Remove multiple packages from tracking.
 
         Args:
             names: List of package names to remove
 
         Returns:
             Number of packages actually removed
+
         """
         packages = self.get_tracked_packages()
         names_set = set(names)
@@ -296,14 +295,14 @@ class PackageTracker:
         return removed_count
 
     def get_packages_by_category(self, category: str) -> list[PackageRecord]:
-        """
-        Get all packages in a specific category.
+        """Get all packages in a specific category.
 
         Args:
             category: Category name to filter by
 
         Returns:
             List of PackageRecord objects in the category
+
         """
         packages = self.get_tracked_packages()
         return [p for p in packages if p.category == category]
@@ -311,14 +310,14 @@ class PackageTracker:
     def get_packages_by_source(
         self, source_prefix: str
     ) -> list[PackageRecord]:
-        """
-        Get all packages from a specific source.
+        """Get all packages from a specific source.
 
         Args:
             source_prefix: Source prefix to filter by (e.g., "COPR:", "AUR:", "official")
 
         Returns:
             List of PackageRecord objects matching the source
+
         """
         packages = self.get_tracked_packages()
 
@@ -328,18 +327,17 @@ class PackageTracker:
         return [p for p in packages if p.source.startswith(source_prefix)]
 
     def get_categories(self) -> set[str]:
-        """
-        Get all unique categories in tracked packages.
+        """Get all unique categories in tracked packages.
 
         Returns:
             Set of category names (excluding None)
+
         """
         packages = self.get_tracked_packages()
         return {p.category for p in packages if p.category is not None}
 
     def backup_database(self, backup_path: Path | None = None) -> Path:
-        """
-        Create a backup of the tracking database.
+        """Create a backup of the tracking database.
 
         Args:
             backup_path: Optional custom backup path
@@ -347,6 +345,7 @@ class PackageTracker:
 
         Returns:
             Path to created backup file
+
         """
         if backup_path is None:
             timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -358,11 +357,11 @@ class PackageTracker:
         return backup_path
 
     def _write_all_packages(self, packages: list[PackageRecord]) -> None:
-        """
-        Write all packages to database, replacing existing content.
+        """Write all packages to database, replacing existing content.
 
         Args:
             packages: List of PackageRecord objects to write
+
         """
         with open(self.db_path, "w", encoding="utf-8") as f:
             for record in packages:
@@ -370,11 +369,11 @@ class PackageTracker:
                 f.write(json_line + "\n")
 
     def count_packages(self) -> int:
-        """
-        Get total count of tracked packages.
+        """Get total count of tracked packages.
 
         Returns:
             Number of tracked packages
+
         """
         return len(self.get_tracked_packages())
 

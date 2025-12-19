@@ -39,6 +39,7 @@ class SSHConfig(BaseSystemConfig):
 
         Raises:
             RuntimeError: If SSH service cannot be determined
+
         """
         distro = self.distro
 
@@ -74,6 +75,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True if host is reachable, False otherwise
+
         """
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -95,6 +97,7 @@ class SSHConfig(BaseSystemConfig):
 
         Raises:
             ValueError: If format is invalid
+
         """
         pattern = r"^([^@]+)@([^:]+):([0-9]+)$"
         match = re.match(pattern, host_string)
@@ -118,6 +121,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True if keys were created or already exist
+
         """
         if self.key_path.exists() and self.pub_key_path.exists() and not force:
             logger.debug("Ed25519 SSH keys already exist at %s", self.key_path)
@@ -182,6 +186,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True on success
+
         """
         logger.info("Configuring SSH security settings...")
 
@@ -245,6 +250,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         try:
             service_name = self._get_ssh_service_name()
@@ -277,6 +283,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         try:
             service_name = self._get_ssh_service_name()
@@ -326,6 +333,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         device_label = device_name or f"{user}@{ip}:{port}"
 
@@ -375,6 +383,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True if passwordless connection works
+
         """
         result = subprocess.run(
             [
@@ -403,6 +412,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         logger.info("Generating SSH client configuration...")
 
@@ -482,6 +492,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         port = kwargs.get("port", 22)
         password_auth = kwargs.get("password_auth", False)

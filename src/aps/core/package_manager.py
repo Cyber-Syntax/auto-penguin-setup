@@ -19,11 +19,11 @@ class PackageManager(ABC):
     """Abstract base class for package manager implementations."""
 
     def __init__(self, distro: DistroInfo) -> None:
-        """
-        Initialize package manager.
+        """Initialize package manager.
 
         Args:
             distro: Distribution information
+
         """
         self.distro = distro
 
@@ -31,8 +31,7 @@ class PackageManager(ABC):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
-        """
-        Install packages.
+        """Install packages.
 
         Args:
             packages: List of package names to install
@@ -41,6 +40,7 @@ class PackageManager(ABC):
         Returns:
             Tuple of (success: bool, error_message: str)
             error_message is empty string if success
+
         """
         pass
 
@@ -48,8 +48,7 @@ class PackageManager(ABC):
     def remove(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
-        """
-        Remove packages.
+        """Remove packages.
 
         Args:
             packages: List of package names to remove
@@ -58,55 +57,56 @@ class PackageManager(ABC):
         Returns:
             Tuple of (success: bool, error_message: str)
             error_message is empty string if success
+
         """
         pass
 
     @abstractmethod
     def search(self, query: str) -> list[str]:
-        """
-        Search for packages matching query.
+        """Search for packages matching query.
 
         Args:
             query: Search query string
 
         Returns:
             List of matching package names
+
         """
         pass
 
     @abstractmethod
     def is_installed(self, package: str) -> bool:
-        """
-        Check if a package is installed.
+        """Check if a package is installed.
 
         Args:
             package: Package name to check
 
         Returns:
             True if package is installed, False otherwise
+
         """
         pass
 
     @abstractmethod
     def update_cache(self) -> bool:
-        """
-        Update package manager cache/database.
+        """Update package manager cache/database.
 
         Returns:
             True if update succeeded, False otherwise
+
         """
         pass
 
     @abstractmethod
     def is_available_in_official_repos(self, package: str) -> bool:
-        """
-        Check if package is available in official repositories.
+        """Check if package is available in official repositories.
 
         Args:
             package: Package name to check
 
         Returns:
             True if package is available in official repos, False otherwise
+
         """
         pass
 
@@ -183,8 +183,7 @@ class DnfManager(PackageManager):
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:
-        """
-        Check if package is available in official Fedora repositories.
+        """Check if package is available in official Fedora repositories.
 
         This should be called BEFORE enabling COPR repos. When called before
         COPR repos are enabled, dnf repoquery will only find packages in
@@ -198,6 +197,7 @@ class DnfManager(PackageManager):
 
         Returns:
             True if package is available in official repos, False otherwise
+
         """
         logger = logging.getLogger(__name__)
 
@@ -238,13 +238,13 @@ class PacmanManager(PackageManager):
         self.aur_helper = self._detect_aur_helper()
 
     def _detect_aur_helper(self) -> str | None:
-        """
-        Detect available AUR helper.
+        """Detect available AUR helper.
 
         Preference order: paru > yay > None
 
         Returns:
             Name of AUR helper if found, None otherwise
+
         """
         for helper in ["paru", "yay"]:
             if shutil.which(helper):
@@ -252,14 +252,14 @@ class PacmanManager(PackageManager):
         return None
 
     def install_paru(self, assume_yes: bool = False) -> bool:
-        """
-        Install paru AUR helper.
+        """Install paru AUR helper.
 
         Args:
             assume_yes: Auto-confirm installation
 
         Returns:
             True if paru was installed successfully, False otherwise
+
         """
         import tempfile
 
@@ -336,8 +336,7 @@ class PacmanManager(PackageManager):
     def install_aur(
         self, packages: list[str], assume_yes: bool = False
     ) -> bool:
-        """
-        Install packages from AUR using detected helper.
+        """Install packages from AUR using detected helper.
 
         Args:
             packages: List of AUR package names
@@ -348,6 +347,7 @@ class PacmanManager(PackageManager):
 
         Raises:
             PackageManagerError: If no AUR helper is available and installation fails
+
         """
         logger = logging.getLogger(__name__)
 
@@ -385,9 +385,11 @@ class PacmanManager(PackageManager):
         Args:
             packages: List of package names to remove
             assume_yes: Auto-confirm removal (default: False)
+
         Returns:
             Tuple of (success: bool, error_message: str)
             error_message is empty string if success
+
         """
         cmd = ["pacman", "-R"]
         if assume_yes:
@@ -435,8 +437,7 @@ class PacmanManager(PackageManager):
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:
-        """
-        Check if package is available in official Arch repositories.
+        """Check if package is available in official Arch repositories.
 
         Uses 'pacman -Ss' to check core, extra, and community repos.
         Excludes AUR and other third-party repos.
@@ -446,6 +447,7 @@ class PacmanManager(PackageManager):
 
         Returns:
             True if package is available in official repos, False otherwise
+
         """
         cmd = ["pacman", "-Ss", f"^{package}$"]
         result = subprocess.run(
@@ -558,8 +560,7 @@ class AptManager(PackageManager):
         return result.returncode == 0
 
     def is_available_in_official_repos(self, package: str) -> bool:
-        """
-        Check if package is available in official Debian/Ubuntu repositories.
+        """Check if package is available in official Debian/Ubuntu repositories.
 
         Uses 'apt-cache policy' to check package availability.
 
@@ -568,6 +569,7 @@ class AptManager(PackageManager):
 
         Returns:
             True if package is available in official repos, False otherwise
+
         """
         cmd = ["apt-cache", "policy", package]
         result = subprocess.run(
@@ -587,8 +589,7 @@ class AptManager(PackageManager):
 
 
 def get_package_manager(distro: DistroInfo) -> PackageManager:
-    """
-    Factory function to get appropriate package manager for distribution.
+    """Factory function to get appropriate package manager for distribution.
 
     Args:
         distro: Distribution information
@@ -598,6 +599,7 @@ def get_package_manager(distro: DistroInfo) -> PackageManager:
 
     Raises:
         ValueError: If distribution is not supported
+
     """
     match distro.family:
         case DistroFamily.FEDORA:

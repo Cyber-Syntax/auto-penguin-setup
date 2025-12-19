@@ -16,6 +16,7 @@ class HostnameConfig(BaseHardwareConfig):
 
         Args:
             distro: Distribution name (fedora, arch, debian)
+
         """
         super().__init__(distro)
 
@@ -27,6 +28,7 @@ class HostnameConfig(BaseHardwareConfig):
 
         Returns:
             True if hostname is set successfully
+
         """
         self.logger.info("Changing hostname to %s...", hostname)
 
@@ -63,6 +65,7 @@ class HostnameConfig(BaseHardwareConfig):
 
         Returns:
             True if hostname is set successfully
+
         """
         hostname = kwargs.get("hostname")
         if hostname:

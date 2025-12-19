@@ -7,8 +7,7 @@ from pathlib import Path
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """
-    Set up logging with file rotation and appropriate console output.
+    """Set up logging with file rotation and appropriate console output.
 
     Creates a rotating log file at ~/.config/auto-penguin-setup/logs/aps.log
     with 5MB max size and 3 backup files. Console output shows INFO messages
@@ -16,6 +15,7 @@ def setup_logging(verbose: bool = False) -> None:
 
     Args:
         verbose: If True, show DEBUG messages on console. Otherwise show INFO and above.
+
     """
     log_dir = Path.home() / ".config" / "auto-penguin-setup" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -51,13 +51,13 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance for the specified module.
+    """Get a logger instance for the specified module.
 
     Args:
         name: Usually __name__ from the calling module
 
     Returns:
         Logger instance configured for the module
+
     """
     return logging.getLogger(name)

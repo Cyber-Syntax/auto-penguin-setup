@@ -8,8 +8,7 @@ from aps.utils.paths import get_default_configs_dir
 
 
 class APSConfigParser:
-    """
-    Parser for Auto Penguin Setup INI configuration files.
+    """Parser for Auto Penguin Setup INI configuration files.
 
     Extends standard ConfigParser to handle special formats:
     - Package lists with comma-separated values
@@ -18,11 +17,11 @@ class APSConfigParser:
     """
 
     def __init__(self, config_path: Path | None = None) -> None:
-        """
-        Initialize parser with optional config file.
+        """Initialize parser with optional config file.
 
         Args:
             config_path: Path to INI configuration file
+
         """
         self._parser = ConfigParser()
         self._path = config_path
@@ -32,14 +31,14 @@ class APSConfigParser:
             self._parser.read_string(processed_content)
 
     def load(self, config_path: Path) -> None:
-        """
-        Load configuration from file.
+        """Load configuration from file.
 
         Args:
             config_path: Path to INI configuration file
 
         Raises:
             FileNotFoundError: If config file doesn't exist
+
         """
         if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
@@ -49,8 +48,7 @@ class APSConfigParser:
         self._parser.read_string(processed_content)
 
     def _preprocess_config_file(self, config_path: Path) -> str:
-        """
-        Preprocess config file to convert bare lines to key=value format.
+        """Preprocess config file to convert bare lines to key=value format.
 
         Bare lines (lines without '=') are converted to numbered keys.
         This allows ConfigParser to read them while maintaining compatibility.
@@ -60,6 +58,7 @@ class APSConfigParser:
 
         Returns:
             Processed content as string
+
         """
         lines = config_path.read_text(encoding="utf-8").splitlines()
         processed_lines = []
@@ -107,8 +106,7 @@ class APSConfigParser:
         return self._parser.sections()
 
     def get_section_packages(self, section: str) -> list[str]:
-        """
-        Get list of packages from a section.
+        """Get list of packages from a section.
 
         Supports multiple formats:
         - Comma-separated values: curl, wget, git
@@ -128,6 +126,7 @@ class APSConfigParser:
 
         Returns:
             List of package names
+
         """
         if not self._parser.has_section(section):
             return []
@@ -153,8 +152,7 @@ class APSConfigParser:
         return packages
 
     def get_package_mappings(self, section: str) -> dict[str, str]:
-        """
-        Get package name mappings from a section.
+        """Get package name mappings from a section.
 
         Handles format like:
         [fedora]
@@ -166,6 +164,7 @@ class APSConfigParser:
 
         Returns:
             Dictionary mapping generic names to distro-specific names
+
         """
         if not self._parser.has_section(section):
             return {}
@@ -177,8 +176,7 @@ class APSConfigParser:
         return mappings
 
     def get_variables(self, section: str = "variables") -> dict[str, str]:
-        """
-        Get variable definitions from configuration.
+        """Get variable definitions from configuration.
 
         Handles format like:
         [variables]
@@ -190,6 +188,7 @@ class APSConfigParser:
 
         Returns:
             Dictionary of variable name to value mappings
+
         """
         if not self._parser.has_section(section):
             return {}
@@ -203,8 +202,7 @@ class APSConfigParser:
     def get(
         self, section: str, option: str, fallback: str | None = None
     ) -> str | None:
-        """
-        Get a single configuration value.
+        """Get a single configuration value.
 
         Args:
             section: Section name
@@ -213,6 +211,7 @@ class APSConfigParser:
 
         Returns:
             Configuration value or fallback
+
         """
         if fallback is not None:
             return self._parser.get(section, option, fallback=fallback)
@@ -223,14 +222,14 @@ class APSConfigParser:
         return self._parser.get(section, option)
 
     def get_all_items(self, section: str) -> dict[str, str]:
-        """
-        Get all key-value pairs from a section.
+        """Get all key-value pairs from a section.
 
         Args:
             section: Section name
 
         Returns:
             Dictionary of all items in section
+
         """
         if not self._parser.has_section(section):
             return {}
@@ -244,8 +243,7 @@ class APSConfigParser:
 
 
 def parse_config(config_path: Path) -> APSConfigParser:
-    """
-    Convenience function to create and load a config parser.
+    """Convenience function to create and load a config parser.
 
     Args:
         config_path: Path to INI configuration file
@@ -255,6 +253,7 @@ def parse_config(config_path: Path) -> APSConfigParser:
 
     Raises:
         FileNotFoundError: If config file doesn't exist
+
     """
     parser = APSConfigParser()
     parser.load(config_path)
@@ -262,14 +261,14 @@ def parse_config(config_path: Path) -> APSConfigParser:
 
 
 def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
-    """
-    Ensure configuration files exist, creating them from examples if needed.
+    """Ensure configuration files exist, creating them from examples if needed.
 
     Args:
         config_dir: Directory for config files (default: ~/.config/auto-penguin-setup)
 
     Returns:
         Dictionary mapping filename to whether it was created (True) or already existed (False)
+
     """
     if config_dir is None:
         config_dir = Path.home() / ".config" / "auto-penguin-setup"

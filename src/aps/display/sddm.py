@@ -18,6 +18,7 @@ class SDDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Installing SDDM display manager...")
 
@@ -47,6 +48,7 @@ class SDDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Switching to SDDM display manager...")
 
@@ -111,6 +113,7 @@ class SDDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info(
             "Setting up SDDM autologin for user %s with session %s...",

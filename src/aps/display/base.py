@@ -28,6 +28,7 @@ class BaseDisplayManager(ABC):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
 
     @abstractmethod
@@ -40,4 +41,5 @@ class BaseDisplayManager(ABC):
 
         Returns:
             bool: True if configuration was successful, False otherwise.
+
         """

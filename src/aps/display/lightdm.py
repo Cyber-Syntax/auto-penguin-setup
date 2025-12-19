@@ -18,6 +18,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Installing LightDM display manager...")
 
@@ -34,6 +35,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Switching to LightDM display manager...")
 
@@ -76,6 +78,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info(
             "Setting up LightDM autologin for user %s with session %s",
@@ -156,6 +159,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             Modified configuration content
+
         """
         lines = content.split("\n")
         new_lines = []

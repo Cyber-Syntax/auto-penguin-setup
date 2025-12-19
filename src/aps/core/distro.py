@@ -42,8 +42,7 @@ class DistroInfo:
     def from_os_release(
         cls, os_release_path: Path = Path("/etc/os-release")
     ) -> Self:
-        """
-        Detect distribution from /etc/os-release file.
+        """Detect distribution from /etc/os-release file.
 
         Args:
             os_release_path: Path to os-release file (default: /etc/os-release)
@@ -54,6 +53,7 @@ class DistroInfo:
         Raises:
             FileNotFoundError: If os-release file doesn't exist
             ValueError: If required fields are missing
+
         """
         if not os_release_path.exists():
             raise FileNotFoundError(
@@ -81,8 +81,7 @@ class DistroInfo:
 
     @staticmethod
     def _parse_os_release(path: Path) -> dict[str, str]:
-        """
-        Parse /etc/os-release file into key-value dictionary.
+        """Parse /etc/os-release file into key-value dictionary.
 
         Format specification: https://www.freedesktop.org/software/systemd/man/os-release.html
 
@@ -91,6 +90,7 @@ class DistroInfo:
 
         Returns:
             Dictionary of key-value pairs from os-release
+
         """
         data: dict[str, str] = {}
         content = path.read_text(encoding="utf-8")
@@ -114,8 +114,7 @@ class DistroInfo:
     def _detect_package_manager(
         distro_id: str, id_like: list[str]
     ) -> tuple[PackageManagerType, DistroFamily]:
-        """
-        Detect package manager and distribution family.
+        """Detect package manager and distribution family.
 
         Uses distribution ID and ID_LIKE to determine the appropriate
         package manager. Supports derivative distributions (e.g., Nobara,
@@ -127,6 +126,7 @@ class DistroInfo:
 
         Returns:
             Tuple of (PackageManagerType, DistroFamily)
+
         """
         # Fedora family (dnf-based)
         fedora_distros = {"fedora", "nobara", "rhel", "rocky", "almalinux"}
@@ -168,8 +168,7 @@ class DistroInfo:
 
 
 def detect_package_manager() -> PackageManagerType:
-    """
-    Detect package manager by checking for executable binaries.
+    """Detect package manager by checking for executable binaries.
 
     This function checks for the presence of package manager executables
     on the system to determine which package manager is available.
@@ -178,6 +177,7 @@ def detect_package_manager() -> PackageManagerType:
 
     Returns:
         PackageManagerType enum value for detected package manager
+
     """
     # Check for dnf (Fedora/RHEL family)
     if shutil.which("dnf"):
@@ -195,8 +195,7 @@ def detect_package_manager() -> PackageManagerType:
 
 
 def detect_distro() -> DistroInfo:
-    """
-    Convenience function to detect current distribution.
+    """Detect current distribution.
 
     Uses os-release file as primary detection method, with package manager
     binary detection as validation and fallback.
@@ -207,6 +206,7 @@ def detect_distro() -> DistroInfo:
     Raises:
         FileNotFoundError: If /etc/os-release doesn't exist
         ValueError: If distribution cannot be determined
+
     """
     try:
         distro = DistroInfo.from_os_release()

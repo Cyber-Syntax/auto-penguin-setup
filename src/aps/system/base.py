@@ -28,4 +28,5 @@ class BaseSystemConfig(ABC):
 
         Returns:
             bool: True if configuration was successful, False otherwise.
+
         """

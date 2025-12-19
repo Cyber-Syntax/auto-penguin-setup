@@ -10,7 +10,7 @@ from aps.core.tracking import PackageTracker
 logger = logging.getLogger(__name__)
 
 
-def cmd_status(args: Namespace) -> None:  # noqa: ARG001
+def cmd_status(args: Namespace) -> None:
     """Handle 'aps status' command."""
     distro_info = detect_distro()
     tracker = PackageTracker(get_tracking_db_path())

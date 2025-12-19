@@ -14,6 +14,7 @@ class BaseHardwareConfig(ABC):
 
         Args:
             distro: Distribution name (fedora, arch, debian)
+
         """
         self.distro = distro
         self.logger = logger
@@ -27,6 +28,7 @@ class BaseHardwareConfig(ABC):
 
         Returns:
             True if configuration succeeds, False otherwise
+
         """
         pass
 
@@ -39,6 +41,7 @@ class BaseHardwareConfig(ABC):
 
         Returns:
             True if copy succeeds, False otherwise
+
         """
         import os
         import shutil

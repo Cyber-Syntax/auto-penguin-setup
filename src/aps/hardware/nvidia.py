@@ -18,6 +18,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Args:
             distro: Distribution name (fedora, arch, debian)
+
         """
         super().__init__(distro)
 
@@ -26,6 +27,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if NVIDIA GPU is detected
+
         """
         try:
             result = subprocess.run(
@@ -43,6 +45,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if installation succeeds, False otherwise
+
         """
         self.logger.info("Setting up NVIDIA CUDA...")
 
@@ -73,6 +76,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         # Get Fedora version
         try:
@@ -147,6 +151,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         self.logger.debug("Installing CUDA from official repositories...")
         result = run_privileged(
@@ -165,6 +170,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         keyring_path = "/usr/share/keyrings/cuda-archive-keyring.gpg"
 
@@ -218,6 +224,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if nvcc is available
+
         """
         try:
             subprocess.run(
@@ -239,6 +246,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if switch succeeds, False otherwise
+
         """
         self.logger.info("Switching to NVIDIA open source drivers...")
 
@@ -270,6 +278,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         macro_file = "/etc/rpm/macros.nvidia-kmod"
         self.logger.debug("Creating NVIDIA kmod macro file...")
@@ -321,6 +330,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         self.logger.info("Installing NVIDIA open source drivers for Arch...")
         result = run_privileged(
@@ -346,6 +356,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if successful
+
         """
         self.logger.info("Installing NVIDIA open source drivers for Debian...")
 
@@ -418,6 +429,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if setup succeeds, False otherwise
+
         """
         self.logger.info("Setting up VA-API for NVIDIA RTX series...")
 
@@ -498,6 +510,7 @@ class NvidiaConfig(BaseHardwareConfig):
 
         Returns:
             True if all requested operations succeed
+
         """
         success = True
 

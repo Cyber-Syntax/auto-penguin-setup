@@ -17,6 +17,7 @@ class TouchpadConfig(BaseHardwareConfig):
 
         Args:
             distro: Distribution name (fedora, arch, debian)
+
         """
         super().__init__(distro)
 
@@ -28,6 +29,7 @@ class TouchpadConfig(BaseHardwareConfig):
 
         Returns:
             True if setup succeeds, False otherwise
+
         """
         if config_source is None:
             config_source = str(resolve_config_file("99-touchpad.conf"))
@@ -60,6 +62,7 @@ class TouchpadConfig(BaseHardwareConfig):
 
         Returns:
             True if all requested operations succeed
+
         """
         if kwargs.get("setup", False):
             config_source = kwargs.get(

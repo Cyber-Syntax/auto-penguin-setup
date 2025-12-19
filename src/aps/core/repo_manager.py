@@ -23,20 +23,19 @@ class RepositoryManager:
     def __init__(
         self, distro: DistroInfo, package_manager: PackageManager
     ) -> None:
-        """
-        Initialize repository manager.
+        """Initialize repository manager.
 
         Args:
             distro: Distribution information
             package_manager: Package manager instance
+
         """
         self.distro = distro
         self.pm = package_manager
         self.logger = logging.getLogger(__name__)
 
     def enable_copr(self, repo: str) -> bool:
-        """
-        Enable COPR repository (Fedora only).
+        """Enable COPR repository (Fedora only).
 
         Args:
             repo: COPR repository in format "user/repo"
@@ -46,6 +45,7 @@ class RepositoryManager:
 
         Raises:
             PackageManagerError: If not running on Fedora
+
         """
         if self.distro.family != DistroFamily.FEDORA:
             raise PackageManagerError(
@@ -63,14 +63,14 @@ class RepositoryManager:
         return result.returncode == 0
 
     def disable_copr(self, repo: str) -> bool:
-        """
-        Disable COPR repository (Fedora only).
+        """Disable COPR repository (Fedora only).
 
         Args:
             repo: COPR repository in format "user/repo"
 
         Returns:
             True if repository was disabled successfully
+
         """
         if self.distro.family != DistroFamily.FEDORA:
             raise PackageManagerError(
@@ -82,14 +82,14 @@ class RepositoryManager:
         return result.returncode == 0
 
     def is_copr_enabled(self, repo: str) -> bool:
-        """
-        Check if COPR repository is enabled.
+        """Check if COPR repository is enabled.
 
         Args:
             repo: COPR repository in format "user/repo"
 
         Returns:
             True if repository is enabled
+
         """
         if self.distro.family != DistroFamily.FEDORA:
             return False
@@ -111,8 +111,7 @@ class RepositoryManager:
     def check_official_before_enabling(
         self, package: str, mapping: "PackageMapping"
     ) -> "PackageMapping":
-        """
-        Check if package is in official repos BEFORE enabling COPR/AUR.
+        """Check if package is in official repos BEFORE enabling COPR/AUR.
 
         This is the critical timing fix - we check before repo enablement,
         not during installation. If the package is available in official repos,
@@ -124,6 +123,7 @@ class RepositoryManager:
 
         Returns:
             Updated mapping with resolved source (either original or "official")
+
         """
         # Import here to avoid circular dependency
         from aps.core.package_mapper import PackageMapping
@@ -155,8 +155,7 @@ class RepositoryManager:
         return mapping
 
     def install_aur_package(self, package: str) -> bool:
-        """
-        Install package from AUR (Arch only).
+        """Install package from AUR (Arch only).
 
         Args:
             package: AUR package name
@@ -166,6 +165,7 @@ class RepositoryManager:
 
         Raises:
             PackageManagerError: If not running on Arch or no AUR helper available
+
         """
         if self.distro.family != DistroFamily.ARCH:
             raise PackageManagerError(
@@ -178,8 +178,7 @@ class RepositoryManager:
         return self.pm.install_aur([package])
 
     def add_ppa(self, ppa: str) -> bool:
-        """
-        Add PPA repository (Ubuntu/Debian only).
+        """Add PPA repository (Ubuntu/Debian only).
 
         Args:
             ppa: PPA in format "user/repo"
@@ -189,6 +188,7 @@ class RepositoryManager:
 
         Raises:
             PackageManagerError: If not running on Ubuntu/Debian
+
         """
         if self.distro.family != DistroFamily.DEBIAN:
             raise PackageManagerError(
@@ -210,14 +210,14 @@ class RepositoryManager:
         return False
 
     def remove_ppa(self, ppa: str) -> bool:
-        """
-        Remove PPA repository (Ubuntu/Debian only).
+        """Remove PPA repository (Ubuntu/Debian only).
 
         Args:
             ppa: PPA in format "user/repo"
 
         Returns:
             True if PPA was removed successfully
+
         """
         if self.distro.family != DistroFamily.DEBIAN:
             raise PackageManagerError(
@@ -229,17 +229,16 @@ class RepositoryManager:
         return result.returncode == 0
 
     def is_flatpak_installed(self) -> bool:
-        """
-        Check if flatpak command is available.
+        """Check if flatpak command is available.
 
         Returns:
             True if flatpak is installed
+
         """
         return shutil.which("flatpak") is not None
 
     def ensure_flatpak_installed(self, assume_yes: bool = False) -> bool:
-        """
-        Ensure flatpak is installed, installing it if necessary.
+        """Ensure flatpak is installed, installing it if necessary.
 
         Args:
             assume_yes: Auto-confirm installation (default: False)
@@ -249,6 +248,7 @@ class RepositoryManager:
 
         Raises:
             PackageManagerError: If flatpak installation fails
+
         """
         if self.is_flatpak_installed():
             self.logger.debug("flatpak is already installed")
@@ -270,8 +270,7 @@ class RepositoryManager:
     def enable_flatpak_remote(
         self, remote_name: str, remote_url: str | None = None
     ) -> bool:
-        """
-        Enable Flatpak remote repository.
+        """Enable Flatpak remote repository.
 
         Args:
             remote_name: Name of the remote (e.g., "flathub")
@@ -279,6 +278,7 @@ class RepositoryManager:
 
         Returns:
             True if remote was enabled successfully
+
         """
         # Ensure flatpak is installed before trying to use it
         self.ensure_flatpak_installed()
@@ -302,14 +302,14 @@ class RepositoryManager:
         return result.returncode == 0
 
     def is_flatpak_remote_enabled(self, remote_name: str) -> bool:
-        """
-        Check if Flatpak remote is enabled.
+        """Check if Flatpak remote is enabled.
 
         Args:
             remote_name: Name of the remote to check
 
         Returns:
             True if remote is enabled
+
         """
         # Ensure flatpak is installed before checking remotes
         if not self.is_flatpak_installed():
@@ -330,8 +330,7 @@ class RepositoryManager:
         return remote_name in result.stdout
 
     def install_flatpak(self, package: str, remote: str = "flathub") -> bool:
-        """
-        Install Flatpak package from remote.
+        """Install Flatpak package from remote.
 
         Args:
             package: Flatpak package ID (e.g., "org.mozilla.firefox")
@@ -339,6 +338,7 @@ class RepositoryManager:
 
         Returns:
             True if package was installed successfully
+
         """
         # Ensure flatpak is installed before trying to use it
         self.ensure_flatpak_installed()
@@ -349,14 +349,14 @@ class RepositoryManager:
         return result.returncode == 0
 
     def remove_flatpak(self, package: str) -> bool:
-        """
-        Remove Flatpak package.
+        """Remove Flatpak package.
 
         Args:
             package: Flatpak package ID
 
         Returns:
             True if package was removed successfully
+
         """
         cmd = ["flatpak", "uninstall", "-y", package]
         result = run_privileged(cmd, capture_output=True, check=False)
