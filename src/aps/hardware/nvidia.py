@@ -1,13 +1,13 @@
 """NVIDIA GPU configuration and driver management."""
 
-import logging
 import os
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class NvidiaConfig(BaseHardwareConfig):

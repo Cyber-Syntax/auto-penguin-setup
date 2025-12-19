@@ -1,17 +1,17 @@
 """Sync repos command implementation."""
 
-import logging
 from argparse import Namespace
 from pathlib import Path
 
 from aps.cli.utils import get_tracking_db_path
 from aps.core.config import APSConfigParser, ensure_config_files
 from aps.core.distro import detect_distro
+from aps.core.logger import get_logger
 from aps.core.package_manager import PackageManagerError, get_package_manager
 from aps.core.tracking import PackageRecord, PackageTracker
 from aps.utils.privilege import ensure_sudo
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _parse_package_source(config_value: str) -> str:

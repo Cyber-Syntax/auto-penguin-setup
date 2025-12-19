@@ -1,13 +1,13 @@
 """SDDM display manager configuration."""
 
-import logging
 import subprocess
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.display.base import BaseDisplayManager
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SDDMConfig(BaseDisplayManager):

@@ -1,12 +1,15 @@
 """Distribution detection module for identifying Linux distributions."""
 
-import logging
 import re
 import shutil
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Self
+
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class PackageManagerType(Enum):
@@ -241,10 +244,9 @@ def detect_distro() -> DistroInfo:
     if distro.package_manager == PackageManagerType.UNKNOWN:
         # If os-release didn't give us a package manager, use binary detection
         if detected_pm != PackageManagerType.UNKNOWN:
-            logger = logging.getLogger(__name__)
             logger.warning(
-                "Distribution family could not be determined from os-release (%s). "
-                "Using package manager detection (%s) instead.",
+                "Distribution family not determined from os-release (%s). "
+                "Using PM detection (%s).",
                 distro.id,
                 detected_pm.value,
             )
@@ -255,27 +257,24 @@ def detect_distro() -> DistroInfo:
                 PackageManagerType.APT: DistroFamily.DEBIAN,
             }.get(detected_pm, DistroFamily.UNKNOWN)
         else:
-            logger = logging.getLogger(__name__)
             logger.error(
                 "Could not detect distribution: os-release shows unsupported "
                 "distribution '%s' and no supported package manager found. "
-                "Supported families: Fedora (dnf), Arch (pacman), Debian (apt)",
+                "Supported: Fedora (dnf), Arch (pacman), Debian (apt)",
                 distro.id,
             )
             raise ValueError(
                 f"Unsupported distribution: {distro.id}. "
-                f"Supported families: Fedora (dnf), Arch (pacman), Debian (apt)"
+                f"Supported: Fedora (dnf), Arch (pacman), Debian (apt)"
             )
     elif detected_pm not in (
         PackageManagerType.UNKNOWN,
         distro.package_manager,
     ):
-        # If there's a mismatch between os-release and binary detection, prefer package manager
-        logger = logging.getLogger(__name__)
+        # Mismatch between os-release and binary detection, prefer PM
         logger.warning(
             "Package manager mismatch detected: os-release indicates %s, "
-            "but %s binary was found. Preferring package manager detection (%s) "
-            "as most systems use a single package manager.",
+            "but %s binary found. Preferring PM detection (%s).",
             distro.package_manager.value,
             detected_pm.value,
             detected_pm.value,

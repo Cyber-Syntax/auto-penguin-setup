@@ -1,12 +1,15 @@
 """Package manager abstraction for cross-distro package operations."""
 
-import logging
 import shutil
 import subprocess
 from abc import ABC, abstractmethod
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.utils.privilege import run_privileged
+
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class PackageManagerError(Exception):
@@ -117,7 +120,6 @@ class DnfManager(PackageManager):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
-        logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
         cmd: list[str] = ["dnf", "install"]
@@ -137,7 +139,6 @@ class DnfManager(PackageManager):
     def remove(
         self, packages: list[str], assume_yes: bool = True
     ) -> tuple[bool, str]:
-        logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
         cmd: list[str] = ["dnf", "remove"]
@@ -199,8 +200,6 @@ class DnfManager(PackageManager):
             True if package is available in official repos, False otherwise
 
         """
-        logger = logging.getLogger(__name__)
-
         # First check if package exists at all
         cmd = ["dnf", "repoquery", package]
         result = subprocess.run(
@@ -263,7 +262,6 @@ class PacmanManager(PackageManager):
         """
         import tempfile
 
-        logger = logging.getLogger(__name__)
         logger.info("Installing paru AUR helper...")
 
         # Check if paru is already installed
@@ -316,7 +314,6 @@ class PacmanManager(PackageManager):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
-        logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
         cmd = ["pacman", "-S", "--needed"]
@@ -349,8 +346,6 @@ class PacmanManager(PackageManager):
             PackageManagerError: If no AUR helper is available and installation fails
 
         """
-        logger = logging.getLogger(__name__)
-
         if not self.aur_helper:
             logger.info("No AUR helper found. Installing paru...")
             if not self.install_paru(assume_yes=assume_yes):
@@ -396,14 +391,13 @@ class PacmanManager(PackageManager):
             cmd.append("--noconfirm")
         cmd.extend(packages)
 
-        logger = logging.getLogger(__name__)
         logger.debug("Executing command: %s", " ".join(cmd))
         result = run_privileged(
             cmd, capture_output=True, text=True, check=False
         )
         if result.returncode == 0:
             return True, ""
-        logging.error(
+        logger.error(
             "Failed to remove packages %s: %s", packages, result.stderr
         )
         return False, result.stderr
@@ -481,7 +475,6 @@ class AptManager(PackageManager):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
-        logger = logging.getLogger(__name__)
         logger.info("Installing packages: %s", ", ".join(packages))
 
         cmd = ["apt-get", "install"]
@@ -508,7 +501,6 @@ class AptManager(PackageManager):
     def remove(
         self, packages: list[str], assume_yes: bool = True
     ) -> tuple[bool, str]:
-        logger = logging.getLogger(__name__)
         logger.info("Removing packages: %s", ", ".join(packages))
 
         cmd = ["apt-get", "remove"]

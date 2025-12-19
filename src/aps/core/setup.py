@@ -1,12 +1,12 @@
 """Setup manager for installing and configuring system components."""
 
-import logging
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from aps.core.distro import DistroInfo, PackageManagerType
+from aps.core.logger import get_logger
 from aps.hardware import (
     AMDConfig,
     HostnameConfig,
@@ -39,7 +39,7 @@ from aps.system import (
 from aps.utils.privilege import run_privileged
 from aps.wm import QtileConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SetupError(Exception):

@@ -7,17 +7,17 @@ This module provides automated SSH setup including:
 - SSH client configuration generation
 """
 
-import logging
 import re
 import socket
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.system.base import BaseSystemConfig
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SSHConfig(BaseSystemConfig):

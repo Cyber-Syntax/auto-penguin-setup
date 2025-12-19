@@ -1,15 +1,16 @@
 """Brave Browser installer module."""
 
-import logging
 import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
 
+from aps.core.logger import get_logger
+
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BraveInstaller(BaseInstaller):

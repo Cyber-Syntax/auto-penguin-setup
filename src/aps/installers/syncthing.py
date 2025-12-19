@@ -1,11 +1,12 @@
 """Syncthing installer and setup."""
 
-import logging
 import subprocess
+
+from aps.core.logger import get_logger
 
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SyncthingInstaller(BaseInstaller):

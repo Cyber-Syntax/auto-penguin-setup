@@ -1,12 +1,12 @@
 """Qtile window manager configuration."""
 
-import logging
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 from aps.wm.base import BaseWMConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class QtileConfig(BaseWMConfig):

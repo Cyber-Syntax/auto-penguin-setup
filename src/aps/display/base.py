@@ -1,12 +1,12 @@
 """Base class for display manager configuration modules."""
 
-import logging
 from abc import ABC, abstractmethod
 
 from ..core.distro import DistroInfo, detect_distro
+from ..core.logger import get_logger
 from ..core.package_manager import get_package_manager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseDisplayManager(ABC):

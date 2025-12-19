@@ -1,11 +1,11 @@
 """Hostname configuration."""
 
-import logging
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HostnameConfig(BaseHardwareConfig):

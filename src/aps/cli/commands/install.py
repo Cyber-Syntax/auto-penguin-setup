@@ -1,19 +1,19 @@
 """Install command implementation."""
 
-import logging
 import subprocess
 from argparse import Namespace
 from pathlib import Path
 
 from aps.cli.utils import get_tracking_db_path, load_category_packages
 from aps.core.distro import DistroFamily, detect_distro
+from aps.core.logger import get_logger
 from aps.core.package_manager import PacmanManager, get_package_manager
 from aps.core.package_mapper import PackageMapper, PackageMapping
 from aps.core.repo_manager import RepositoryManager
 from aps.core.tracking import PackageRecord, PackageTracker
 from aps.utils.privilege import ensure_sudo
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def cmd_install(args: Namespace) -> None:

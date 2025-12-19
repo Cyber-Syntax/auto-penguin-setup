@@ -1,6 +1,5 @@
 """Package tracking using JSONL database for fast, simple storage."""
 
-import logging
 import shutil
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -9,7 +8,9 @@ from typing import Self
 
 import orjson
 
-logger = logging.getLogger(__name__)
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass

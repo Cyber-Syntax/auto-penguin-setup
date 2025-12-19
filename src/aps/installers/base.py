@@ -1,15 +1,15 @@
 """Base class for application installers."""
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
 from ..core.distro import DistroInfo, detect_distro
+from ..core.logger import get_logger
 from ..core.package_manager import get_package_manager
 from ..utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseInstaller(ABC):

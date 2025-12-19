@@ -1,12 +1,12 @@
 """List command implementation."""
 
-import logging
 from argparse import Namespace
 
 from aps.cli.utils import get_tracking_db_path
+from aps.core.logger import get_logger
 from aps.core.tracking import PackageTracker
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def cmd_list(args: Namespace) -> None:

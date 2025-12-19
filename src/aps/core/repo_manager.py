@@ -1,11 +1,11 @@
 """Repository management for COPR, AUR, and PPA sources."""
 
-import logging
 import shutil
 import subprocess
 from typing import TYPE_CHECKING
 
 from aps.core.distro import DistroFamily, DistroInfo
+from aps.core.logger import get_logger
 from aps.core.package_manager import (
     PackageManager,
     PackageManagerError,
@@ -32,7 +32,7 @@ class RepositoryManager:
         """
         self.distro = distro
         self.pm = package_manager
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__)
 
     def enable_copr(self, repo: str) -> bool:
         """Enable COPR repository (Fedora only).

@@ -1,13 +1,13 @@
 """AMD CPU configuration - zenpower setup for Ryzen 5000 series."""
 
-import logging
 import subprocess
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AMDConfig(BaseHardwareConfig):
@@ -129,7 +129,7 @@ class AMDConfig(BaseHardwareConfig):
             logger.error("This system does not appear to have an AMD CPU")
             return False
 
-        if self.distro not in ["fedora", "arch", "debian"]:
+        if self.distro not in ["fedora", "arch"]:
             self.logger.error("Unsupported distribution: %s", self.distro)
             return False
 

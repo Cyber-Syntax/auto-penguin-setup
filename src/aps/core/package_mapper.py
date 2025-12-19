@@ -7,6 +7,10 @@ from pathlib import Path
 from aps.core.config import APSConfigParser
 from aps.core.distro import DistroFamily, DistroInfo
 
+from .logger import get_logger
+
+logger = get_logger(__name__)
+
 
 @dataclass
 class PackageMapping:
@@ -14,7 +18,8 @@ class PackageMapping:
 
     original_name: str
     mapped_name: str
-    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", "flatpak:remote"
+    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo",
+    # "flatpak:remote"
     category: str | None = None
 
     @property
@@ -90,9 +95,6 @@ class PackageMapper:
             pkgmap_path: Path to pkgmap.ini file
 
         """
-        import logging
-
-        logger = logging.getLogger(__name__)
         logger.debug("Loading mappings from %s", pkgmap_path)
         if not pkgmap_path.exists():
             logger.debug("pkgmap.ini not found at %s", pkgmap_path)
@@ -230,7 +232,8 @@ class PackageMapper:
         """Get all packages from a specific source.
 
         Args:
-            source_prefix: Source prefix to filter by (e.g., "COPR:", "AUR:", "official")
+            source_prefix: Source prefix to filter by
+            (e.g., "COPR:", "AUR:", "official")
 
         Returns:
             List of PackageMapping objects matching the source

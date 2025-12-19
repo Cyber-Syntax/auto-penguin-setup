@@ -1,12 +1,12 @@
 """Touchpad configuration."""
 
-import logging
 import os
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 from aps.utils.paths import resolve_config_file
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TouchpadConfig(BaseHardwareConfig):

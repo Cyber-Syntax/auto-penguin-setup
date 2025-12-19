@@ -1,14 +1,14 @@
 """Sudoers configuration management."""
 
-import logging
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SudoersConfig(BaseSystemConfig):

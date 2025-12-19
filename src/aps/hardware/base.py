@@ -1,9 +1,10 @@
 """Base class for hardware configuration modules."""
 
-import logging
 from abc import ABC, abstractmethod
 
-logger = logging.getLogger(__name__)
+from aps.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class BaseHardwareConfig(ABC):

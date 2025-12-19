@@ -1,15 +1,15 @@
 """Trash-cli installer and systemd timer setup."""
 
-import logging
 import subprocess
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.paths import resolve_config_file
 from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TrashCLIInstaller(BaseInstaller):

@@ -1,13 +1,13 @@
 """UFW firewall configuration module."""
 
-import logging
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UFWConfig(BaseSystemConfig):

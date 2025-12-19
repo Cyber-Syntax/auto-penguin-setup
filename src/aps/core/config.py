@@ -243,7 +243,7 @@ class APSConfigParser:
 
 
 def parse_config(config_path: Path) -> APSConfigParser:
-    """Convenience function to create and load a config parser.
+    """Create and load a config parser.
 
     Args:
         config_path: Path to INI configuration file

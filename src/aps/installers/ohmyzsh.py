@@ -1,6 +1,5 @@
 """Oh-My-Zsh installer with custom installation path."""
 
-import logging
 import os
 import re
 import shutil
@@ -8,9 +7,11 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
+
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OhMyZshInstaller(BaseInstaller):
