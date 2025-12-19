@@ -63,7 +63,7 @@ _aps() {
                     _arguments \
                         '(--verbose)--verbose[Enable verbose output]' \
                         '(-h --help)'{-h,--help}'[Show help information]' \
-                        '--source[Filter by source]:source:(official copr aur ppa flatpak)'
+                        '--source[Filter by source]:source:(official copr aur flatpak)'
                     ;;
                 sync-repos)
                     _arguments \

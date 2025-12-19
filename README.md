@@ -144,7 +144,7 @@ fd-find = fd  # Fedora name -> Arch name
 fd = AUR:fd  # Install fd from AUR on Arch
 ```
 
-Supports `official`, `COPR:user/repo`, `AUR:package`, `PPA:user/repo`, and `flatpak:remote` sources.
+Supports `official`, `COPR:user/repo`, `AUR:package`, and `flatpak:remote` sources.
 
 ### variables.ini
 

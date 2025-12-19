@@ -30,7 +30,7 @@ _aps_completion() {
     local components="aur-helper flatpak ollama tlp nvidia brave fonts ohmyzsh neovim-config"
     
     # Sources for list --source
-    local sources="official copr aur ppa flatpak"
+    local sources="official copr aur flatpak"
     
     # If we're completing the first argument (command)
     if [[ ${COMP_CWORD} -eq 1 ]]; then
