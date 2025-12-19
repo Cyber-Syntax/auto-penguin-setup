@@ -1,6 +1,6 @@
 [project]
 name = "auto-penguin-setup"
-version = "0.2.0-alpha"
+version = "0.3.0-alpha"
 license = { text = "BSD-3-Clause" }
 description = "Automated Linux setup tool supporting Fedora and Arch base distributions."
 keywords = ["linux", "automation", "setup", "package-manager"]
