@@ -28,7 +28,6 @@ class TestPaths:
         assert configs_dir.is_dir()
         # Should contain the config files
         assert (configs_dir / "01-mytlp.conf").exists()
-        assert (configs_dir / "borg").exists()
         assert (configs_dir / "default_aps_configs").exists()
 
     def test_get_default_configs_dir(self) -> None:
@@ -49,10 +48,10 @@ class TestPaths:
         assert str(get_configs_dir()) in str(config_file)
 
         # Test with subdirectory
-        borg_file = resolve_config_file("borg/home-borgbackup.sh")
-        assert borg_file.is_file()
-        assert borg_file.name == "home-borgbackup.sh"
-        assert "borg" in str(borg_file)
+        mpv_file = resolve_config_file("mpv/mpv.conf")
+        assert mpv_file.is_file()
+        assert mpv_file.name == "mpv.conf"
+        assert "mpv" in str(mpv_file)
 
     def test_resolve_default_config_file(self) -> None:
         """Test resolve_default_config_file resolves paths correctly."""
@@ -63,7 +62,10 @@ class TestPaths:
         assert str(get_default_configs_dir()) in str(config_file)
 
     def test_resolve_nonexistent_file(self) -> None:
-        """Test resolving non-existent files still returns valid Path objects."""
+        """Test resolving non-existent files.
+
+        Should still return valid Path objects.
+        """
         nonexistent = resolve_config_file("nonexistent.conf")
         assert isinstance(nonexistent, Path)
         assert not nonexistent.exists()

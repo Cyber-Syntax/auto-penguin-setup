@@ -1,11 +1,12 @@
 """Syncthing installer and setup."""
 
-import logging
 import subprocess
+
+from aps.core.logger import get_logger
 
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SyncthingInstaller(BaseInstaller):
@@ -16,6 +17,7 @@ class SyncthingInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up Syncthing...")
 
@@ -38,6 +40,7 @@ class SyncthingInstaller(BaseInstaller):
 
         Returns:
             True if enabled, False otherwise
+
         """
         try:
             result = subprocess.run(

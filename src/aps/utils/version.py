@@ -12,6 +12,7 @@ def get_version() -> str:
 
     Returns:
         str: Version string (e.g., "0.2.0-alpha" or "dev")
+
     """
     try:
         return importlib.metadata.version("auto-penguin-setup")
@@ -24,6 +25,7 @@ def _get_version_from_pyproject() -> str:
 
     Returns:
         str: Version string from pyproject.toml or "dev" if not found
+
     """
     try:
         project_root = Path(__file__).parent.parent.parent.parent

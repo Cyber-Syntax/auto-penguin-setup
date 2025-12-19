@@ -1,11 +1,11 @@
 """Hostname configuration."""
 
-import logging
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class HostnameConfig(BaseHardwareConfig):
@@ -15,7 +15,8 @@ class HostnameConfig(BaseHardwareConfig):
         """Initialize hostname configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
+
         """
         super().__init__(distro)
 
@@ -27,6 +28,7 @@ class HostnameConfig(BaseHardwareConfig):
 
         Returns:
             True if hostname is set successfully
+
         """
         self.logger.info("Changing hostname to %s...", hostname)
 
@@ -63,6 +65,7 @@ class HostnameConfig(BaseHardwareConfig):
 
         Returns:
             True if hostname is set successfully
+
         """
         hostname = kwargs.get("hostname")
         if hostname:

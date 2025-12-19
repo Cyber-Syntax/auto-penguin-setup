@@ -99,7 +99,9 @@ class TestPackageTracker:
         # Track multiple packages
         tracker.track_install(PackageRecord.create("git", source="official"))
         tracker.track_install(PackageRecord.create("vim", source="official"))
-        tracker.track_install(PackageRecord.create("lazygit", source="COPR:atim/lazygit"))
+        tracker.track_install(
+            PackageRecord.create("lazygit", source="COPR:atim/lazygit")
+        )
 
         # Retrieve and verify
         packages = tracker.get_tracked_packages()
@@ -179,9 +181,15 @@ class TestPackageTracker:
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
 
-        tracker.track_install(PackageRecord.create("git", source="official", category="dev"))
-        tracker.track_install(PackageRecord.create("vim", source="official", category="editor"))
-        tracker.track_install(PackageRecord.create("gcc", source="official", category="dev"))
+        tracker.track_install(
+            PackageRecord.create("git", source="official", category="dev")
+        )
+        tracker.track_install(
+            PackageRecord.create("vim", source="official", category="editor")
+        )
+        tracker.track_install(
+            PackageRecord.create("gcc", source="official", category="dev")
+        )
 
         dev_packages = tracker.get_packages_by_category("dev")
         assert len(dev_packages) == 2
@@ -193,8 +201,12 @@ class TestPackageTracker:
         tracker = PackageTracker(db_path)
 
         tracker.track_install(PackageRecord.create("git", source="official"))
-        tracker.track_install(PackageRecord.create("lazygit", source="COPR:atim/lazygit"))
-        tracker.track_install(PackageRecord.create("brave", source="COPR:user/brave"))
+        tracker.track_install(
+            PackageRecord.create("lazygit", source="COPR:atim/lazygit")
+        )
+        tracker.track_install(
+            PackageRecord.create("brave", source="COPR:user/brave")
+        )
 
         copr_packages = tracker.get_packages_by_source("COPR:")
         assert len(copr_packages) == 2
@@ -207,9 +219,15 @@ class TestPackageTracker:
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
 
-        tracker.track_install(PackageRecord.create("git", source="official", category="dev"))
-        tracker.track_install(PackageRecord.create("vim", source="official", category="editor"))
-        tracker.track_install(PackageRecord.create("gcc", source="official", category="dev"))
+        tracker.track_install(
+            PackageRecord.create("git", source="official", category="dev")
+        )
+        tracker.track_install(
+            PackageRecord.create("vim", source="official", category="editor")
+        )
+        tracker.track_install(
+            PackageRecord.create("gcc", source="official", category="dev")
+        )
 
         categories = tracker.get_categories()
         assert len(categories) == 2
@@ -262,7 +280,9 @@ class TestPackageTracker:
         records = [
             PackageRecord.create("git", source="official"),
             PackageRecord.create("vim", source="official"),
-            PackageRecord.create("lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"),
+            PackageRecord.create(
+                "lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"
+            ),
         ]
 
         tracker.track_multiple(records)
@@ -275,11 +295,15 @@ class TestPackageTracker:
         tracker = PackageTracker(db_path)
 
         # Track package first time
-        record1 = PackageRecord.create("git", source="official", category="dev")
+        record1 = PackageRecord.create(
+            "git", source="official", category="dev"
+        )
         tracker.track_install(record1)
 
         # Track same package again
-        record2 = PackageRecord.create("git", source="official", category="dev")
+        record2 = PackageRecord.create(
+            "git", source="official", category="dev"
+        )
         tracker.track_install(record2)
 
         # Should only have one entry
@@ -287,17 +311,23 @@ class TestPackageTracker:
         assert len(packages) == 1
         assert packages[0].name == "git"
 
-    def test_track_install_updates_existing_package(self, tmp_path: Path) -> None:
+    def test_track_install_updates_existing_package(
+        self, tmp_path: Path
+    ) -> None:
         """Test that tracking existing package updates the record."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
 
         # Track package from official source
-        record1 = PackageRecord.create("git", source="official", category="dev")
+        record1 = PackageRecord.create(
+            "git", source="official", category="dev"
+        )
         tracker.track_install(record1)
 
         # Update to different source
-        record2 = PackageRecord.create("git", source="COPR:test/git", category="tools")
+        record2 = PackageRecord.create(
+            "git", source="COPR:test/git", category="tools"
+        )
         tracker.track_install(record2)
 
         # Should still have one entry with updated info
@@ -315,7 +345,9 @@ class TestPackageTracker:
         # Track initial packages
         records1 = [
             PackageRecord.create("git", source="official"),
-            PackageRecord.create("lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"),
+            PackageRecord.create(
+                "lazygit", source="COPR:atim/lazygit", mapped_name="lazygit"
+            ),
         ]
         tracker.track_multiple(records1)
 
@@ -383,13 +415,17 @@ class TestPackageTracker:
         assert keys[3] == "category"
         assert keys[4] == "installed_at"
 
-    def test_track_by_mapped_name_prevents_duplicates(self, tmp_path: Path) -> None:
+    def test_track_by_mapped_name_prevents_duplicates(
+        self, tmp_path: Path
+    ) -> None:
         """Test that tracking by mapped_name also prevents duplicates."""
         db_path = tmp_path / "tracking.jsonl"
         tracker = PackageTracker(db_path)
 
         # Track package with mapped_name
-        record1 = PackageRecord.create("git", source="official", mapped_name="git-core")
+        record1 = PackageRecord.create(
+            "git", source="official", mapped_name="git-core"
+        )
         tracker.track_install(record1)
 
         # Try to track by mapped_name (should update, not duplicate)

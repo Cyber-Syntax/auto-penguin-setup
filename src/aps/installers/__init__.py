@@ -2,7 +2,6 @@
 
 from .autocpufreq import AutoCPUFreqInstaller
 from .base import BaseInstaller
-from .borgbackup import BorgbackupInstaller
 from .brave import BraveInstaller
 from .nfancurve import NfancurveInstaller
 from .ohmyzsh import OhMyZshInstaller
@@ -18,16 +17,15 @@ from .vscode import VSCodeInstaller
 __all__ = [
     "AutoCPUFreqInstaller",
     "BaseInstaller",
-    "BorgbackupInstaller",
     "BraveInstaller",
     "NfancurveInstaller",
     "OhMyZshInstaller",
     "ProtonVPNInstaller",
     "SyncthingInstaller",
-    "ThinkfanInstaller",
     "TLPInstaller",
+    "ThinkfanInstaller",
     "TrashCLIInstaller",
     "UeberzugppInstaller",
-    "VirtManagerInstaller",
     "VSCodeInstaller",
+    "VirtManagerInstaller",
 ]

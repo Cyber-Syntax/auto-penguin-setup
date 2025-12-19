@@ -11,7 +11,9 @@ from _pytest.logging import LogCaptureFixture
 from aps.cli.commands.list import cmd_list
 
 
-def _pkg(name: str, source: str, category: str | None, installed_at: str) -> Mock:
+def _pkg(
+    name: str, source: str, category: str | None, installed_at: str
+) -> Mock:
     """Create a mock package object."""
     p = Mock()
     p.name = name
@@ -25,7 +27,9 @@ class TestListCommand:
     """Test list command with various scenarios."""
 
     @patch("aps.cli.commands.list.PackageTracker")
-    def test_list_all_packages(self, mock_tracker_cls: Mock, caplog: LogCaptureFixture) -> None:
+    def test_list_all_packages(
+        self, mock_tracker_cls: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test listing all tracked packages."""
         tracker = Mock()
         tracker.get_tracked_packages.return_value = [
@@ -43,7 +47,9 @@ class TestListCommand:
         assert "lazygit" in caplog.text
 
     @patch("aps.cli.commands.list.PackageTracker")
-    def test_list_empty_packages(self, mock_tracker_cls: Mock, caplog: LogCaptureFixture) -> None:
+    def test_list_empty_packages(
+        self, mock_tracker_cls: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test listing when no packages are tracked."""
         tracker = Mock()
         tracker.get_tracked_packages.return_value = []
@@ -99,7 +105,9 @@ class TestListCommand:
         assert "lazygit" in caplog.text
         assert "neovim" in caplog.text
         # Verify official is not in the package list (only in headers)
-        lines = [line for line in caplog.text.split("\n") if "official" in line]
+        lines = [
+            line for line in caplog.text.split("\n") if "official" in line
+        ]
         assert len(lines) == 0
 
     @patch("aps.cli.commands.list.PackageTracker")
@@ -164,7 +172,9 @@ class TestListCommand:
         # Should include PPA packages only
         assert "neovim" in caplog.text
         # Verify official is not in the package list
-        lines = [line for line in caplog.text.split("\n") if "official" in line]
+        lines = [
+            line for line in caplog.text.split("\n") if "official" in line
+        ]
         assert len(lines) == 0
 
     @patch("aps.cli.commands.list.PackageTracker")
@@ -207,7 +217,9 @@ class TestListCommand:
         # No output is generated
 
     @patch("aps.cli.commands.list.PackageTracker")
-    def test_list_with_categories(self, mock_tracker_cls: Mock, caplog: LogCaptureFixture) -> None:
+    def test_list_with_categories(
+        self, mock_tracker_cls: Mock, caplog: LogCaptureFixture
+    ) -> None:
         """Test listing packages with various categories."""
         tracker = Mock()
         tracker.get_tracked_packages.return_value = [

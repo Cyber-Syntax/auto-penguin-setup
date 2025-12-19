@@ -22,7 +22,9 @@ class TestBaseInstallerInit:
 
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_init_initializes_attributes(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_init_initializes_attributes(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test that __init__ properly initializes attributes."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_pm.return_value = MagicMock()
@@ -41,14 +43,6 @@ class TestBaseInstallerInit:
         mock_distro.return_value = MagicMock(id="arch")
         installer = ConcreteInstaller()
         assert installer.distro == "arch"
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init_with_debian(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization with debian distro."""
-        mock_distro.return_value = MagicMock(id="debian")
-        installer = ConcreteInstaller()
-        assert installer.distro == "debian"
 
 
 class TestBaseInstallerAbstractMethods:
@@ -93,7 +87,9 @@ class TestTryOfficialFirst:
         """Test fallback when package not in official repos."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_package_manager = MagicMock()
-        mock_package_manager.is_available_in_official_repos.return_value = False
+        mock_package_manager.is_available_in_official_repos.return_value = (
+            False
+        )
         mock_pm.return_value = mock_package_manager
 
         installer = ConcreteInstaller()
@@ -141,7 +137,9 @@ class TestAddRepository:
         installer = ConcreteInstaller()
         installer._add_repo_file = Mock(return_value=True)
 
-        result = installer.add_repository("https://example.com/repo", "example-repo")
+        result = installer.add_repository(
+            "https://example.com/repo", "example-repo"
+        )
 
         assert result is True
         installer._add_repo_file.assert_called_once()
@@ -149,7 +147,9 @@ class TestAddRepository:
 
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_add_repository_with_gpg_key(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_add_repository_with_gpg_key(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test adding repository with GPG key."""
         mock_distro.return_value = MagicMock(id="fedora")
         installer = ConcreteInstaller()
@@ -157,7 +157,9 @@ class TestAddRepository:
         installer._add_repo_file = Mock(return_value=True)
 
         result = installer.add_repository(
-            "https://example.com/repo", "example-repo", "https://example.com/key.gpg"
+            "https://example.com/repo",
+            "example-repo",
+            "https://example.com/key.gpg",
         )
 
         assert result is True
@@ -176,7 +178,9 @@ class TestAddRepository:
         installer._import_gpg_key = Mock(return_value=False)
 
         result = installer.add_repository(
-            "https://example.com/repo", "example-repo", "https://example.com/key.gpg"
+            "https://example.com/repo",
+            "example-repo",
+            "https://example.com/key.gpg",
         )
 
         assert result is False
@@ -190,7 +194,11 @@ class TestImportGpgKey:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     def test_import_gpg_key_fedora(
-        self, mock_pm: Mock, mock_distro: Mock, mock_run_priv: Mock, caplog: LogCaptureFixture
+        self,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        mock_run_priv: Mock,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test GPG key import on Fedora."""
         caplog.set_level("DEBUG")
@@ -209,27 +217,12 @@ class TestImportGpgKey:
     @patch("aps.installers.base.run_privileged")
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_import_gpg_key_debian(
-        self, mock_pm: Mock, mock_distro: Mock, mock_run_priv: Mock
-    ) -> None:
-        """Test GPG key import on Debian."""
-        mock_distro.return_value = MagicMock(id="debian")
-        mock_result = MagicMock(returncode=0)
-        mock_run_priv.return_value = mock_result
-
-        with patch("subprocess.run") as mock_subprocess:
-            mock_subprocess.return_value = MagicMock(returncode=0, stdout="key content")
-
-            installer = ConcreteInstaller()
-            result = installer._import_gpg_key("https://example.com/key.gpg")
-
-            assert result is True
-
-    @patch("aps.installers.base.run_privileged")
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
     def test_import_gpg_key_unsupported_distro(
-        self, mock_pm: Mock, mock_distro: Mock, mock_run_priv: Mock, caplog: LogCaptureFixture
+        self,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        mock_run_priv: Mock,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test GPG key import on unsupported distro."""
         caplog.set_level("WARNING")
@@ -245,7 +238,11 @@ class TestImportGpgKey:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     def test_import_gpg_key_failure(
-        self, mock_pm: Mock, mock_distro: Mock, mock_run_priv: Mock, caplog: LogCaptureFixture
+        self,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        mock_run_priv: Mock,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test GPG key import failure."""
         caplog.set_level("ERROR")
@@ -264,23 +261,16 @@ class TestAddRepoFile:
 
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_add_repo_file_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_add_repo_file_fedora(
+        self, mock_pm: Mock, mock_distro: Mock
+    ) -> None:
         """Test adding repo file on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
         installer = ConcreteInstaller()
 
-        result = installer._add_repo_file("https://example.com/repo", "example")
-
-        assert result is True
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_add_repo_file_debian(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test adding repo file on Debian."""
-        mock_distro.return_value = MagicMock(id="debian")
-        installer = ConcreteInstaller()
-
-        result = installer._add_repo_file("https://example.com/repo", "example")
+        result = installer._add_repo_file(
+            "https://example.com/repo", "example"
+        )
 
         assert result is True
 
@@ -294,7 +284,9 @@ class TestAddRepoFile:
         mock_distro.return_value = MagicMock(id="unknown")
         installer = ConcreteInstaller()
 
-        result = installer._add_repo_file("https://example.com/repo", "example")
+        result = installer._add_repo_file(
+            "https://example.com/repo", "example"
+        )
 
         assert result is True  # Continues anyway
         assert "not implemented" in caplog.text.lower()
@@ -340,7 +332,9 @@ class TestCreateDesktopFile:
         user_file = user_path / "test.desktop"
 
         modifications = {"Exec": "new-test"}
-        result = installer.create_desktop_file(str(source), str(user_file), modifications)
+        result = installer.create_desktop_file(
+            str(source), str(user_file), modifications
+        )
 
         assert result is True
         content = user_file.read_text()
@@ -349,7 +343,11 @@ class TestCreateDesktopFile:
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
     def test_create_desktop_file_source_not_found(
-        self, mock_pm: Mock, mock_distro: Mock, tmp_path: Path, caplog: LogCaptureFixture
+        self,
+        mock_pm: Mock,
+        mock_distro: Mock,
+        tmp_path: Path,
+        caplog: LogCaptureFixture,
     ) -> None:
         """Test handling of missing source file."""
         caplog.set_level("ERROR")

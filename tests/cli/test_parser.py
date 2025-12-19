@@ -41,7 +41,9 @@ class TestGlobalFlags:
         """Test that verbose flag is defined on main parser."""
         parser = create_parser()
         # Global flags are defined on main parser
-        assert parser.parse_args(["install", "--verbose", "curl"]).verbose is True
+        assert (
+            parser.parse_args(["install", "--verbose", "curl"]).verbose is True
+        )
 
     def test_global_noconfirm_flag_on_main_parser(self) -> None:
         """Test that noconfirm flag is defined on main parser."""
@@ -106,7 +108,9 @@ class TestInstallCommand:
     def test_install_dry_run_with_multiple_packages(self) -> None:
         """Test install --dry-run with multiple packages."""
         parser = create_parser()
-        args = parser.parse_args(["install", "--dry-run", "curl", "wget", "@core"])
+        args = parser.parse_args(
+            ["install", "--dry-run", "curl", "wget", "@core"]
+        )
         assert args.dry_run is True
         assert args.packages == ["curl", "wget", "@core"]
 
@@ -120,7 +124,9 @@ class TestInstallCommand:
     def test_install_combined_flags(self) -> None:
         """Test install with multiple flags."""
         parser = create_parser()
-        args = parser.parse_args(["install", "--dry-run", "--verbose", "curl", "wget"])
+        args = parser.parse_args(
+            ["install", "--dry-run", "--verbose", "curl", "wget"]
+        )
         assert args.dry_run is True
         assert args.verbose is True
         assert args.packages == ["curl", "wget"]
@@ -366,7 +372,9 @@ class TestFlagPositioning:
     def test_packages_after_command_and_flags(self) -> None:
         """Test package specification after command and flags."""
         parser = create_parser()
-        args = parser.parse_args(["install", "--dry-run", "--verbose", "curl", "wget"])
+        args = parser.parse_args(
+            ["install", "--dry-run", "--verbose", "curl", "wget"]
+        )
         assert args.packages == ["curl", "wget"]
         assert args.dry_run is True
         assert args.verbose is True
@@ -374,8 +382,12 @@ class TestFlagPositioning:
     def test_flag_order_flexibility_within_command(self) -> None:
         """Test that flag order is flexible within command scope."""
         parser = create_parser()
-        args1 = parser.parse_args(["install", "--verbose", "--dry-run", "curl"])
-        args2 = parser.parse_args(["install", "--dry-run", "--verbose", "curl"])
+        args1 = parser.parse_args(
+            ["install", "--verbose", "--dry-run", "curl"]
+        )
+        args2 = parser.parse_args(
+            ["install", "--dry-run", "--verbose", "curl"]
+        )
 
         assert args1.verbose == args2.verbose
         assert args1.dry_run == args2.dry_run

@@ -1,9 +1,10 @@
 """Base class for hardware configuration modules."""
 
-import logging
 from abc import ABC, abstractmethod
 
-logger = logging.getLogger(__name__)
+from aps.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class BaseHardwareConfig(ABC):
@@ -13,7 +14,8 @@ class BaseHardwareConfig(ABC):
         """Initialize hardware configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
+
         """
         self.distro = distro
         self.logger = logger
@@ -27,6 +29,7 @@ class BaseHardwareConfig(ABC):
 
         Returns:
             True if configuration succeeds, False otherwise
+
         """
         pass
 
@@ -39,6 +42,7 @@ class BaseHardwareConfig(ABC):
 
         Returns:
             True if copy succeeds, False otherwise
+
         """
         import os
         import shutil
@@ -53,5 +57,7 @@ class BaseHardwareConfig(ABC):
             self.logger.info("Copied %s to %s", source, destination)
             return True
         except OSError as e:
-            self.logger.error("Failed to copy %s to %s: %s", source, destination, e)
+            self.logger.error(
+                "Failed to copy %s to %s: %s", source, destination, e
+            )
             return False

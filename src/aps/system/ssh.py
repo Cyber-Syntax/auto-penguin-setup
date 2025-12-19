@@ -7,17 +7,17 @@ This module provides automated SSH setup including:
 - SSH client configuration generation
 """
 
-import logging
 import re
 import socket
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.system.base import BaseSystemConfig
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SSHConfig(BaseSystemConfig):
@@ -35,17 +35,16 @@ class SSHConfig(BaseSystemConfig):
         """Get the SSH service name for the current distribution.
 
         Returns:
-            Service name ("sshd" for Fedora/Arch, "ssh" for Debian)
+            Service name ("sshd" for Fedora/Arch)
 
         Raises:
             RuntimeError: If SSH service cannot be determined
+
         """
         distro = self.distro
 
         if distro in ["fedora", "arch"]:
             return "sshd"
-        if distro == "debian":
-            return "ssh"
 
         # Fallback detection
         result = subprocess.run(
@@ -62,7 +61,9 @@ class SSHConfig(BaseSystemConfig):
 
         raise RuntimeError("Could not detect SSH service name")
 
-    def _check_host_reachable(self, ip: str, port: int, timeout: int = 3) -> bool:
+    def _check_host_reachable(
+        self, ip: str, port: int, timeout: int = 3
+    ) -> bool:
         """Check if remote host is reachable on specified port.
 
         Args:
@@ -72,6 +73,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True if host is reachable, False otherwise
+
         """
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,12 +95,15 @@ class SSHConfig(BaseSystemConfig):
 
         Raises:
             ValueError: If format is invalid
+
         """
         pattern = r"^([^@]+)@([^:]+):([0-9]+)$"
         match = re.match(pattern, host_string)
 
         if not match:
-            raise ValueError(f"Invalid host format: {host_string} (expected user@ip:port)")
+            raise ValueError(
+                f"Invalid host format: {host_string} (expected user@ip:port)"
+            )
 
         user = match.group(1)
         ip = match.group(2)
@@ -114,6 +119,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True if keys were created or already exist
+
         """
         if self.key_path.exists() and self.pub_key_path.exists() and not force:
             logger.debug("Ed25519 SSH keys already exist at %s", self.key_path)
@@ -147,14 +153,18 @@ class SSHConfig(BaseSystemConfig):
         )
 
         if result.returncode != 0:
-            logger.error("Failed to generate Ed25519 SSH keys: %s", result.stderr)
+            logger.error(
+                "Failed to generate Ed25519 SSH keys: %s", result.stderr
+            )
             return False
 
         # Set proper permissions
         self.key_path.chmod(0o600)
         self.pub_key_path.chmod(0o644)
 
-        logger.info("Ed25519 SSH keys generated successfully at %s", self.key_path)
+        logger.info(
+            "Ed25519 SSH keys generated successfully at %s", self.key_path
+        )
         return True
 
     def configure_sshd_security(
@@ -174,6 +184,7 @@ class SSHConfig(BaseSystemConfig):
 
         Returns:
             True on success
+
         """
         logger.info("Configuring SSH security settings...")
 
@@ -182,7 +193,9 @@ class SSHConfig(BaseSystemConfig):
 
         # Create directory if it doesn't exist
         if not sshd_config_dir.exists():
-            logger.debug("Creating SSH drop-in config directory: %s", sshd_config_dir)
+            logger.debug(
+                "Creating SSH drop-in config directory: %s", sshd_config_dir
+            )
             result = run_privileged(
                 ["mkdir", "-p", str(sshd_config_dir)],
                 capture_output=True,
@@ -235,10 +248,13 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         try:
             service_name = self._get_ssh_service_name()
-            logger.info("Ensuring SSH service (%s) is running...", service_name)
+            logger.info(
+                "Ensuring SSH service (%s) is running...", service_name
+            )
 
             result = run_privileged(
                 ["systemctl", "enable", "--now", service_name],
@@ -248,7 +264,9 @@ Subsystem sftp /usr/lib/openssh/sftp-server
             )
 
             if result.returncode != 0:
-                logger.error("Failed to enable and start SSH service: %s", result.stderr)
+                logger.error(
+                    "Failed to enable and start SSH service: %s", result.stderr
+                )
                 return False
 
             logger.info("SSH service (%s) is running", service_name)
@@ -263,6 +281,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         try:
             service_name = self._get_ssh_service_name()
@@ -286,7 +305,10 @@ Subsystem sftp /usr/lib/openssh/sftp-server
                 )
 
                 if result.returncode != 0:
-                    logger.error("Failed to reload/restart SSH service: %s", result.stderr)
+                    logger.error(
+                        "Failed to reload/restart SSH service: %s",
+                        result.stderr,
+                    )
                     return False
 
             logger.info("SSH configuration reloaded successfully")
@@ -309,6 +331,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         device_label = device_name or f"{user}@{ip}:{port}"
 
@@ -322,7 +345,9 @@ Subsystem sftp /usr/lib/openssh/sftp-server
             )
             return False
 
-        logger.info("Copying SSH key to %s (%s@%s:%d)...", device_label, user, ip, port)
+        logger.info(
+            "Copying SSH key to %s (%s@%s:%d)...", device_label, user, ip, port
+        )
         logger.info("You may be prompted for password on the remote host")
 
         result = subprocess.run(
@@ -356,6 +381,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True if passwordless connection works
+
         """
         result = subprocess.run(
             [
@@ -384,6 +410,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         logger.info("Generating SSH client configuration...")
 
@@ -445,7 +472,9 @@ Subsystem sftp /usr/lib/openssh/sftp-server
         self.config_file.write_text("\n".join(config_lines) + "\n")
         self.config_file.chmod(0o600)
 
-        logger.info("SSH config generated successfully at %s", self.config_file)
+        logger.info(
+            "SSH config generated successfully at %s", self.config_file
+        )
         return True
 
     def configure(self, **kwargs) -> bool:
@@ -461,6 +490,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
         Returns:
             True on success
+
         """
         port = kwargs.get("port", 22)
         password_auth = kwargs.get("password_auth", False)
@@ -479,7 +509,9 @@ Subsystem sftp /usr/lib/openssh/sftp-server
             return False
 
         # Configure sshd security
-        if not self.configure_sshd_security(port, password_auth, permit_root_login):
+        if not self.configure_sshd_security(
+            port, password_auth, permit_root_login
+        ):
             logger.error("Failed to configure SSH security")
             return False
 
@@ -498,12 +530,16 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
             for target in targets:
                 if target not in devices:
-                    logger.warning("Target device '%s' not found in device list", target)
+                    logger.warning(
+                        "Target device '%s' not found in device list", target
+                    )
                     fail_count += 1
                     continue
 
                 try:
-                    user, ip, target_port = self._parse_remote_host(devices[target])
+                    user, ip, target_port = self._parse_remote_host(
+                        devices[target]
+                    )
                     if self.copy_key_to_remote(user, ip, target_port, target):
                         success_count += 1
                     else:
@@ -532,7 +568,9 @@ Subsystem sftp /usr/lib/openssh/sftp-server
                     continue
 
                 try:
-                    user, ip, target_port = self._parse_remote_host(devices[target])
+                    user, ip, target_port = self._parse_remote_host(
+                        devices[target]
+                    )
                     if self.test_ssh_connection(user, ip, target_port):
                         logger.info("✓ %s - Connection OK", target)
                     else:

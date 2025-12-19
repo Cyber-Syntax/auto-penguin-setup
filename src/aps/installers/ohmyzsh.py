@@ -1,6 +1,5 @@
 """Oh-My-Zsh installer with custom installation path."""
 
-import logging
 import os
 import re
 import shutil
@@ -8,9 +7,11 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
+
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OhMyZshInstaller(BaseInstaller):
@@ -21,6 +22,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Installing oh-my-zsh...")
 
@@ -42,21 +44,25 @@ class OhMyZshInstaller(BaseInstaller):
         already_installed = target_dir.exists() or default_dir.exists()
 
         if already_installed:
-            logger.info("oh-my-zsh is already installed, updating configuration...")
+            logger.info(
+                "oh-my-zsh is already installed, updating configuration..."
+            )
             # Ensure we're using the correct directory
             if default_dir.exists() and not target_dir.exists():
-                logger.info("Moving oh-my-zsh from %s to %s", default_dir, target_dir)
+                logger.info(
+                    "Moving oh-my-zsh from %s to %s", default_dir, target_dir
+                )
                 target_dir.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     shutil.move(str(default_dir), str(target_dir))
                 except (OSError, shutil.Error) as e:
-                    logger.error("Failed to move oh-my-zsh to target directory: %s", e)
+                    logger.error(
+                        "Failed to move oh-my-zsh to target directory: %s", e
+                    )
                     return False
         else:
             # Run official installer non-interactively, installing directly to target_dir
-            installer_url = (
-                "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
-            )
+            installer_url = "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
 
             install_env = os.environ.copy()
             install_env.update(
@@ -88,7 +94,9 @@ class OhMyZshInstaller(BaseInstaller):
                     logger.debug("Installer stderr: %s", result.stderr)
             except subprocess.CalledProcessError as e:
                 combined_output = (
-                    (e.stdout or "") + ("\n" if e.stdout and e.stderr else "") + (e.stderr or "")
+                    (e.stdout or "")
+                    + ("\n" if e.stdout and e.stderr else "")
+                    + (e.stderr or "")
                 )
                 logger.error(
                     "oh-my-zsh installation failed. Full output follows:\n%s",
@@ -118,7 +126,9 @@ class OhMyZshInstaller(BaseInstaller):
         logger.info("Updating %s with correct paths...", zshrc_path)
 
         # Create backup
-        backup_path = Path(f"{zshrc_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        backup_path = Path(
+            f"{zshrc_path}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        )
         try:
             shutil.copy2(zshrc_path, backup_path)
             logger.debug("Created backup at %s", backup_path)
@@ -143,6 +153,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         Returns:
             Path to zshrc file
+
         """
         config_zshrc = Path.home() / ".config" / "zsh" / ".zshrc"
         home_zshrc = Path.home() / ".zshrc"
@@ -164,6 +175,7 @@ class OhMyZshInstaller(BaseInstaller):
             name: Plugin name
             url: Git repository URL
             plugins_dir: Plugins directory path
+
         """
         plugin_path = plugins_dir / name
 
@@ -190,6 +202,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         Returns:
             True if successful, False otherwise
+
         """
         try:
             content = zshrc_path.read_text()
@@ -198,20 +211,28 @@ class OhMyZshInstaller(BaseInstaller):
             return False
 
         # Remove existing export ZSH lines
-        content = re.sub(r"^\s*export ZSH=.*$", "", content, flags=re.MULTILINE)
+        content = re.sub(
+            r"^\s*export ZSH=.*$", "", content, flags=re.MULTILINE
+        )
 
         # Add correct export ZSH at the beginning
         content = 'export ZSH="$HOME/.config/oh-my-zsh"\n' + content
 
         # Replace path references
-        content = content.replace("$HOME/.oh-my-zsh", "$HOME/.config/oh-my-zsh")
+        content = content.replace(
+            "$HOME/.oh-my-zsh", "$HOME/.config/oh-my-zsh"
+        )
         content = content.replace("~/.oh-my-zsh", "$HOME/.config/oh-my-zsh")
 
         # Replace hardcoded absolute paths
-        content = re.sub(r"/home/[^/]*/\.oh-my-zsh", "$HOME/.config/oh-my-zsh", content)
+        content = re.sub(
+            r"/home/[^/]*/\.oh-my-zsh", "$HOME/.config/oh-my-zsh", content
+        )
 
         # Ensure source line uses $ZSH variable
-        content = re.sub(r"source [^\s]*/oh-my-zsh\.sh", "source $ZSH/oh-my-zsh.sh", content)
+        content = re.sub(
+            r"source [^\s]*/oh-my-zsh\.sh", "source $ZSH/oh-my-zsh.sh", content
+        )
 
         # Write updated content
         try:
@@ -234,6 +255,7 @@ class OhMyZshInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         target_dir = Path.home() / ".config" / "oh-my-zsh"
         default_dir = Path.home() / ".oh-my-zsh"

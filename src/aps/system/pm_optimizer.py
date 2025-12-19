@@ -1,13 +1,13 @@
 """Package manager optimization module."""
 
-import logging
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PackageManagerOptimizer(BaseSystemConfig):
@@ -18,15 +18,16 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
-        logger.info("Optimizing package manager configuration for %s...", self.distro)
+        logger.info(
+            "Optimizing package manager configuration for %s...", self.distro
+        )
 
         if self.distro in ("fedora", "rhel", "centos", "nobara"):
             success = self._optimize_dnf()
         elif self.distro in ("arch", "archlinux", "manjaro", "cachyos"):
             success = self._optimize_pacman()
-        elif self.distro in ("debian", "ubuntu", "linuxmint", "pop"):
-            success = self._optimize_apt()
         else:
             logger.error("Unsupported distribution: %s", self.distro)
             return False
@@ -40,6 +41,7 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
         logger.info("Configuring DNF for improved performance...")
         dnf_conf = Path("/etc/dnf/dnf.conf")
@@ -68,6 +70,7 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         Returns:
             bool: True if optimization was successful, False otherwise.
+
         """
         logger.info("Configuring pacman for improved performance...")
         pacman_conf = Path("/etc/pacman.conf")
@@ -79,7 +82,9 @@ class PackageManagerOptimizer(BaseSystemConfig):
         settings = {"ParallelDownloads": "20"}
 
         for key, value in settings.items():
-            if not self._add_or_update_setting(pacman_conf, key, value, separator=" = "):
+            if not self._add_or_update_setting(
+                pacman_conf, key, value, separator=" = "
+            ):
                 return False
 
         if not self._enable_pacman_color(pacman_conf):
@@ -87,41 +92,6 @@ class PackageManagerOptimizer(BaseSystemConfig):
 
         logger.info("Pacman configuration updated successfully")
         return True
-
-    def _optimize_apt(self) -> bool:
-        """Optimize APT configuration for Debian-based systems.
-
-        Returns:
-            bool: True if optimization was successful, False otherwise.
-        """
-        logger.info("Configuring APT for improved performance...")
-        apt_conf = Path("/etc/apt/apt.conf.d/99custom")
-
-        apt_config = """APT::Acquire::Queue-Mode "host";
-APT::Acquire::Retries "3";
-Acquire::http::Timeout "15";
-Acquire::https::Timeout "15";
-"""
-
-        try:
-            result = run_privileged(
-                ["tee", str(apt_conf)],
-                stdin_input=apt_config,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-
-            if result.returncode != 0:
-                logger.error("Failed to create APT configuration file")
-                return False
-
-            logger.info("APT configuration updated successfully")
-            return True
-
-        except Exception as e:
-            logger.error("Error configuring APT: %s", e)
-            return False
 
     def _create_backup(self, config_file: Path) -> bool:
         """Create a backup of the configuration file if it doesn't exist.
@@ -131,6 +101,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if backup was created or already exists, False on error.
+
         """
         backup_file = Path(f"{config_file}.bak")
 
@@ -168,6 +139,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if setting was added/updated successfully, False otherwise.
+
         """
         try:
             content = config_file.read_text()
@@ -176,7 +148,9 @@ Acquire::https::Timeout "15";
             # Check if key exists
             import re
 
-            pattern = rf"^{re.escape(key)}\s*{re.escape(separator.strip())}\s*(.+)$"
+            pattern = (
+                rf"^{re.escape(key)}\s*{re.escape(separator.strip())}\s*(.+)$"
+            )
             match = re.search(pattern, content, re.MULTILINE)
 
             if match:
@@ -186,8 +160,12 @@ Acquire::https::Timeout "15";
                     return True
 
                 # Update existing setting
-                logger.debug("Updating %s from %s to %s", key, current_value, value)
-                new_content = re.sub(pattern, setting_line, content, flags=re.MULTILINE)
+                logger.debug(
+                    "Updating %s from %s to %s", key, current_value, value
+                )
+                new_content = re.sub(
+                    pattern, setting_line, content, flags=re.MULTILINE
+                )
 
                 result = run_privileged(
                     ["tee", str(config_file)],
@@ -233,6 +211,7 @@ Acquire::https::Timeout "15";
 
         Returns:
             bool: True if color was enabled successfully, False otherwise.
+
         """
         try:
             content = pacman_conf.read_text()

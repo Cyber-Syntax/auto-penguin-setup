@@ -1,13 +1,13 @@
 """LightDM display manager configuration."""
 
-import logging
 import re
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.display.base import BaseDisplayManager
 from aps.utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LightDMConfig(BaseDisplayManager):
@@ -18,6 +18,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Installing LightDM display manager...")
 
@@ -34,6 +35,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info("Switching to LightDM display manager...")
 
@@ -76,6 +78,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             True on success
+
         """
         logger.info(
             "Setting up LightDM autologin for user %s with session %s",
@@ -86,7 +89,9 @@ class LightDMConfig(BaseDisplayManager):
         config_file = Path("/etc/lightdm/lightdm.conf")
 
         if not config_file.exists():
-            logger.error("LightDM configuration file not found: %s", config_file)
+            logger.error(
+                "LightDM configuration file not found: %s", config_file
+            )
             return False
 
         # Create backup
@@ -124,9 +129,7 @@ class LightDMConfig(BaseDisplayManager):
         else:
             # Add new [Seat:*] section
             logger.info("Adding new LightDM autologin configuration...")
-            new_content = (
-                f"{content}\n\n[Seat:*]\nautologin-user={username}\nautologin-session={session}\n"
-            )
+            new_content = f"{content}\n\n[Seat:*]\nautologin-user={username}\nautologin-session={session}\n"
 
         # Write new configuration
         result = run_privileged(
@@ -144,7 +147,9 @@ class LightDMConfig(BaseDisplayManager):
         logger.info("LightDM autologin configured successfully")
         return True
 
-    def _modify_seat_section(self, content: str, username: str, session: str) -> str:
+    def _modify_seat_section(
+        self, content: str, username: str, session: str
+    ) -> str:
         """Modify the [Seat:*] section in LightDM config.
 
         Args:
@@ -154,6 +159,7 @@ class LightDMConfig(BaseDisplayManager):
 
         Returns:
             Modified configuration content
+
         """
         lines = content.split("\n")
         new_lines = []

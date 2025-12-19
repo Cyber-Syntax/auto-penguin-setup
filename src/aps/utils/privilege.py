@@ -4,7 +4,9 @@ import logging
 import os
 import subprocess
 
-logger = logging.getLogger(__name__)
+from aps.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def run_privileged(
@@ -28,6 +30,7 @@ def run_privileged(
 
     Returns:
         CompletedProcess instance
+
     """
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("Running privileged command: %s", " ".join(cmd))

@@ -1,12 +1,12 @@
 """Base class for system configuration modules."""
 
-import logging
 from abc import ABC, abstractmethod
 
 from ..core.distro import DistroInfo, detect_distro
+from ..core.logger import get_logger
 from ..core.package_manager import get_package_manager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseSystemConfig(ABC):
@@ -28,4 +28,5 @@ class BaseSystemConfig(ABC):
 
         Returns:
             bool: True if configuration was successful, False otherwise.
+
         """

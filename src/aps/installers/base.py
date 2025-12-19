@@ -1,15 +1,15 @@
 """Base class for application installers."""
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
 from ..core.distro import DistroInfo, detect_distro
+from ..core.logger import get_logger
 from ..core.package_manager import get_package_manager
 from ..utils.privilege import run_privileged
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseInstaller(ABC):
@@ -32,12 +32,14 @@ class BaseInstaller(ABC):
 
         Returns:
             bool: True if installation was successful, False otherwise.
+
         """
         pass
 
-    def try_official_first(self, official_name: str, fallback_install: Callable[[], bool]) -> bool:
-        """
-        Try installing from official repos first, fall back to custom method.
+    def try_official_first(
+        self, official_name: str, fallback_install: Callable[[], bool]
+    ) -> bool:
+        """Try installing from official repos first, fall back to custom method.
 
         This method checks if a package is available in official repositories
         before falling back to a custom installation method (e.g., AUR, third-party repos).
@@ -49,6 +51,7 @@ class BaseInstaller(ABC):
 
         Returns:
             True if installation succeeded (from either source)
+
         """
         if self.pm.is_available_in_official_repos(official_name):
             logger.info(
@@ -67,7 +70,9 @@ class BaseInstaller(ABC):
         logger.debug("Using custom installation method for %s", official_name)
         return fallback_install()
 
-    def add_repository(self, repo_url: str, repo_name: str, gpg_key_url: str | None = None) -> bool:
+    def add_repository(
+        self, repo_url: str, repo_name: str, gpg_key_url: str | None = None
+    ) -> bool:
         """Add a repository for the application.
 
         Args:
@@ -77,6 +82,7 @@ class BaseInstaller(ABC):
 
         Returns:
             bool: True if repository was added successfully, False otherwise.
+
         """
         logger.info("Adding repository: %s", repo_name)
 
@@ -95,9 +101,8 @@ class BaseInstaller(ABC):
 
         Returns:
             bool: True if key was imported successfully, False otherwise.
-        """
-        import subprocess
 
+        """
         logger.debug("Importing GPG key from: %s", key_url)
 
         try:
@@ -108,24 +113,10 @@ class BaseInstaller(ABC):
                     text=True,
                     check=False,
                 )
-            elif self.distro in ("debian", "ubuntu"):
-                # Download key and add to apt keyring
-                result = subprocess.run(
-                    ["curl", "-fsSL", key_url], capture_output=True, text=True, check=False
-                )
-                if result.returncode != 0:
-                    return False
-
-                key_content = result.stdout
-                result = run_privileged(
-                    ["gpg", "--dearmor", "-o", "/usr/share/keyrings/aps-temp.gpg"],
-                    stdin_input=key_content,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
             else:
-                logger.warning("GPG key import not implemented for: %s", self.distro)
+                logger.warning(
+                    "GPG key import not implemented for: %s", self.distro
+                )
                 return True  # Continue anyway
 
             return result.returncode == 0
@@ -143,18 +134,16 @@ class BaseInstaller(ABC):
 
         Returns:
             bool: True if repo file was created successfully, False otherwise.
-        """
 
+        """
         try:
             if self.distro in ("fedora", "rhel", "centos"):
                 Path(f"/etc/yum.repos.d/{repo_name}.repo")
                 # Implementation specific to each installer
                 return True
-            if self.distro in ("debian", "ubuntu"):
-                Path(f"/etc/apt/sources.list.d/{repo_name}.list")
-                # Implementation specific to each installer
-                return True
-            logger.warning("Repository file creation not implemented for: %s", self.distro)
+            logger.warning(
+                "Repository file creation not implemented for: %s", self.distro
+            )
             return True
 
         except Exception as e:
@@ -162,7 +151,10 @@ class BaseInstaller(ABC):
             return False
 
     def create_desktop_file(
-        self, source_path: str, user_path: str, modifications: dict[str, str] | None = None
+        self,
+        source_path: str,
+        user_path: str,
+        modifications: dict[str, str] | None = None,
     ) -> bool:
         """Create or modify a desktop file in user's application directory.
 
@@ -173,6 +165,7 @@ class BaseInstaller(ABC):
 
         Returns:
             bool: True if desktop file was created/modified successfully, False otherwise.
+
         """
         import shutil
 
@@ -202,10 +195,16 @@ class BaseInstaller(ABC):
                     pattern = rf"^{re.escape(key)}=.*$"
                     replacement = f"{key}={value}"
                     if re.search(pattern, content, re.MULTILINE):
-                        content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+                        content = re.sub(
+                            pattern, replacement, content, flags=re.MULTILINE
+                        )
                     else:
                         # Add to [Desktop Entry] section
-                        content = re.sub(r"(\[Desktop Entry\])", rf"\1\n{replacement}", content)
+                        content = re.sub(
+                            r"(\[Desktop Entry\])",
+                            rf"\1\n{replacement}",
+                            content,
+                        )
                 user.write_text(content)
                 logger.debug("Modified desktop file: %s", user)
 

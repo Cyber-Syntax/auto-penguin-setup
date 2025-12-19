@@ -1,13 +1,13 @@
 """Repository management for non-free software."""
 
-import logging
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RepositoryConfig(BaseSystemConfig):
@@ -21,8 +21,6 @@ class RepositoryConfig(BaseSystemConfig):
             return self._enable_rpm_fusion()
         if self.distro == "arch":
             return self._enable_arch_extras()
-        if self.distro == "debian":
-            return self._enable_debian_nonfree()
         logger.warning("Unsupported distribution: %s", self.distro)
         return False
 
@@ -32,7 +30,10 @@ class RepositoryConfig(BaseSystemConfig):
 
         # Get Fedora version
         version_result = subprocess.run(
-            ["rpm", "-E", "%fedora"], capture_output=True, text=True, check=False
+            ["rpm", "-E", "%fedora"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if version_result.returncode != 0:
             logger.error("Failed to detect Fedora version")
@@ -64,46 +65,3 @@ class RepositoryConfig(BaseSystemConfig):
         logger.info("Arch Linux uses AUR for additional packages")
         logger.info("No additional repositories needed (using AUR helper)")
         return True
-
-    def _enable_debian_nonfree(self) -> bool:
-        """Enable contrib and non-free repositories on Debian."""
-        logger.info("Enabling contrib and non-free repositories for Debian")
-
-        success = True
-
-        # Add contrib repository
-        result = run_privileged(
-            ["add-apt-repository", "-y", "contrib"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.warning("Failed to add contrib repository")
-            success = False
-
-        # Add non-free repository
-        result = run_privileged(
-            ["add-apt-repository", "-y", "non-free"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.warning("Failed to add non-free repository")
-            success = False
-
-        # Update package lists
-        result = run_privileged(
-            ["apt-get", "update"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            logger.error("Failed to update package lists")
-            return False
-
-        if success:
-            logger.info("Debian non-free repositories enabled successfully")
-        return success

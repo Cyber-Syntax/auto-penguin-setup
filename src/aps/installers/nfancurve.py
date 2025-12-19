@@ -1,15 +1,15 @@
 """Nfancurve installer for NVIDIA GPU fan control."""
 
-import logging
 import subprocess
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.paths import resolve_config_file
 from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class NfancurveInstaller(BaseInstaller):
@@ -20,6 +20,7 @@ class NfancurveInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up nfancurve for NVIDIA fan control...")
 
@@ -35,7 +36,9 @@ class NfancurveInstaller(BaseInstaller):
                     text=True,
                 )
             except subprocess.CalledProcessError as e:
-                logger.error("Failed to create /opt/nfancurve directory: %s", e.stderr)
+                logger.error(
+                    "Failed to create /opt/nfancurve directory: %s", e.stderr
+                )
                 return False
 
         # Copy temp.sh script to /opt/nfancurve
@@ -131,6 +134,7 @@ class NfancurveInstaller(BaseInstaller):
 
         Returns:
             True if enabled, False otherwise
+
         """
         try:
             result = subprocess.run(

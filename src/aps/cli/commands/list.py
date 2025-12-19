@@ -1,12 +1,12 @@
 """List command implementation."""
 
-import logging
 from argparse import Namespace
 
 from aps.cli.utils import get_tracking_db_path
+from aps.core.logger import get_logger
 from aps.core.tracking import PackageTracker
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def cmd_list(args: Namespace) -> None:
@@ -18,7 +18,11 @@ def cmd_list(args: Namespace) -> None:
         # Extract prefix from source (before ':' if present) and compare case-insensitively
         # Handles both simple sources ("official") and compound sources ("COPR:user/repo")
         filter_prefix = args.source.lower()
-        packages = [p for p in packages if p.source.split(":")[0].lower() == filter_prefix]
+        packages = [
+            p
+            for p in packages
+            if p.source.split(":")[0].lower() == filter_prefix
+        ]
 
     if not packages:
         return
@@ -29,7 +33,9 @@ def cmd_list(args: Namespace) -> None:
     date_width = 24
 
     logger.info("Tracked Packages:")
-    logger.info("=" * (name_width + source_width + category_width + date_width + 3))
+    logger.info(
+        "=" * (name_width + source_width + category_width + date_width + 3)
+    )
     logger.info(
         "%s %s %s %s",
         "Name".ljust(name_width),
@@ -38,7 +44,11 @@ def cmd_list(args: Namespace) -> None:
         "Installed At".ljust(date_width),
     )
     logger.info(
-        "%s %s %s %s", "-" * name_width, "-" * source_width, "-" * category_width, "-" * date_width
+        "%s %s %s %s",
+        "-" * name_width,
+        "-" * source_width,
+        "-" * category_width,
+        "-" * date_width,
     )
     for pkg in packages:
         logger.info(

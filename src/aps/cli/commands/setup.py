@@ -1,13 +1,13 @@
 """Setup command implementation."""
 
-import logging
 from argparse import Namespace
 
 from aps.core.distro import detect_distro
+from aps.core.logger import get_logger
 from aps.core.setup import SetupError, SetupManager
 from aps.utils.privilege import ensure_sudo
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def cmd_setup(args: Namespace) -> None:

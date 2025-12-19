@@ -1,8 +1,8 @@
 [project]
 name = "auto-penguin-setup"
-version = "0.2.0-alpha"
+version = "0.3.0-alpha"
 license = { text = "BSD-3-Clause" }
-description = "Automated Linux setup tool supporting Fedora, Arch, and Debian-based systems"
+description = "Automated Linux setup tool supporting Fedora and Arch base distributions."
 keywords = ["linux", "automation", "setup", "package-manager"]
 requires-python = ">=3.12"
 authors = [{ name = "Cyber-Syntax" }]
@@ -62,10 +62,8 @@ markers = [
 [tool.ruff]
 line-length = 79
 indent-width = 4
-include = ["pyproject.toml"]
 src = ["src", "tests"]
 # Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373.
-ignore = ["E203"]
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -118,6 +116,11 @@ ignore = [
   # only relevant if you run a script with `python -0`,
   # which seems unlikely for any of the scripts in this repo
   "B011",
+  # Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373.
+  "E203",
+  # Incompatible pydocstyle rules: ignoring D203 and D213
+  "D203",
+  "D213",
   # Leave it to the formatter to split long lines and
   # the judgement of all of us.
   # "E501"

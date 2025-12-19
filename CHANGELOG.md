@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-alpha]
+
+### Changed
+
+- Enhanced CLI installation logic and configuration clarity.
+- Adopted custom logger across modules for consistent logging.
+- Improved type hints and docstrings for maintainability.
+- Cleaned up imports and module structure.
+- Updated documentation and applied code formatting.
+- Improved and refactored test cases.
+
+### Fixed
+
+- Added missing source paths for qtile configuration.
+
+### Removed
+
+- Removed Debian/Ubuntu Support: Debian-based distributions are no longer supported to reduce complexity and maintenance burden
+- Entry point script `run.py`.
+- Removed borgbackup due to maintenance overhead.
+- Removed network.py and bootloader.py modules: network module wasn't give so much benefit to desktop linux setup by enabling tcp_bbr and bootloader module was changing grub timeout to 0 which it's not good for dual boot systems. So, those are removed to keep codebase clean.
+
 ## [0.2.0-alpha]
 
 ### Added
@@ -123,5 +145,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added repository removal functions
     - Improved code formatting
 
+[0.3.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.2.0-alpha...v0.3.0-alpha
 [0.2.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.1.0-alpha...v0.2.0-alpha
 [0.1.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/releases/tag/v0.1.0-alpha

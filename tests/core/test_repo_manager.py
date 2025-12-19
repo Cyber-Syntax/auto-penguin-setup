@@ -5,7 +5,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.core.package_manager import PackageManager, PackageManagerError, PacmanManager
+from aps.core.package_manager import (
+    PackageManager,
+    PackageManagerError,
+    PacmanManager,
+)
 from aps.core.repo_manager import RepositoryManager
 
 
@@ -34,18 +38,6 @@ class TestRepositoryManager:
             id_like=[],
             package_manager=PackageManagerType.PACMAN,
             family=DistroFamily.ARCH,
-        )
-
-    @pytest.fixture
-    def debian_distro(self) -> DistroInfo:
-        """Create a Debian distro info instance."""
-        return DistroInfo(
-            name="ubuntu",
-            version="22.04",
-            id="ubuntu",
-            id_like=["debian"],
-            package_manager=PackageManagerType.APT,
-            family=DistroFamily.DEBIAN,
         )
 
     def test_init(self, fedora_distro: DistroInfo) -> None:
@@ -77,7 +69,9 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(arch_distro, pm)
 
-        with pytest.raises(PackageManagerError, match="COPR is only available on Fedora"):
+        with pytest.raises(
+            PackageManagerError, match="COPR is only available on Fedora"
+        ):
             repo_mgr.enable_copr("user/repo")
 
     def test_enable_copr_failure(self, fedora_distro: DistroInfo) -> None:
@@ -111,14 +105,6 @@ class TestRepositoryManager:
                 capture_output=True,
                 check=False,
             )
-
-    def test_disable_copr_non_fedora(self, debian_distro: DistroInfo) -> None:
-        """Test disabling COPR on non-Fedora raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with pytest.raises(PackageManagerError, match="COPR is only available on Fedora"):
-            repo_mgr.disable_copr("user/repo")
 
     def test_is_copr_enabled_true(self, fedora_distro: DistroInfo) -> None:
         """Test checking if COPR is enabled returns True."""
@@ -165,7 +151,9 @@ class TestRepositoryManager:
         result = repo_mgr.is_copr_enabled("user/repo")
         assert result is False
 
-    def test_is_copr_enabled_command_failure(self, fedora_distro: DistroInfo) -> None:
+    def test_is_copr_enabled_command_failure(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test that command failure returns False."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -199,7 +187,9 @@ class TestRepositoryManager:
         assert result.mapped_name == "git"
         assert "available in official repositories" in caplog.text
 
-    def test_check_official_before_enabling_not_official(self, fedora_distro: DistroInfo) -> None:
+    def test_check_official_before_enabling_not_official(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test check_official_before_enabling when package is not available in official repos."""
         pm = Mock(spec=PackageManager)
         pm.is_available_in_official_repos.return_value = False
@@ -234,9 +224,13 @@ class TestRepositoryManager:
 
         result = repo_mgr.check_official_before_enabling("git", mapping)
 
-        assert result is mapping  # Should return the same mapping without checking
+        assert (
+            result is mapping
+        )  # Should return the same mapping without checking
 
-    def test_install_aur_package_success(self, arch_distro: DistroInfo) -> None:
+    def test_install_aur_package_success(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test installing AUR package successfully."""
         pm = Mock(spec=PacmanManager)
         pm.install_aur.return_value = True
@@ -247,84 +241,33 @@ class TestRepositoryManager:
         assert result is True
         pm.install_aur.assert_called_once_with(["yay"])
 
-    def test_install_aur_package_non_arch(self, fedora_distro: DistroInfo) -> None:
+    def test_install_aur_package_non_arch(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test installing AUR on non-Arch raises error."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with pytest.raises(PackageManagerError, match="AUR is only available on Arch"):
+        with pytest.raises(
+            PackageManagerError, match="AUR is only available on Arch"
+        ):
             repo_mgr.install_aur_package("yay")
 
-    def test_install_aur_package_wrong_pm(self, arch_distro: DistroInfo) -> None:
+    def test_install_aur_package_wrong_pm(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test installing AUR with wrong package manager raises error."""
         pm = Mock(spec=PackageManager)  # Not PacmanManager
         repo_mgr = RepositoryManager(arch_distro, pm)
 
-        with pytest.raises(PackageManagerError, match="Package manager is not PacmanManager"):
+        with pytest.raises(
+            PackageManagerError, match="Package manager is not PacmanManager"
+        ):
             repo_mgr.install_aur_package("yay")
 
-    def test_add_ppa_success(self, debian_distro: DistroInfo) -> None:
-        """Test adding PPA successfully."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=0)
-            result = repo_mgr.add_ppa("user/repo")
-
-            assert result is True
-            mock_run.assert_called_once_with(
-                ["add-apt-repository", "-y", "ppa:user/repo"],
-                check=False,
-                capture_output=False,
-            )
-            pm.update_cache.assert_called_once()
-
-    def test_add_ppa_failure(self, debian_distro: DistroInfo) -> None:
-        """Test adding PPA failure."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=1)
-            result = repo_mgr.add_ppa("user/repo")
-
-            assert result is False
-            pm.update_cache.assert_not_called()
-
-    def test_add_ppa_non_debian(self, fedora_distro: DistroInfo) -> None:
-        """Test adding PPA on non-Debian raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(fedora_distro, pm)
-
-        with pytest.raises(PackageManagerError, match="PPA is only available on Debian/Ubuntu"):
-            repo_mgr.add_ppa("user/repo")
-
-    def test_remove_ppa_success(self, debian_distro: DistroInfo) -> None:
-        """Test removing PPA successfully."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(debian_distro, pm)
-
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
-            mock_run.return_value = Mock(returncode=0)
-            result = repo_mgr.remove_ppa("user/repo")
-
-            assert result is True
-            mock_run.assert_called_once_with(
-                ["add-apt-repository", "-y", "--remove", "ppa:user/repo"],
-                capture_output=True,
-                check=False,
-            )
-
-    def test_remove_ppa_non_debian(self, arch_distro: DistroInfo) -> None:
-        """Test removing PPA on non-Debian raises error."""
-        pm = Mock(spec=PackageManager)
-        repo_mgr = RepositoryManager(arch_distro, pm)
-
-        with pytest.raises(PackageManagerError, match="PPA is only available on Debian/Ubuntu"):
-            repo_mgr.remove_ppa("user/repo")
-
-    def test_enable_flatpak_remote_flathub(self, fedora_distro: DistroInfo) -> None:
+    def test_enable_flatpak_remote_flathub(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test enabling Flathub remote."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -351,7 +294,9 @@ class TestRepositoryManager:
                 check=False,
             )
 
-    def test_enable_flatpak_remote_custom(self, fedora_distro: DistroInfo) -> None:
+    def test_enable_flatpak_remote_custom(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test enabling custom Flatpak remote."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -369,7 +314,9 @@ class TestRepositoryManager:
 
             assert result is True
 
-    def test_enable_flatpak_remote_no_url(self, fedora_distro: DistroInfo) -> None:
+    def test_enable_flatpak_remote_no_url(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test enabling Flatpak remote without URL raises error."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -380,7 +327,9 @@ class TestRepositoryManager:
             with pytest.raises(ValueError, match="remote_url is required"):
                 repo_mgr.enable_flatpak_remote("custom")
 
-    def test_is_flatpak_remote_enabled_true(self, fedora_distro: DistroInfo) -> None:
+    def test_is_flatpak_remote_enabled_true(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test checking if Flatpak remote is enabled returns True."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -396,7 +345,9 @@ class TestRepositoryManager:
 
             assert result is True
 
-    def test_is_flatpak_remote_enabled_false(self, fedora_distro: DistroInfo) -> None:
+    def test_is_flatpak_remote_enabled_false(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test checking if Flatpak remote is enabled returns False."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -412,7 +363,9 @@ class TestRepositoryManager:
 
             assert result is False
 
-    def test_is_flatpak_remote_enabled_command_failed(self, fedora_distro: DistroInfo) -> None:
+    def test_is_flatpak_remote_enabled_command_failed(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test checking Flatpak remote when command fails."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -450,7 +403,9 @@ class TestRepositoryManager:
                 capture_output=False,
             )
 
-    def test_install_flatpak_custom_remote(self, fedora_distro: DistroInfo) -> None:
+    def test_install_flatpak_custom_remote(
+        self, fedora_distro: DistroInfo
+    ) -> None:
         """Test installing Flatpak package from custom remote."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
@@ -462,7 +417,9 @@ class TestRepositoryManager:
             # Simulate flatpak already installed
             mock_which.return_value = "/usr/bin/flatpak"
             mock_run.return_value = Mock(returncode=0)
-            result = repo_mgr.install_flatpak("org.mozilla.firefox", remote="fedora")
+            result = repo_mgr.install_flatpak(
+                "org.mozilla.firefox", remote="fedora"
+            )
 
             assert result is True
             # No -y flag - installation is interactive
@@ -512,7 +469,9 @@ class TestRepositoryManager:
             assert result is False
             mock_which.assert_called_once_with("flatpak")
 
-    def test_is_flatpak_remote_enabled_not_installed(self, arch_distro: DistroInfo) -> None:
+    def test_is_flatpak_remote_enabled_not_installed(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test checking remote when flatpak is not installed returns False."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(arch_distro, pm)
@@ -524,7 +483,9 @@ class TestRepositoryManager:
             assert result is False
             mock_which.assert_called_once_with("flatpak")
 
-    def test_ensure_flatpak_installed_already_installed(self, arch_distro: DistroInfo) -> None:
+    def test_ensure_flatpak_installed_already_installed(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test ensuring flatpak is installed when already present."""
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(arch_distro, pm)
@@ -538,7 +499,9 @@ class TestRepositoryManager:
             # Should not call install since it's already installed
             pm.install.assert_not_called()
 
-    def test_ensure_flatpak_installed_success(self, arch_distro: DistroInfo) -> None:
+    def test_ensure_flatpak_installed_success(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test installing flatpak successfully when not present."""
         pm = Mock(spec=PackageManager)
         pm.install.return_value = (True, "")
@@ -552,7 +515,9 @@ class TestRepositoryManager:
             assert result is True
             pm.install.assert_called_once_with(["flatpak"], assume_yes=False)
 
-    def test_ensure_flatpak_installed_install_fails(self, arch_distro: DistroInfo) -> None:
+    def test_ensure_flatpak_installed_install_fails(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test handling installation failure."""
         pm = Mock(spec=PackageManager)
         pm.install.return_value = (False, "Installation failed")
@@ -561,11 +526,14 @@ class TestRepositoryManager:
         with patch("shutil.which") as mock_which:
             mock_which.return_value = None
             with pytest.raises(
-                PackageManagerError, match="Failed to install flatpak: Installation failed"
+                PackageManagerError,
+                match="Failed to install flatpak: Installation failed",
             ):
                 repo_mgr.ensure_flatpak_installed()
 
-    def test_ensure_flatpak_installed_verification_fails(self, arch_distro: DistroInfo) -> None:
+    def test_ensure_flatpak_installed_verification_fails(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test handling verification failure after installation."""
         pm = Mock(spec=PackageManager)
         pm.install.return_value = (True, "")
@@ -575,11 +543,14 @@ class TestRepositoryManager:
             # Always return None to simulate verification failure
             mock_which.return_value = None
             with pytest.raises(
-                PackageManagerError, match="flatpak installation verification failed"
+                PackageManagerError,
+                match="flatpak installation verification failed",
             ):
                 repo_mgr.ensure_flatpak_installed()
 
-    def test_enable_flatpak_remote_installs_flatpak_first(self, arch_distro: DistroInfo) -> None:
+    def test_enable_flatpak_remote_installs_flatpak_first(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test that enabling remote installs flatpak if needed."""
         pm = Mock(spec=PackageManager)
         pm.install.return_value = (True, "")
@@ -597,7 +568,9 @@ class TestRepositoryManager:
             assert result is True
             pm.install.assert_called_once_with(["flatpak"], assume_yes=False)
 
-    def test_install_flatpak_installs_flatpak_first(self, arch_distro: DistroInfo) -> None:
+    def test_install_flatpak_installs_flatpak_first(
+        self, arch_distro: DistroInfo
+    ) -> None:
         """Test that installing flatpak package installs flatpak command if needed."""
         pm = Mock(spec=PackageManager)
         pm.install.return_value = (True, "")

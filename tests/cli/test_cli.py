@@ -107,8 +107,14 @@ class TestCLICommands:
         ]
 
         with (
-            patch("aps.cli.commands.status.detect_distro", return_value=mock_distro),
-            patch("aps.cli.commands.status.PackageTracker", return_value=mock_tracker),
+            patch(
+                "aps.cli.commands.status.detect_distro",
+                return_value=mock_distro,
+            ),
+            patch(
+                "aps.cli.commands.status.PackageTracker",
+                return_value=mock_tracker,
+            ),
         ):
             args = Namespace()
             cmd_status(args)
@@ -135,7 +141,10 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = []
 
         with (
-            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
+            patch(
+                "aps.cli.commands.list.PackageTracker",
+                return_value=mock_tracker,
+            ),
         ):
             args = Namespace(source=None)
             cmd_list(args)
@@ -162,7 +171,10 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = [mock_record]
 
         with (
-            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
+            patch(
+                "aps.cli.commands.list.PackageTracker",
+                return_value=mock_tracker,
+            ),
         ):
             args = Namespace(source=None)
             cmd_list(args)
@@ -173,7 +185,9 @@ class TestCLICommands:
             assert "curl" in captured.err
             assert "official" in captured.err
 
-    def test_cmd_list_with_source_filter(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_source_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command with source filtering."""
         from unittest.mock import Mock, patch
 
@@ -194,10 +208,16 @@ class TestCLICommands:
         mock_record2.installed_at = "2025-12-06 17:24:50 +0000"
 
         mock_tracker = Mock()
-        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+        ]
 
         with (
-            patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker),
+            patch(
+                "aps.cli.commands.list.PackageTracker",
+                return_value=mock_tracker,
+            ),
         ):
             args = Namespace(source="aur")
             cmd_list(args)
@@ -252,7 +272,9 @@ class TestCLICommands:
         ]
 
         # Test lowercase "copr" matches "COPR:..." sources
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="copr")
             cmd_list(args)
 
@@ -266,7 +288,9 @@ class TestCLICommands:
             assert "obsidian" not in captured.err
             assert "curl" not in captured.err
 
-    def test_cmd_list_with_uppercase_source_filter(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_uppercase_source_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command with uppercase source filter."""
         from unittest.mock import Mock, patch
 
@@ -287,10 +311,15 @@ class TestCLICommands:
         mock_record2.installed_at = "2025-12-06 17:26:30 +0000"
 
         mock_tracker = Mock()
-        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+        ]
 
         # Test uppercase "FLATPAK" matches "flatpak:..." sources
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="FLATPAK")
             cmd_list(args)
 
@@ -300,7 +329,9 @@ class TestCLICommands:
             assert "signal" in captured.err
             assert "flatpak:flathub" in captured.err
 
-    def test_cmd_list_with_official_source_filter(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_official_source_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command filtering official packages (no colon in source)."""
         from unittest.mock import Mock, patch
 
@@ -327,10 +358,16 @@ class TestCLICommands:
         mock_record3.installed_at = "2025-12-06 17:24:50 +0000"
 
         mock_tracker = Mock()
-        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2, mock_record3]
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+            mock_record3,
+        ]
 
         # Test "official" or "OFFICIAL" matches "official" sources
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="OFFICIAL")
             cmd_list(args)
 
@@ -341,7 +378,9 @@ class TestCLICommands:
             # Should NOT include COPR package
             assert "lazygit" not in captured.err
 
-    def test_cmd_list_with_aur_lowercase_filter(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_aur_lowercase_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command with lowercase 'aur' filter matching AUR packages."""
         from unittest.mock import Mock, patch
 
@@ -382,7 +421,9 @@ class TestCLICommands:
         ]
 
         # Test lowercase "aur" matches "AUR:..." sources
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="aur")
             cmd_list(args)
 
@@ -398,7 +439,9 @@ class TestCLICommands:
             assert "curl" not in captured.err
             assert "official" not in captured.err
 
-    def test_cmd_list_with_aur_uppercase_filter(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_aur_uppercase_filter(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command with uppercase 'AUR' filter matching AUR packages."""
         from unittest.mock import Mock, patch
 
@@ -419,10 +462,15 @@ class TestCLICommands:
         mock_record2.installed_at = "2025-12-06 17:26:30 +0000"
 
         mock_tracker = Mock()
-        mock_tracker.get_tracked_packages.return_value = [mock_record1, mock_record2]
+        mock_tracker.get_tracked_packages.return_value = [
+            mock_record1,
+            mock_record2,
+        ]
 
         # Test uppercase "AUR" matches "AUR:..." sources
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="AUR")
             cmd_list(args)
 
@@ -434,7 +482,9 @@ class TestCLICommands:
             assert "starship" not in captured.err
             assert "COPR:atim/starship" not in captured.err
 
-    def test_cmd_list_with_mixed_sources(self, capsys: CaptureFixture[str]) -> None:
+    def test_cmd_list_with_mixed_sources(
+        self, capsys: CaptureFixture[str]
+    ) -> None:
         """Test list command correctly filters among mixed source types."""
         from unittest.mock import Mock, patch
 
@@ -480,7 +530,9 @@ class TestCLICommands:
         mock_tracker.get_tracked_packages.return_value = mock_records
 
         # Test filtering by "aur" - should only show AUR packages
-        with patch("aps.cli.commands.list.PackageTracker", return_value=mock_tracker):
+        with patch(
+            "aps.cli.commands.list.PackageTracker", return_value=mock_tracker
+        ):
             args = Namespace(source="aur")
             cmd_list(args)
 
@@ -523,17 +575,37 @@ class TestCLICommands:
         mock_mapping.is_ppa = False
         mock_mapping.is_flatpak = False
 
-        mock_repo_mgr.check_official_before_enabling.return_value = mock_mapping
+        mock_repo_mgr.check_official_before_enabling.return_value = (
+            mock_mapping
+        )
         mock_mapper.map_package.return_value = mock_mapping
 
         with (
             patch("aps.utils.privilege.ensure_sudo"),  # Mock at the source
-            patch("aps.cli.commands.install.detect_distro", return_value=mock_distro),
-            patch("aps.cli.commands.install.get_package_manager", return_value=mock_pm),
-            patch("aps.cli.commands.install.RepositoryManager", return_value=mock_repo_mgr),
-            patch("aps.cli.commands.install.PackageTracker", return_value=mock_tracker),
-            patch("aps.cli.commands.install.PackageMapper", return_value=mock_mapper),
-            patch("aps.cli.commands.install.load_category_packages", return_value=[]),
+            patch(
+                "aps.cli.commands.install.detect_distro",
+                return_value=mock_distro,
+            ),
+            patch(
+                "aps.cli.commands.install.get_package_manager",
+                return_value=mock_pm,
+            ),
+            patch(
+                "aps.cli.commands.install.RepositoryManager",
+                return_value=mock_repo_mgr,
+            ),
+            patch(
+                "aps.cli.commands.install.PackageTracker",
+                return_value=mock_tracker,
+            ),
+            patch(
+                "aps.cli.commands.install.PackageMapper",
+                return_value=mock_mapper,
+            ),
+            patch(
+                "aps.cli.commands.install.load_category_packages",
+                return_value=[],
+            ),
         ):
             args = Namespace(packages=["neovim"], dry_run=True)
             cmd_install(args)
@@ -559,9 +631,18 @@ class TestCLICommands:
 
         with (
             patch("aps.utils.privilege.ensure_sudo"),  # Mock at the source
-            patch("aps.cli.commands.remove.detect_distro", return_value=mock_distro),
-            patch("aps.cli.commands.remove.get_package_manager", return_value=mock_pm),
-            patch("aps.cli.commands.remove.PackageTracker", return_value=mock_tracker),
+            patch(
+                "aps.cli.commands.remove.detect_distro",
+                return_value=mock_distro,
+            ),
+            patch(
+                "aps.cli.commands.remove.get_package_manager",
+                return_value=mock_pm,
+            ),
+            patch(
+                "aps.cli.commands.remove.PackageTracker",
+                return_value=mock_tracker,
+            ),
         ):
             args = Namespace(packages=["neovim"], dry_run=True)
             cmd_remove(args)

@@ -1,13 +1,13 @@
 """Virt-manager installer for virtualization management."""
 
-import logging
 import subprocess
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseInstaller
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class VirtManagerInstaller(BaseInstaller):
@@ -18,6 +18,7 @@ class VirtManagerInstaller(BaseInstaller):
 
         Returns:
             True if installation successful, False otherwise
+
         """
         logger.info("Setting up virtualization...")
 
@@ -25,8 +26,6 @@ class VirtManagerInstaller(BaseInstaller):
             return self._install_fedora()
         if self.distro == "arch":
             return self._install_arch()
-        if self.distro == "debian":
-            return self._install_debian()
         logger.error("Unsupported distribution: %s", self.distro)
         return False
 
@@ -43,19 +42,30 @@ class VirtManagerInstaller(BaseInstaller):
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.error("Failed to install virtualization group: %s", e.stderr)
+            logger.error(
+                "Failed to install virtualization group: %s", e.stderr
+            )
             return False
 
         # Install optional packages
         try:
             run_privileged(
-                ["dnf", "group", "install", "-y", "--with-optional", "virtualization"],
+                [
+                    "dnf",
+                    "group",
+                    "install",
+                    "-y",
+                    "--with-optional",
+                    "virtualization",
+                ],
                 check=False,
                 capture_output=True,
                 text=True,
             )
         except subprocess.SubprocessError:
-            logger.warning("Failed to install optional virtualization packages")
+            logger.warning(
+                "Failed to install optional virtualization packages"
+            )
 
         return self._configure_libvirt()
 
@@ -83,26 +93,9 @@ class VirtManagerInstaller(BaseInstaller):
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.error("Failed to install virtualization packages: %s", e.stderr)
-            return False
-
-        return self._configure_libvirt()
-
-    def _install_debian(self) -> bool:
-        """Install virtualization packages on Debian/Ubuntu."""
-        logger.info("Installing virtualization packages for Debian/Ubuntu")
-
-        deb_pkgs = [
-            "libvirt-daemon-system",
-            "libvirt-clients",
-            "qemu-kvm",
-            "virt-manager",
-            "bridge-utils",
-        ]
-
-        success, error = self.pm.install(deb_pkgs)
-        if not success:
-            logger.error("Failed to install virtualization packages: %s", error)
+            logger.error(
+                "Failed to install virtualization packages: %s", e.stderr
+            )
             return False
 
         return self._configure_libvirt()
@@ -190,7 +183,9 @@ class VirtManagerInstaller(BaseInstaller):
             logger.warning("Failed to configure default network: %s", e.stderr)
 
         logger.info("Virtualization setup completed successfully")
-        logger.info("Note: You may need to log out and back in for group changes to take effect")
+        logger.info(
+            "Note: You may need to log out and back in for group changes to take effect"
+        )
 
         return True
 
@@ -199,5 +194,6 @@ class VirtManagerInstaller(BaseInstaller):
 
         Returns:
             True if installed, False otherwise
+
         """
         return self.pm.is_installed("virt-manager")

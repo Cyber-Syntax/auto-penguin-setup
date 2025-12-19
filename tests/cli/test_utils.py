@@ -18,7 +18,9 @@ class TestGetTrackingDbPath:
 
         path = get_tracking_db_path()
 
-        assert path == Path("/home/testuser/.config/auto-penguin-setup/metadata.jsonl")
+        assert path == Path(
+            "/home/testuser/.config/auto-penguin-setup/metadata.jsonl"
+        )
 
     @patch("aps.cli.utils.Path.home")
     def test_returns_pathlib_path_object(self, mock_home: Mock) -> None:
@@ -38,7 +40,9 @@ class TestGetTrackingDbPath:
 
         mock_home.return_value = Path("/home/anotheruser")
         path = get_tracking_db_path()
-        assert path == Path("/home/anotheruser/.config/auto-penguin-setup/metadata.jsonl")
+        assert path == Path(
+            "/home/anotheruser/.config/auto-penguin-setup/metadata.jsonl"
+        )
 
 
 class TestLoadCategoryPackages:
@@ -55,7 +59,11 @@ class TestLoadCategoryPackages:
 
         mock_parser = Mock()
         mock_parser.has_section.return_value = True
-        mock_parser.get_section_packages.return_value = ["vim", "emacs", "neovim"]
+        mock_parser.get_section_packages.return_value = [
+            "vim",
+            "emacs",
+            "neovim",
+        ]
         mock_parser_cls.return_value = mock_parser
 
         packages = load_category_packages("editors")
@@ -135,7 +143,9 @@ class TestLoadCategoryPackages:
         load_category_packages("test")
 
         # Ensure called before parser operations
-        mock_ensure.assert_called_once_with(Path("/home/testuser/.config/auto-penguin-setup"))
+        mock_ensure.assert_called_once_with(
+            Path("/home/testuser/.config/auto-penguin-setup")
+        )
         mock_parser.load.assert_called_once()
 
     @patch("aps.cli.utils.APSConfigParser")

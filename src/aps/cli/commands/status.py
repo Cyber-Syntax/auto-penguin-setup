@@ -1,16 +1,16 @@
 """Status command implementation."""
 
-import logging
 from argparse import Namespace
 
 from aps.cli.utils import get_tracking_db_path
 from aps.core.distro import detect_distro
+from aps.core.logger import get_logger
 from aps.core.tracking import PackageTracker
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-def cmd_status(args: Namespace) -> None:  # noqa: ARG001
+def cmd_status(args: Namespace) -> None:
     """Handle 'aps status' command."""
     distro_info = detect_distro()
     tracker = PackageTracker(get_tracking_db_path())
@@ -24,7 +24,9 @@ def cmd_status(args: Namespace) -> None:  # noqa: ARG001
     # Count by source
     sources: dict[str, int] = {}
     for pkg in packages:
-        source_type = pkg.source.split(":")[0] if ":" in pkg.source else pkg.source
+        source_type = (
+            pkg.source.split(":")[0] if ":" in pkg.source else pkg.source
+        )
         sources[source_type] = sources.get(source_type, 0) + 1
 
     logger.info("By Source:")

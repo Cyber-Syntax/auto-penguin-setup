@@ -35,7 +35,9 @@ class TestRepositoryConfig:
 
     @patch("aps.system.base.detect_distro")
     @patch("aps.system.base.get_package_manager")
-    def test_configure_arch(self, mock_get_pm: Mock, mock_detect_distro: Mock) -> None:
+    def test_configure_arch(
+        self, mock_get_pm: Mock, mock_detect_distro: Mock
+    ) -> None:
         """Test repository config on Arch (should return True)."""
         arch_distro = DistroInfo(
             name="Arch Linux",

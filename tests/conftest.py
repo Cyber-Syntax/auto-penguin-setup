@@ -20,7 +20,9 @@ def pytest_configure(config: pytest.Config) -> None:
     # Patch run_privileged globally for all tests
     patcher = patch("aps.utils.privilege.run_privileged")
     _run_privileged_mock = patcher.start()
-    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    _run_privileged_mock.return_value = MagicMock(
+        returncode=0, stdout="", stderr=""
+    )
 
     # Configure logging to avoid "I/O operation on closed file" errors
     # Remove all handlers and use NullHandler for tests
@@ -40,7 +42,9 @@ def mock_run_privileged() -> Generator[MagicMock, None, None]:
     # Reset mock before each test - including side_effect
     _run_privileged_mock.reset_mock(side_effect=True)
     # Set default return value
-    _run_privileged_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    _run_privileged_mock.return_value = MagicMock(
+        returncode=0, stdout="", stderr=""
+    )
     yield _run_privileged_mock
 
 
@@ -79,19 +83,6 @@ def arch_distro() -> DistroInfo:
 
 
 @pytest.fixture
-def debian_distro() -> DistroInfo:
-    """Debian distribution fixture."""
-    return DistroInfo(
-        name="Debian GNU/Linux",
-        version="12",
-        id="debian",
-        id_like=[],
-        package_manager=PackageManagerType.APT,
-        family=DistroFamily.DEBIAN,
-    )
-
-
-@pytest.fixture
 def sample_os_release_fedora(tmp_path: Path) -> Path:
     """Sample /etc/os-release for Fedora."""
     content = """
@@ -117,21 +108,6 @@ ID_LIKE=archlinux
 PRETTY_NAME="Arch Linux"
 """
     os_release = tmp_path / "os-release-arch"
-    os_release.write_text(content)
-    return os_release
-
-
-@pytest.fixture
-def sample_os_release_debian(tmp_path: Path) -> Path:
-    """Sample /etc/os-release for Debian."""
-    content = """
-NAME="Debian GNU/Linux"
-VERSION="12 (bookworm)"
-ID=debian
-VERSION_ID=12
-PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
-"""
-    os_release = tmp_path / "os-release-debian"
     os_release.write_text(content)
     return os_release
 
@@ -167,11 +143,6 @@ lazygit=COPR:atim/lazygit
 [pkgmap.arch]
 brave-browser=AUR:brave-bin
 visual-studio-code=visual-studio-code-bin
-lazygit=lazygit
-
-[pkgmap.debian]
-brave-browser=brave-browser
-visual-studio-code=code
 lazygit=lazygit
 """
     pkgmap_ini = tmp_path / "pkgmap.ini"

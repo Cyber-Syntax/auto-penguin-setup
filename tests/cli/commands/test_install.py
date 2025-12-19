@@ -168,9 +168,17 @@ class TestInstallCommand:
             mapping.category = None
             return mapping
 
-        mappings = [create_mapping("vim"), create_mapping("git"), create_mapping("curl")]
+        mappings = [
+            create_mapping("vim"),
+            create_mapping("git"),
+            create_mapping("curl"),
+        ]
         mock_mapper.mappings = mappings
-        mock_mapper.map_package.side_effect = [mappings[0], mappings[1], mappings[2]]
+        mock_mapper.map_package.side_effect = [
+            mappings[0],
+            mappings[1],
+            mappings[2],
+        ]
         mock_mapper_cls.return_value = mock_mapper
 
         mock_repo_mgr = Mock()
@@ -184,7 +192,9 @@ class TestInstallCommand:
         mock_tracker = Mock()
         mock_tracker_cls.return_value = mock_tracker
 
-        args = Namespace(packages=["vim", "git", "curl"], dry_run=False, noconfirm=False)
+        args = Namespace(
+            packages=["vim", "git", "curl"], dry_run=False, noconfirm=False
+        )
         cmd_install(args)
 
         # Should install all three packages
@@ -574,7 +584,9 @@ class TestInstallCommand:
 
         mock_mapper = Mock()
 
-        def create_mapping(name: str, source: str, is_official: bool, is_copr: bool) -> Mock:
+        def create_mapping(
+            name: str, source: str, is_official: bool, is_copr: bool
+        ) -> Mock:
             mapping = Mock()
             mapping.original_name = name
             mapping.mapped_name = name
@@ -606,7 +618,9 @@ class TestInstallCommand:
         mock_tracker = Mock()
         mock_tracker_cls.return_value = mock_tracker
 
-        args = Namespace(packages=["vim", "lazygit"], dry_run=False, noconfirm=False)
+        args = Namespace(
+            packages=["vim", "lazygit"], dry_run=False, noconfirm=False
+        )
         cmd_install(args)
 
         # Both official and COPR should be processed

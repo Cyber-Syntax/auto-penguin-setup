@@ -23,11 +23,6 @@ class TestTouchpadConfigInit:
         config = TouchpadConfig("arch")
         assert config.distro == "arch"
 
-    def test_init_debian(self) -> None:
-        """Test initialization with debian distro."""
-        config = TouchpadConfig("debian")
-        assert config.distro == "debian"
-
 
 class TestTouchpadConfigSetup:
     """Test touchpad setup functionality."""

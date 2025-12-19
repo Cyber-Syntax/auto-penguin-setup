@@ -16,6 +16,9 @@
 
 ## in-progress
 
+- [ ] add upgrade command to self-update the cli tool via uv
+- [ ] BUG: dry-run not work for copr enabling
+- [ ] better to have util function to backup any config file to keep DRY principle
 - [ ] test all aps commands in virtual machines for all distros
 - [ ] add option to remove the packages, which it would remove from tracked database
 - [ ] logs rotation setup for aps logs to avoid large log files
@@ -24,6 +27,7 @@
 
 ## todo
 
+- [ ] track setup's too like ohmyzsh, tmux, neovim, hyprland, i3 etc.
 - [ ] exclude configs/readme.md from uv builds
 - [ ] add lightdm auto unlock keyring subcommand
 - [ ] BUG: lightdm auto keyring unlock not work:
@@ -104,7 +108,6 @@
 - [ ] my-unicorn compatibility for mimeapp.list
 - [ ] bats unittest updates
 - [ ] tmux dotfiles need to git clone tpm to tmux/plugins folder than install the plugins prefix and press shift and I to install
-- [ ] qtile-extras need to handled on debian based systems
 
 ## backlog
 
@@ -129,17 +132,17 @@
 SUBSYSTEM=="rfkill", ATTR{type}=="bluetooth", ATTR{state}="0"
 ```
 
-2. reconfigured the tlp settings
+1. reconfigured the tlp settings
 
 - [ ] display backlight show 3W usage even on 10% brightness
 - [x] powertop need to run 1h 30min to detect power consumption correctly
 - add enable to auto-cpufreq which we do same thing on tlp
 
-3. disable leds like power led, numlock led, mic led
+1. disable leds like power led, numlock led, mic led
 
 ## cpu status
 
-4. disable intel_pstate and enable acpid to get 4.6 Ghz turbo boost , intel_pstate only 1.3Ghz available
+1. disable intel_pstate and enable acpid to get 4.6 Ghz turbo boost , intel_pstate only 1.3Ghz available
    which it would be good for battery and tempature but things would take more time with lower ghz though?
 
 dependencies install:
@@ -176,6 +179,7 @@ sudo dnf remove irqbalance
 
 ## done
 
+- [ ] add setup commands like system folder, hardware folder to cli which we didn't have yet
 - `uv tool install .` tested on cachyos and work as expected.
 - Brave setup works.
 - [ ] Switch to python for core modules, keep the bash for other simple scripts
@@ -190,7 +194,6 @@ sudo dnf remove irqbalance
 - [ ] add flatpak tracking
 - [ ] test new tracking system for all of the packages.ini setups
     - [ ] arch
-    - [ ] debian
     - [ ] ubuntu qemu
 - [x] Sources not recognized correctly: COPR:atim/starship found but no lazygit
       - now it is fixed with new tracking system

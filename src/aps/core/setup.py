@@ -1,15 +1,21 @@
 """Setup manager for installing and configuring system components."""
 
-import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from aps.core.distro import DistroInfo, PackageManagerType
+from aps.core.logger import get_logger
+from aps.hardware import (
+    AMDConfig,
+    HostnameConfig,
+    IntelConfig,
+    NvidiaConfig,
+    TouchpadConfig,
+)
 from aps.installers import (
     AutoCPUFreqInstaller,
-    BorgbackupInstaller,
     BraveInstaller,
     NfancurveInstaller,
     OhMyZshInstaller,
@@ -22,9 +28,18 @@ from aps.installers import (
     VirtManagerInstaller,
     VSCodeInstaller,
 )
+from aps.system import (
+    MultimediaConfig,
+    PackageManagerOptimizer,
+    RepositoryConfig,
+    SSHConfig,
+    SudoersConfig,
+    UFWConfig,
+)
 from aps.utils.privilege import run_privileged
+from aps.wm import QtileConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SetupError(Exception):
@@ -35,7 +50,7 @@ class SetupManager:
     """Manages setup operations for AUR helpers, ollama, and other components."""
 
     # Registry of available setup components
-    COMPONENT_REGISTRY: dict[str, dict[str, Any]] = {
+    COMPONENT_REGISTRY: ClassVar[dict[str, dict[str, Any]]] = {
         "aur-helper": {
             "description": "Install paru AUR helper (Arch Linux only)",
             "installer": None,  # Built-in method
@@ -68,10 +83,6 @@ class SetupManager:
             "description": "Install Auto-CPUFreq power optimization",
             "installer": AutoCPUFreqInstaller,
         },
-        "borgbackup": {
-            "description": "Install BorgBackup",
-            "installer": BorgbackupInstaller,
-        },
         "nfancurve": {
             "description": "Install NVIDIA fan curve control",
             "installer": NfancurveInstaller,
@@ -96,50 +107,141 @@ class SetupManager:
             "description": "Install Visual Studio Code",
             "installer": VSCodeInstaller,
         },
+        # Hardware configuration components
+        "amd": {
+            "description": "Configure AMD CPU (zenpower setup for Ryzen)",
+            "config_class": AMDConfig,
+        },
+        "intel": {
+            "description": "Configure Intel CPU power management",
+            "config_class": IntelConfig,
+        },
+        "nvidia": {
+            "description": "Configure NVIDIA GPU drivers and CUDA",
+            "config_class": NvidiaConfig,
+        },
+        "touchpad": {
+            "description": "Configure touchpad settings",
+            "config_class": TouchpadConfig,
+        },
+        "hostname": {
+            "description": "Configure system hostname",
+            "config_class": HostnameConfig,
+        },
+        # System configuration components
+        "firewall": {
+            "description": "Configure UFW firewall",
+            "config_class": UFWConfig,
+        },
+        "multimedia": {
+            "description": "Configure multimedia codecs and settings",
+            "config_class": MultimediaConfig,
+        },
+        "pm-optimizer": {
+            "description": "Optimize package manager settings",
+            "config_class": PackageManagerOptimizer,
+        },
+        "repositories": {
+            "description": "Configure additional repositories",
+            "config_class": RepositoryConfig,
+        },
+        "ssh": {
+            "description": "Configure SSH server and client",
+            "config_class": SSHConfig,
+        },
+        "sudoers": {
+            "description": "Configure sudo privileges and settings",
+            "config_class": SudoersConfig,
+        },
+        # Window manager configuration components
+        "qtile": {
+            "description": "Configure Qtile window manager",
+            "config_class": QtileConfig,
+        },
     }
 
     def __init__(self, distro_info: DistroInfo):
-        """
-        Initialize setup manager.
+        """Initialize setup manager.
 
         Args:
             distro_info: Distribution information for platform-specific setup
+
         """
         self.distro = distro_info
 
     @classmethod
     def get_available_components(cls) -> dict[str, str]:
-        """
-        Get all available setup components.
+        """Get all available setup components.
 
         Returns:
             Dictionary mapping component names to descriptions
+
         """
-        return {name: info["description"] for name, info in cls.COMPONENT_REGISTRY.items()}
+        return {
+            name: info["description"]
+            for name, info in cls.COMPONENT_REGISTRY.items()
+        }
 
     def setup_component(self, component: str) -> None:
-        """
-        Setup a component by name.
+        """Setup a component by name.
 
         Args:
             component: Name of the component to setup
 
         Raises:
             SetupError: If component is unknown or setup fails
+
         """
         if component not in self.COMPONENT_REGISTRY:
             msg = f"Unknown component: {component}"
             raise SetupError(msg)
 
         component_info = self.COMPONENT_REGISTRY[component]
-        installer_class = component_info["installer"]
+        installer_class = component_info.get("installer")
+        config_class = component_info.get("config_class")
 
         # Use built-in methods for aur-helper and ollama
-        if installer_class is None:
+        if installer_class is None and config_class is None:
             if component == "aur-helper":
                 self.setup_aur_helper()
             elif component == "ollama":
                 self.setup_ollama()
+            return
+
+        # Use config class for configuration components
+        if config_class is not None:
+            logger.info("Configuring %s...", component)
+            try:
+                config = config_class(self.distro.id)
+
+                # Default kwargs for configuration components
+                default_kwargs = {
+                    "amd": {"zenpower": True},
+                    "intel": {"xorg": True},
+                    "nvidia": {
+                        "cuda": True
+                    },  # Enable CUDA by default if NVIDIA GPU present
+                    "touchpad": {},
+                    "hostname": {},
+                    "firewall": {},
+                    "multimedia": {},
+                    "pm-optimizer": {},
+                    "repositories": {},
+                    "ssh": {},
+                    "sudoers": {},
+                    "qtile": {},
+                }.get(component, {})
+
+                success = config.configure(**default_kwargs)
+                if not success:
+                    msg = f"Failed to configure {component}"
+                    raise SetupError(msg)
+                logger.info(
+                    "%s configuration completed successfully", component
+                )
+            except Exception as e:
+                msg = f"Error during {component} configuration: {e}"
+                raise SetupError(msg) from e
             return
 
         # Use installer class for other components
@@ -156,14 +258,14 @@ class SetupManager:
             raise SetupError(msg) from e
 
     def setup_aur_helper(self) -> None:
-        """
-        Install paru AUR helper for Arch Linux.
+        """Install paru AUR helper for Arch Linux.
 
         Uses pre-compiled paru-bin to avoid memory issues during compilation.
         Build directory is /opt to avoid tmpfs memory limitations.
 
         Raises:
             SetupError: If installation fails
+
         """
         if self.distro.package_manager != PackageManagerType.PACMAN:
             msg = "AUR helper setup is only available for Arch-based distributions"
@@ -193,14 +295,14 @@ class SetupManager:
         logger.info("paru installed successfully")
 
     def setup_ollama(self) -> None:
-        """
-        Install or update Ollama.
+        """Install or update Ollama.
 
         On Arch, uses package manager with GPU-specific packages.
         On other distributions, uses official install script.
 
         Raises:
             SetupError: If installation fails
+
         """
         action = "Updating" if shutil.which("ollama") else "Installing"
         logger.info("%s Ollama...", action)
@@ -262,7 +364,12 @@ class SetupManager:
             # Clone paru-bin repository
             logger.info("Cloning paru-bin repository...")
             result = run_privileged(
-                ["git", "clone", "https://aur.archlinux.org/paru-bin.git", str(build_dir)],
+                [
+                    "git",
+                    "clone",
+                    "https://aur.archlinux.org/paru-bin.git",
+                    str(build_dir),
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -334,7 +441,9 @@ class SetupManager:
             return
 
         # Fallback to official installer
-        logger.warning("Package installation failed, falling back to official installer")
+        logger.warning(
+            "Package installation failed, falling back to official installer"
+        )
         self._setup_ollama_official()
 
     def _setup_ollama_official(self) -> None:
@@ -356,11 +465,11 @@ class SetupManager:
             raise SetupError(msg)
 
     def _detect_gpu_vendor(self) -> str:
-        """
-        Detect GPU vendor for Ollama package selection.
+        """Detect GPU vendor for Ollama package selection.
 
         Returns:
             GPU vendor: "nvidia", "amd", or "unknown"
+
         """
         # Check for NVIDIA
         if shutil.which("nvidia-smi"):

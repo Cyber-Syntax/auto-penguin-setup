@@ -7,6 +7,10 @@ from pathlib import Path
 from aps.core.config import APSConfigParser
 from aps.core.distro import DistroFamily, DistroInfo
 
+from .logger import get_logger
+
+logger = get_logger(__name__)
+
 
 @dataclass
 class PackageMapping:
@@ -14,7 +18,8 @@ class PackageMapping:
 
     original_name: str
     mapped_name: str
-    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", "flatpak:remote"
+    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo",
+    # "flatpak:remote"
     category: str | None = None
 
     @property
@@ -33,25 +38,20 @@ class PackageMapping:
         return self.source.startswith("AUR:")
 
     @property
-    def is_ppa(self) -> bool:
-        """Check if package is from PPA (Debian/Ubuntu)."""
-        return self.source.startswith("PPA:")
-
-    @property
     def is_flatpak(self) -> bool:
         """Check if package is from Flatpak."""
         return self.source.startswith("flatpak:")
 
     def get_repo_name(self) -> str | None:
-        """
-        Extract repository name from source prefix.
+        """Extract repository name from source prefix.
 
         Returns:
-            Repository name (e.g., "user/repo" for COPR/PPA) or None
+            Repository name (e.g., "user/repo" for COPR) or None
+
         """
-        if self.is_copr or self.is_ppa:
-            # Format: COPR:user/repo or PPA:user/repo
-            match = re.match(r"^(?:COPR|PPA):([^:]+)", self.source)
+        if self.is_copr:
+            # Format: COPR:user/repo
+            match = re.match(r"^COPR:([^:]+)", self.source)
             return match.group(1) if match else None
 
         if self.is_flatpak:
@@ -62,38 +62,33 @@ class PackageMapping:
 
 
 class PackageMapper:
-    """
-    Maps generic package names to distribution-specific names.
+    """Maps generic package names to distribution-specific names.
 
     Handles prefix formats:
     - COPR:user/repo:package (Fedora)
     - AUR:package (Arch)
-    - PPA:user/repo:package (Debian/Ubuntu)
     - flatpak:remote:package (Flatpak)
     """
 
     def __init__(self, pkgmap_path: Path, distro: DistroInfo) -> None:
-        """
-        Initialize package mapper with configuration and distro info.
+        """Initialize package mapper with configuration and distro info.
 
         Args:
             pkgmap_path: Path to pkgmap.ini configuration file
             distro: Distribution information from distro detection
+
         """
         self.distro = distro
         self.mappings: dict[str, PackageMapping] = {}
         self._load_mappings(pkgmap_path)
 
     def _load_mappings(self, pkgmap_path: Path) -> None:
-        """
-        Load package mappings from pkgmap.ini configuration.
+        """Load package mappings from pkgmap.ini configuration.
 
         Args:
             pkgmap_path: Path to pkgmap.ini file
-        """
-        import logging
 
-        logger = logging.getLogger(__name__)
+        """
         logger.debug("Loading mappings from %s", pkgmap_path)
         if not pkgmap_path.exists():
             logger.debug("pkgmap.ini not found at %s", pkgmap_path)
@@ -105,7 +100,6 @@ class PackageMapper:
         section_map = {
             DistroFamily.FEDORA: "pkgmap.fedora",
             DistroFamily.ARCH: "pkgmap.arch",
-            DistroFamily.DEBIAN: "pkgmap.debian",
         }
 
         section = section_map.get(self.distro.family)
@@ -122,15 +116,15 @@ class PackageMapper:
             self.mappings[original_name] = mapping
         logger.debug("Loaded %d mappings", len(self.mappings))
 
-    def _parse_mapping(self, original_name: str, mapped_value: str) -> PackageMapping:
-        """
-        Parse a mapping value to extract source prefix and package name.
+    def _parse_mapping(
+        self, original_name: str, mapped_value: str
+    ) -> PackageMapping:
+        """Parse a mapping value to extract source prefix and package name.
 
         Supported formats:
         - package_name (official repo)
         - COPR:user/repo:package_name
         - AUR:package_name
-        - PPA:user/repo:package_name
         - flatpak:remote:package_name
 
         Args:
@@ -139,6 +133,7 @@ class PackageMapper:
 
         Returns:
             PackageMapping with extracted information
+
         """
         # Check for COPR format: COPR:user/repo or COPR:user/repo:package
         copr_match = re.match(r"^COPR:([^:]+)(?::(.+))?$", mapped_value)
@@ -162,16 +157,6 @@ class PackageMapper:
                 source=f"AUR:{package}",
             )
 
-        # Check for PPA format: PPA:user/repo:package
-        ppa_match = re.match(r"^PPA:([^:]+):(.+)$", mapped_value)
-        if ppa_match:
-            repo, package = ppa_match.groups()
-            return PackageMapping(
-                original_name=original_name,
-                mapped_name=package,
-                source=f"PPA:{repo}",
-            )
-
         # Check for Flatpak format: flatpak:remote:package
         flatpak_match = re.match(r"^flatpak:([^:]+):(.+)$", mapped_value)
         if flatpak_match:
@@ -189,9 +174,10 @@ class PackageMapper:
             source="official",
         )
 
-    def map_package(self, package_name: str, category: str | None = None) -> PackageMapping:
-        """
-        Map package name to distro-specific name and source.
+    def map_package(
+        self, package_name: str, category: str | None = None
+    ) -> PackageMapping:
+        """Map package name to distro-specific name and source.
 
         Args:
             package_name: Generic package name to map
@@ -199,6 +185,7 @@ class PackageMapper:
 
         Returns:
             PackageMapping with distro-specific information
+
         """
         # Check if we have a mapping for this package
         if package_name in self.mappings:
@@ -221,20 +208,27 @@ class PackageMapper:
             category=category,
         )
 
-    def get_packages_by_source(self, source_prefix: str) -> list[PackageMapping]:
-        """
-        Get all packages from a specific source.
+    def get_packages_by_source(
+        self, source_prefix: str
+    ) -> list[PackageMapping]:
+        """Get all packages from a specific source.
 
         Args:
-            source_prefix: Source prefix to filter by (e.g., "COPR:", "AUR:", "official")
+            source_prefix: Source prefix to filter by
+            (e.g., "COPR:", "AUR:", "official")
 
         Returns:
             List of PackageMapping objects matching the source
+
         """
         if source_prefix == "official":
             return [m for m in self.mappings.values() if m.is_official]
 
-        return [m for m in self.mappings.values() if m.source.startswith(source_prefix)]
+        return [
+            m
+            for m in self.mappings.values()
+            if m.source.startswith(source_prefix)
+        ]
 
     def has_mapping(self, package_name: str) -> bool:
         """Check if package has a defined mapping."""

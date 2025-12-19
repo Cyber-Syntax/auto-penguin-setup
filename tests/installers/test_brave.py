@@ -30,7 +30,9 @@ class TestBraveInstaller:
 
         installer = BraveInstaller()
 
-        with patch("aps.installers.brave.shutil.which", return_value="/usr/bin/brave"):
+        with patch(
+            "aps.installers.brave.shutil.which", return_value="/usr/bin/brave"
+        ):
             assert installer._is_installed() is True
 
     @patch("aps.installers.base.detect_distro")
@@ -111,7 +113,9 @@ class TestBraveInstaller:
 
     @patch("aps.installers.base.detect_distro")
     @patch("aps.installers.base.get_package_manager")
-    def test_install_success(self, mock_get_pm: MagicMock, mock_detect_distro: MagicMock) -> None:
+    def test_install_success(
+        self, mock_get_pm: MagicMock, mock_detect_distro: MagicMock
+    ) -> None:
         """Test successful Brave installation."""
         fedora_distro = DistroInfo(
             name="Fedora Linux",
@@ -128,7 +132,10 @@ class TestBraveInstaller:
 
         with (
             patch.object(installer, "_is_installed", return_value=False),
-            patch("aps.installers.brave.shutil.which", return_value="/usr/bin/curl"),
+            patch(
+                "aps.installers.brave.shutil.which",
+                return_value="/usr/bin/curl",
+            ),
             patch.object(installer, "_install_brave", return_value=True),
             patch.object(installer, "_disable_keyring", return_value=True),
         ):
@@ -157,7 +164,10 @@ class TestBraveInstaller:
 
         with (
             patch.object(installer, "_is_installed", return_value=False),
-            patch("aps.installers.brave.shutil.which", return_value="/usr/bin/curl"),
+            patch(
+                "aps.installers.brave.shutil.which",
+                return_value="/usr/bin/curl",
+            ),
             patch.object(installer, "_install_brave", return_value=False),
         ):
             result = installer.install()
@@ -185,7 +195,10 @@ class TestBraveInstaller:
 
         with (
             patch.object(installer, "_is_installed", return_value=False),
-            patch("aps.installers.brave.shutil.which", return_value="/usr/bin/curl"),
+            patch(
+                "aps.installers.brave.shutil.which",
+                return_value="/usr/bin/curl",
+            ),
             patch.object(installer, "_install_brave", return_value=True),
             patch.object(installer, "_disable_keyring", return_value=True),
         ):
@@ -214,7 +227,10 @@ class TestBraveInstaller:
 
         with (
             patch.object(installer, "_is_installed", return_value=False),
-            patch("aps.installers.brave.shutil.which", return_value="/usr/bin/curl"),
+            patch(
+                "aps.installers.brave.shutil.which",
+                return_value="/usr/bin/curl",
+            ),
             patch.object(installer, "_install_brave", return_value=True),
             patch.object(installer, "_disable_keyring", return_value=False),
         ):

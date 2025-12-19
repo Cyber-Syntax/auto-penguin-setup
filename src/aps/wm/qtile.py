@@ -1,12 +1,12 @@
 """Qtile window manager configuration."""
 
-import logging
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 from aps.wm.base import BaseWMConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class QtileConfig(BaseWMConfig):
@@ -20,6 +20,7 @@ class QtileConfig(BaseWMConfig):
 
         Returns:
             True on success
+
         """
         logger.info("Installing Qtile and WM-common packages...")
 
@@ -35,7 +36,9 @@ class QtileConfig(BaseWMConfig):
         try:
             success, message = self.pm.install(packages)
             if success:
-                logger.info("Qtile and WM-common packages installation completed")
+                logger.info(
+                    "Qtile and WM-common packages installation completed"
+                )
             else:
                 logger.error("Failed to install packages: %s", message)
             return success
@@ -43,17 +46,19 @@ class QtileConfig(BaseWMConfig):
             logger.error("Failed to install Qtile packages: %s", e)
             return False
 
-    def setup_backlight_rules(self, qtile_rules_src: str | Path, backlight_src: str | Path) -> bool:
-        """Setup udev rules for backlight control on Qtile.
-
-        Args:
-            qtile_rules_src: Path to qtile.rules source file
-            backlight_src: Path to backlight.conf source file
+    def setup_backlight_rules(self) -> bool:
+        """Copy udev rules for Qtile and backlight configuration.
 
         Returns:
             True on success
+
         """
         logger.info("Setting up udev rule for Qtile...")
+
+        # Source paths from configs folder
+        configs_dir = Path(__file__).parent.parent / "configs"
+        qtile_rules_src = configs_dir / "99-qtile.rules"
+        backlight_src = configs_dir / "99-backlight.conf"
 
         qtile_rules_dest = Path("/etc/udev/rules.d/99-qtile.rules")
         backlight_dest = Path("/etc/X11/xorg.conf.d/99-backlight.conf")
@@ -69,7 +74,9 @@ class QtileConfig(BaseWMConfig):
                     check=False,
                 )
                 if result.returncode != 0:
-                    logger.error("Failed to create %s: %s", dest, result.stderr)
+                    logger.error(
+                        "Failed to create %s: %s", dest, result.stderr
+                    )
                     return False
 
         # Copy qtile udev rules
@@ -81,7 +88,9 @@ class QtileConfig(BaseWMConfig):
         )
 
         if result.returncode != 0:
-            logger.error("Failed to copy udev rule for Qtile: %s", result.stderr)
+            logger.error(
+                "Failed to copy udev rule for Qtile: %s", result.stderr
+            )
             return False
 
         logger.info("Udev rule for Qtile setup completed.")
@@ -95,7 +104,9 @@ class QtileConfig(BaseWMConfig):
         )
 
         if result.returncode != 0:
-            logger.error("Failed to copy backlight configuration: %s", result.stderr)
+            logger.error(
+                "Failed to copy backlight configuration: %s", result.stderr
+            )
             return False
 
         logger.info("Backlight configuration completed.")
@@ -131,7 +142,17 @@ class QtileConfig(BaseWMConfig):
 
         Returns:
             True on success
+
         """
-        logger.info("Qtile configuration is typically done via Python config files")
+        logger.info("Configuring Qtile window manager...")
+
+        # Setup udev rules for backlight permissions
+        if not self.setup_backlight_rules():
+            logger.error("Failed to setup backlight rules")
+            return False
+
+        logger.info(
+            "Qtile configuration is typically done via Python config files"
+        )
         logger.info("Place your config.py in ~/.config/qtile/")
         return True

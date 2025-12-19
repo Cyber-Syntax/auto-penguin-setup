@@ -1,15 +1,14 @@
 """Sudoers configuration management."""
 
-import logging
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
 from .base import BaseSystemConfig
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SudoersConfig(BaseSystemConfig):
@@ -25,15 +24,11 @@ class SudoersConfig(BaseSystemConfig):
 
         Returns:
             bool: True if all configurations were successful, False otherwise.
+
         """
         logger.info("Starting sudoers configuration...")
 
         errors = 0
-
-        # Setup borgbackup configuration
-        if not self.configure_borgbackup():
-            logger.warning("Borgbackup sudoers setup failed")
-            errors += 1
 
         # Setup terminal timeout configuration
         if not self.configure_terminal_timeout():
@@ -46,52 +41,25 @@ class SudoersConfig(BaseSystemConfig):
         logger.warning("Sudoers setup completed with %d error(s)", errors)
         return False
 
-    def configure_borgbackup(self) -> bool:
-        """Configure borgbackup to run without password prompt.
-
-        Returns:
-            bool: True if configuration was successful, False otherwise.
-        """
-        marker_start = "# BEGIN auto-penguin-setup: borgbackup"
-        marker_end = "# END auto-penguin-setup: borgbackup"
-
-        logger.info("Configuring sudoers for borgbackup passwordless execution...")
-
-        # Create backup before modifying
-        if not self._create_backup():
-            logger.error("Backup failed, aborting borgbackup sudoers setup")
-            return False
-
-        # Get current user
-        user_result = subprocess.run(["whoami"], capture_output=True, text=True, check=False)
-        if user_result.returncode != 0:
-            logger.error("Failed to get current username")
-            return False
-        username = user_result.stdout.strip()
-
-        # Configuration to add
-        config = f"""{marker_start}
-## Allow borgbackup script to run without password
-{username} ALL=(ALL) NOPASSWD: /opt/borg/home-borgbackup.sh
-{marker_end}
-"""
-
-        return self._update_sudoers_section(marker_start, marker_end, config)
-
     def configure_terminal_timeout(self) -> bool:
         """Configure terminal password prompt timeout.
 
         Returns:
             bool: True if configuration was successful, False otherwise.
+
         """
         marker_start = "# BEGIN auto-penguin-setup: terminal-timeout"
         marker_end = "# END auto-penguin-setup: terminal-timeout"
 
-        logger.info("Configuring sudoers for extended terminal password timeout...")
+        logger.info(
+            "Configuring sudoers for extended terminal password timeout..."
+        )
 
         # Create backup before modifying
         if not self._create_backup():
-            logger.error("Backup failed, aborting terminal timeout sudoers setup")
+            logger.error(
+                "Backup failed, aborting terminal timeout sudoers setup"
+            )
             return False
 
         # Configuration to add
@@ -104,7 +72,9 @@ Defaults env_reset,timestamp_timeout=20
 
         return self._update_sudoers_section(marker_start, marker_end, config)
 
-    def _update_sudoers_section(self, marker_start: str, marker_end: str, config: str) -> bool:
+    def _update_sudoers_section(
+        self, marker_start: str, marker_end: str, config: str
+    ) -> bool:
         """Update a section in the sudoers file.
 
         Args:
@@ -114,6 +84,7 @@ Defaults env_reset,timestamp_timeout=20
 
         Returns:
             bool: True if update was successful, False otherwise.
+
         """
         try:
             # Read current content
@@ -149,7 +120,9 @@ Defaults env_reset,timestamp_timeout=20
 
             # Validate sudoers file syntax
             if not self._validate_sudoers():
-                logger.error("Sudoers file syntax validation failed, restoring from backup")
+                logger.error(
+                    "Sudoers file syntax validation failed, restoring from backup"
+                )
                 self._restore_latest_backup()
                 return False
 
@@ -165,6 +138,7 @@ Defaults env_reset,timestamp_timeout=20
 
         Returns:
             bool: True if backup was successful, False otherwise.
+
         """
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         backup_file = Path(f"{self.sudoers_file}.bak.{timestamp}")
@@ -190,6 +164,7 @@ Defaults env_reset,timestamp_timeout=20
 
         Returns:
             bool: True if validation passed, False otherwise.
+
         """
         result = run_privileged(
             ["visudo", "-c", "-f", str(self.sudoers_file)],
@@ -205,6 +180,7 @@ Defaults env_reset,timestamp_timeout=20
 
         Returns:
             bool: True if restore was successful, False otherwise.
+
         """
         # Find latest backup
         result = run_privileged(

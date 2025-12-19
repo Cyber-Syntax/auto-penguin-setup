@@ -1,12 +1,12 @@
 """Intel graphics configuration."""
 
-import logging
 import os
 
+from aps.core.logger import get_logger
 from aps.hardware.base import BaseHardwareConfig
 from aps.utils.paths import resolve_config_file
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class IntelConfig(BaseHardwareConfig):
@@ -16,7 +16,8 @@ class IntelConfig(BaseHardwareConfig):
         """Initialize Intel configuration.
 
         Args:
-            distro: Distribution name (fedora, arch, debian)
+            distro: Distribution name (fedora, arch)
+
         """
         super().__init__(distro)
 
@@ -28,6 +29,7 @@ class IntelConfig(BaseHardwareConfig):
 
         Returns:
             True if setup succeeds, False otherwise
+
         """
         if config_source is None:
             config_source = str(resolve_config_file("20-intel.conf"))
@@ -37,7 +39,9 @@ class IntelConfig(BaseHardwareConfig):
         destination = "/etc/X11/xorg.conf.d/20-intel.conf"
 
         if not os.path.exists(config_source):
-            self.logger.error("Intel configuration file not found: %s", config_source)
+            self.logger.error(
+                "Intel configuration file not found: %s", config_source
+            )
             return False
 
         if self._copy_config_file(config_source, destination):
@@ -58,9 +62,12 @@ class IntelConfig(BaseHardwareConfig):
 
         Returns:
             True if all requested operations succeed
+
         """
         if kwargs.get("xorg", False):
-            config_source = kwargs.get("config_source", str(resolve_config_file("20-intel.conf")))
+            config_source = kwargs.get(
+                "config_source", str(resolve_config_file("20-intel.conf"))
+            )
             return self.setup_xorg(config_source)
 
         return True
