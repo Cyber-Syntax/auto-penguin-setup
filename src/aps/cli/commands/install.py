@@ -113,10 +113,13 @@ def cmd_install(args: Namespace) -> None:
     for m in flatpak_mapped:
         remote = m.get_repo_name()
         if remote and not repo_mgr.is_flatpak_remote_enabled(remote):
-            logger.info("Enabling flatpak remote %s...", remote)
-            if not repo_mgr.enable_flatpak_remote(remote):
-                logger.error("Failed to enable flatpak remote %s", remote)
-                return
+            if args.dry_run:
+                logger.info("Would enable flatpak remote %s", remote)
+            else:
+                logger.info("Enabling flatpak remote %s...", remote)
+                if not repo_mgr.enable_flatpak_remote(remote):
+                    logger.error("Failed to enable flatpak remote %s", remote)
+                    return
         flatpak_packages.append(m.mapped_name)
         package_categories[m.original_name] = m.category
 
@@ -126,11 +129,14 @@ def cmd_install(args: Namespace) -> None:
             repo = m.get_repo_name()
             if repo:
                 if not repo_mgr.is_copr_enabled(repo):
-                    logger.info("Enabling COPR repo %s...", repo)
-                    if not repo_mgr.enable_copr(repo):
-                        logger.error("Failed to enable COPR repo %s", repo)
-                        return
-                else:
+                    if args.dry_run:
+                        logger.info("Would enable COPR repo %s", repo)
+                    else:
+                        logger.info("Enabling COPR repo %s...", repo)
+                        if not repo_mgr.enable_copr(repo):
+                            logger.error("Failed to enable COPR repo %s", repo)
+                            return
+                elif not args.dry_run:
                     logger.info("COPR repo %s is already enabled", repo)
 
     all_packages: list[str] = [

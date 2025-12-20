@@ -131,6 +131,131 @@ class TestInstallCommand:
     @patch("aps.cli.commands.install.get_package_manager")
     @patch("aps.cli.commands.install.detect_distro")
     @patch("aps.cli.commands.install.ensure_sudo")
+    def test_install_dry_run_copr_not_enabled(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        """Test dry run mode doesn't enable COPR repos."""
+        mock_distro = Mock()
+        mock_distro.name = "Fedora"
+        mock_distro.family = DistroFamily.FEDORA
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock()
+        mock_get_pm.return_value = mock_pm
+
+        mock_mapper = Mock()
+        mapping = Mock()
+        mapping.original_name = "lazygit"
+        mapping.mapped_name = "lazygit"
+        mapping.source = "COPR:atim/lazygit"
+        mapping.is_official = False
+        mapping.is_copr = True
+        mapping.is_aur = False
+        mapping.is_flatpak = False
+        mapping.category = None
+        mapping.get_repo_name.return_value = "atim/lazygit"
+        mock_mapper.mappings = [mapping]
+        mock_mapper.map_package.return_value = mapping
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_copr_enabled.return_value = False
+        mock_repo_mgr.check_official_before_enabling.return_value = mapping
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        caplog.set_level("INFO")
+        args = Namespace(packages=["lazygit"], dry_run=True, noconfirm=False)
+        cmd_install(args)
+
+        # In dry-run, should not enable COPR
+        mock_repo_mgr.enable_copr.assert_not_called()
+        mock_pm.install.assert_not_called()
+        mock_tracker.track_install.assert_not_called()
+        assert "Would enable COPR repo atim/lazygit" in caplog.text
+        assert "Would install: lazygit" in caplog.text
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_install_dry_run_flatpak_not_enabled(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        """Test dry run mode doesn't enable Flatpak remotes."""
+        mock_distro = Mock()
+        mock_distro.name = "Fedora"
+        mock_distro.family = DistroFamily.FEDORA
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock()
+        mock_get_pm.return_value = mock_pm
+
+        mock_mapper = Mock()
+        mapping = Mock()
+        mapping.original_name = "bottles"
+        mapping.mapped_name = "com.usebottles.bottles"
+        mapping.source = "flatpak:flathub"
+        mapping.is_official = False
+        mapping.is_copr = False
+        mapping.is_aur = False
+        mapping.is_flatpak = True
+        mapping.category = None
+        mapping.get_repo_name.return_value = "flathub"
+        mock_mapper.mappings = [mapping]
+        mock_mapper.map_package.return_value = mapping
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_flatpak_remote_enabled.return_value = False
+        mock_repo_mgr.check_official_before_enabling.return_value = mapping
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        caplog.set_level("INFO")
+        args = Namespace(packages=["bottles"], dry_run=True, noconfirm=False)
+        cmd_install(args)
+
+        # In dry-run, should not enable Flatpak remote
+        mock_repo_mgr.enable_flatpak_remote.assert_not_called()
+        mock_subprocess.assert_not_called()
+        mock_tracker.track_install.assert_not_called()
+        assert "Would enable flatpak remote flathub" in caplog.text
+        assert (
+            "Would install: com.usebottles.bottles" in caplog.text
+            or "Would install: bottles" in caplog.text
+        )
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
     def test_install_multiple_packages(
         self,
         mock_ensure_sudo: Mock,
