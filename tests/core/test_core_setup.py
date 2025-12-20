@@ -411,7 +411,6 @@ class TestComponentRegistry:
             "intel",
             "nvidia",
             "touchpad",
-            "hostname",
             # System configuration components
             "firewall",
             "multimedia",

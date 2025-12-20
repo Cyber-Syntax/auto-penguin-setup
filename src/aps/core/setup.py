@@ -9,7 +9,6 @@ from aps.core.distro import DistroInfo, PackageManagerType
 from aps.core.logger import get_logger
 from aps.hardware import (
     AMDConfig,
-    HostnameConfig,
     IntelConfig,
     NvidiaConfig,
     TouchpadConfig,
@@ -123,10 +122,6 @@ class SetupManager:
         "touchpad": {
             "description": "Configure touchpad settings",
             "config_class": TouchpadConfig,
-        },
-        "hostname": {
-            "description": "Configure system hostname",
-            "config_class": HostnameConfig,
         },
         # System configuration components
         "firewall": {
