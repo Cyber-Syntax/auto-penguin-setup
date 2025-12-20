@@ -13,7 +13,7 @@ class APSConfigParser:
     Extends standard ConfigParser to handle special formats:
     - Package lists with comma-separated values
     - Package mappings: generic_name=distro:specific_name
-    - Prefix handling: COPR:user/repo:package, AUR:package, PPA:user/repo:package
+    - Prefix handling: COPR:user/repo:package, AUR:package
     """
 
     def __init__(self, config_path: Path | None = None) -> None:

@@ -1,4 +1,4 @@
-"""Repository management for COPR, AUR, and PPA sources."""
+"""Repository management for COPR and AUR sources."""
 
 import shutil
 import subprocess

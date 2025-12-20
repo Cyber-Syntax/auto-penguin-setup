@@ -48,7 +48,6 @@ class TestInstallCommand:
         mapping.is_official = True
         mapping.is_copr = False
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mock_mapper.mappings = [mapping]
@@ -103,7 +102,6 @@ class TestInstallCommand:
         mapping.is_official = True
         mapping.is_copr = False
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mock_mapper.mappings = [mapping]
@@ -163,7 +161,6 @@ class TestInstallCommand:
             mapping.is_official = True
             mapping.is_copr = False
             mapping.is_aur = False
-            mapping.is_ppa = False
             mapping.is_flatpak = False
             mapping.category = None
             return mapping
@@ -247,7 +244,6 @@ class TestInstallCommand:
             mapping.is_official = True
             mapping.is_copr = False
             mapping.is_aur = False
-            mapping.is_ppa = False
             mapping.is_flatpak = False
             mapping.category = "editors"
             return mapping
@@ -305,7 +301,6 @@ class TestInstallCommand:
         mapping.is_official = True
         mapping.is_copr = False
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mock_mapper.mappings = [mapping]
@@ -360,7 +355,6 @@ class TestInstallCommand:
         mapping.is_official = True
         mapping.is_copr = False
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mock_mapper.mappings = [mapping]
@@ -416,7 +410,6 @@ class TestInstallCommand:
         mapping.is_official = False
         mapping.is_copr = True
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mapping.get_repo_name.return_value = "user/repo"
@@ -476,7 +469,6 @@ class TestInstallCommand:
         mapping.is_official = False
         mapping.is_copr = False
         mapping.is_aur = True
-        mapping.is_ppa = False
         mapping.is_flatpak = False
         mapping.category = None
         mock_mapper.mappings = [mapping]
@@ -531,7 +523,6 @@ class TestInstallCommand:
         mapping.is_official = False
         mapping.is_copr = False
         mapping.is_aur = False
-        mapping.is_ppa = False
         mapping.is_flatpak = True
         mapping.category = "flatpak"
         mapping.get_repo_name.return_value = "flathub"
@@ -594,7 +585,6 @@ class TestInstallCommand:
             mapping.is_official = is_official
             mapping.is_copr = is_copr
             mapping.is_aur = False
-            mapping.is_ppa = False
             mapping.is_flatpak = False
             mapping.category = None
             if is_copr:

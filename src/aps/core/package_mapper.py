@@ -1,4 +1,4 @@
-"""Package name mapping with support for COPR, AUR, and PPA prefixes."""
+"""Package name mapping with support for COPR, AUR."""
 
 import re
 from dataclasses import dataclass
@@ -18,8 +18,7 @@ class PackageMapping:
 
     original_name: str
     mapped_name: str
-    source: str  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo",
-    # "flatpak:remote"
+    source: str  # "official", "COPR:user/repo", "AUR:pkg", "flatpak:remote"
     category: str | None = None
 
     @property

@@ -36,13 +36,6 @@ class TestParsePackageSource:
             _parse_package_source("COPR:user/repo:package") == "COPR:user/repo"
         )
 
-    def test_ppa_package(self) -> None:
-        """Test parsing PPA package."""
-        assert _parse_package_source("PPA:user/repo") == "PPA:user/repo"
-        assert (
-            _parse_package_source("PPA:user/repo:package") == "PPA:user/repo"
-        )
-
 
 class TestExtractPackageName:
     """Test _extract_package_name helper function."""
@@ -65,15 +58,6 @@ class TestExtractPackageName:
         """Test COPR without explicit name returns full value."""
         result = _extract_package_name("COPR:user/repo")
         assert result == "COPR:user/repo"  # Caller should handle this
-
-    def test_ppa_with_explicit_name(self) -> None:
-        """Test extracting name from PPA with explicit package name."""
-        assert _extract_package_name("PPA:user/repo:mypackage") == "mypackage"
-
-    def test_ppa_without_explicit_name(self) -> None:
-        """Test PPA without explicit name returns full value."""
-        result = _extract_package_name("PPA:user/repo")
-        assert result == "PPA:user/repo"
 
 
 class TestCmdSyncRepos:

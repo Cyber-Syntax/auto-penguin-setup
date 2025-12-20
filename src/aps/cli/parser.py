@@ -77,7 +77,7 @@ Examples:
     # aps list
     list_parser = subparsers.add_parser("list", help="List tracked packages")
     list_parser.add_argument(
-        "--source", choices=["official", "copr", "aur", "ppa", "flatpak"]
+        "--source", choices=["official", "copr", "aur", "flatpak"]
     )
     list_parser.add_argument(
         "--verbose",

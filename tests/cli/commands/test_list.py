@@ -154,30 +154,6 @@ class TestListCommand:
         assert "vim" not in caplog.text
 
     @patch("aps.cli.commands.list.PackageTracker")
-    def test_list_filtered_by_source_ppa(
-        self, mock_tracker_cls: Mock, caplog: LogCaptureFixture
-    ) -> None:
-        """Test filtering packages by PPA source."""
-        tracker = Mock()
-        tracker.get_tracked_packages.return_value = [
-            _pkg("vim", "official", None, "2025-12-01"),
-            _pkg("neovim", "PPA:user/repo", "dev", "2025-12-02"),
-        ]
-        mock_tracker_cls.return_value = tracker
-
-        caplog.set_level("INFO")
-        args = Namespace(source="PPA")
-        cmd_list(args)
-
-        # Should include PPA packages only
-        assert "neovim" in caplog.text
-        # Verify official is not in the package list
-        lines = [
-            line for line in caplog.text.split("\n") if "official" in line
-        ]
-        assert len(lines) == 0
-
-    @patch("aps.cli.commands.list.PackageTracker")
     def test_list_filtered_by_source_flatpak(
         self, mock_tracker_cls: Mock, caplog: LogCaptureFixture
     ) -> None:

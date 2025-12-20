@@ -21,7 +21,9 @@ class PackageRecord:
     mapped_name: str | None = (
         None  # Actual installed name if different from 'name'
     )
-    source: str = "official"  # "official", "COPR:user/repo", "AUR:pkg", "PPA:user/repo", etc.
+    source: str = (
+        "official"  # "official", "COPR:user/repo", "AUR:pkg", "flatpak:remote"
+    )
     category: str | None = None
     installed_at: str = ""  # ISO 8601 timestamp - set in create()
 
