@@ -140,13 +140,13 @@ class DnfManager(PackageManager):
         return False, "Package installation failed"
 
     def remove(
-        self, packages: list[str], assume_yes: bool = True
+        self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
         """Remove packages.
 
         Args:
             packages: List of package names to remove
-            assume_yes: Auto-confirm removal (default: True)
+            assume_yes: Auto-confirm removal (default: False)
 
         Returns:
             Tuple of (success: bool, error_message: str)
@@ -447,7 +447,7 @@ class PacmanManager(PackageManager):
 
         logger.debug("Executing command: %s", " ".join(cmd))
         result = run_privileged(
-            cmd, capture_output=True, text=True, check=False
+            cmd, capture_output=False, check=False
         )
         if result.returncode == 0:
             return True, ""
