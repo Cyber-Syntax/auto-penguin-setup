@@ -34,7 +34,6 @@ class BaseInstaller(ABC):
             bool: True if installation was successful, False otherwise.
 
         """
-        pass
 
     def try_official_first(
         self, official_name: str, fallback_install: Callable[[], bool]

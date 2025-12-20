@@ -31,7 +31,6 @@ class BaseHardwareConfig(ABC):
             True if configuration succeeds, False otherwise
 
         """
-        pass
 
     def _copy_config_file(self, source: str, destination: str) -> bool:
         """Copy configuration file to destination.

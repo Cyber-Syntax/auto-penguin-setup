@@ -15,7 +15,6 @@ logger = get_logger(__name__)
 class PackageManagerError(Exception):
     """Base exception for package manager operations."""
 
-    pass
 
 
 class PackageManager(ABC):
@@ -45,7 +44,6 @@ class PackageManager(ABC):
             error_message is empty string if success
 
         """
-        pass
 
     @abstractmethod
     def remove(
@@ -62,7 +60,6 @@ class PackageManager(ABC):
             error_message is empty string if success
 
         """
-        pass
 
     @abstractmethod
     def search(self, query: str) -> list[str]:
@@ -75,7 +72,6 @@ class PackageManager(ABC):
             List of matching package names
 
         """
-        pass
 
     @abstractmethod
     def is_installed(self, package: str) -> bool:
@@ -88,7 +84,6 @@ class PackageManager(ABC):
             True if package is installed, False otherwise
 
         """
-        pass
 
     @abstractmethod
     def update_cache(self) -> bool:
@@ -98,7 +93,6 @@ class PackageManager(ABC):
             True if update succeeded, False otherwise
 
         """
-        pass
 
     @abstractmethod
     def is_available_in_official_repos(self, package: str) -> bool:
@@ -111,7 +105,6 @@ class PackageManager(ABC):
             True if package is available in official repos, False otherwise
 
         """
-        pass
 
 
 class DnfManager(PackageManager):

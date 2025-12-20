@@ -203,7 +203,7 @@ class TestQtileConfigSetupBacklightRules:
 
         assert result is True
         # Should call run_privileged 4 times: cp qtile, cp backlight, udevadm control, udevadm trigger
-        assert mock_run_priv.call_count == 4  # noqa: PLR2004
+        assert mock_run_priv.call_count == 4
 
     @patch("aps.wm.base.detect_distro")
     @patch("aps.wm.base.get_package_manager")

@@ -12,13 +12,13 @@ import pytest
 from aps.core.logger import get_logger, setup_logging
 
 
-@pytest.fixture()
+@pytest.fixture
 def log_dir(tmp_path: Path) -> Path:
     """Create a temporary log directory."""
     return tmp_path / ".config" / "auto-penguin-setup" / "logs"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Mock Path.home() to use temporary directory."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
