@@ -144,6 +144,5 @@ class TestConfigureAbstractMethod:
         class IncompleteConfig(BaseHardwareConfig):
             """Missing configure implementation."""
 
-
         with pytest.raises(TypeError):
             IncompleteConfig("fedora")  # type: ignore

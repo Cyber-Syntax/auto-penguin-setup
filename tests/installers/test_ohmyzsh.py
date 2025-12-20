@@ -65,9 +65,8 @@ class TestOhMyZshInstall:
 
         with (
             patch("pathlib.Path.exists", return_value=True),
-            patch("shutil.copy2"),patch.object(
-            OhMyZshInstaller, "_update_zshrc", return_value=True
-        )
+            patch("shutil.copy2"),
+            patch.object(OhMyZshInstaller, "_update_zshrc", return_value=True),
         ):
             installer = OhMyZshInstaller()
             result = installer.install()

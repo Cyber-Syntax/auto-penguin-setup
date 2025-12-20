@@ -446,9 +446,7 @@ class PacmanManager(PackageManager):
         cmd.extend(packages)
 
         logger.debug("Executing command: %s", " ".join(cmd))
-        result = run_privileged(
-            cmd, capture_output=False, check=False
-        )
+        result = run_privileged(cmd, capture_output=False, check=False)
         if result.returncode == 0:
             return True, ""
         logger.error(
