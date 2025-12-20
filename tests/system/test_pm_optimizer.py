@@ -100,6 +100,6 @@ class TestPackageManagerOptimizer:
         optimizer = PackageManagerOptimizer()
 
         with patch("aps.system.pm_optimizer.Path.exists", return_value=False):
-            result = optimizer._create_backup(Path("/etc/dnf/dnf.conf"))  # noqa: SLF001
+            result = optimizer._create_backup(Path("/etc/dnf/dnf.conf"))
 
         assert result is True

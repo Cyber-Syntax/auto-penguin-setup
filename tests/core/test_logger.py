@@ -46,7 +46,7 @@ class TestSetupLogging:
         # File may not exist until first log, but parent directory should
         assert log_file.parent.exists()
 
-    def test_normal_mode_shows_info_messages(self, mock_home: Path) -> None:  # noqa: ARG002
+    def test_normal_mode_shows_info_messages(self, mock_home: Path) -> None:
         """Test that INFO messages are shown in normal mode."""
         stderr_capture = StringIO()
         with patch.object(sys, "stderr", stderr_capture):
@@ -59,7 +59,7 @@ class TestSetupLogging:
         assert "Test info message" in output
         assert "Test debug message" not in output
 
-    def test_verbose_mode_shows_debug_messages(self, mock_home: Path) -> None:  # noqa: ARG002
+    def test_verbose_mode_shows_debug_messages(self, mock_home: Path) -> None:
         """Test that DEBUG messages are shown in verbose mode."""
         stderr_capture = StringIO()
         with patch.object(sys, "stderr", stderr_capture):
@@ -74,7 +74,7 @@ class TestSetupLogging:
 
     def test_file_handler_configured_with_rotation(
         self, mock_home: Path
-    ) -> None:  # noqa: ARG002
+    ) -> None:
         """Test that file handler is configured with proper rotation."""
         setup_logging()
 
@@ -92,7 +92,7 @@ class TestSetupLogging:
         assert handler.maxBytes == 5 * 1024 * 1024  # 5MB
         assert handler.backupCount == 3
 
-    def test_clears_existing_handlers(self, mock_home: Path) -> None:  # noqa: ARG002
+    def test_clears_existing_handlers(self, mock_home: Path) -> None:
         """Test that existing handlers are cleared to avoid duplicates."""
         # Setup logging once
         setup_logging(verbose=False)
@@ -108,7 +108,7 @@ class TestSetupLogging:
         # Should have exactly 2 handlers: file + console
         assert handler_count_second == 2
 
-    def test_console_output_format_is_simple(self, mock_home: Path) -> None:  # noqa: ARG002
+    def test_console_output_format_is_simple(self, mock_home: Path) -> None:
         """Test that console output uses simple format without timestamps."""
         stderr_capture = StringIO()
         with patch.object(sys, "stderr", stderr_capture):

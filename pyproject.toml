@@ -63,7 +63,6 @@ markers = [
 line-length = 79
 indent-width = 4
 src = ["src", "tests"]
-# Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373.
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -88,6 +87,9 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint]
+# TID252: Prefer absolute imports over relative imports from parent modules
+# Enabled to auto-apply fixes for this rule
+extend-safe-fixes = ["TID252"]
 extend-select = [
   "B",   # bugbear
   "B9",

@@ -65,19 +65,18 @@ class TestOhMyZshInstall:
 
         with (
             patch("pathlib.Path.exists", return_value=True),
-            patch("shutil.copy2"),
+            patch("shutil.copy2"),patch.object(
+            OhMyZshInstaller, "_update_zshrc", return_value=True
+        )
         ):
-            with patch.object(
-                OhMyZshInstaller, "_update_zshrc", return_value=True
-            ):
-                installer = OhMyZshInstaller()
-                result = installer.install()
+            installer = OhMyZshInstaller()
+            result = installer.install()
 
-                assert result is True
-                assert (
-                    "updating configuration" in caplog.text
-                    or "already installed" in caplog.text
-                )
+            assert result is True
+            assert (
+                "updating configuration" in caplog.text
+                or "already installed" in caplog.text
+            )
 
 
 class TestOhMyZshGetZshrcPath:

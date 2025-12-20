@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
-from ..core.distro import DistroInfo, detect_distro
-from ..core.logger import get_logger
-from ..core.package_manager import get_package_manager
-from ..utils.privilege import run_privileged
+from aps.core.distro import DistroInfo, detect_distro
+from aps.core.logger import get_logger
+from aps.core.package_manager import get_package_manager
+from aps.utils.privilege import run_privileged
 
 logger = get_logger(__name__)
 
