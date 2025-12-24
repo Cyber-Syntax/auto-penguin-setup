@@ -30,7 +30,9 @@ class OhMyZshInstaller(BaseInstaller):
         target_dir = Path.home() / ".config" / "oh-my-zsh"
         zshrc_path = self._get_zshrc_path()
 
-        if not target_dir.exists():
+        if target_dir.exists():
+            logger.info("oh-my-zsh already installed, updating configuration")
+        else:
             target_dir.parent.mkdir(parents=True, exist_ok=True)
             install_env = os.environ.copy()
             install_env.update(
