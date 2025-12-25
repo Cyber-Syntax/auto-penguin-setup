@@ -40,7 +40,6 @@ tests/root*
 *.bats.log
 bats-core/
 session.vim
-protonvpn.rpm
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
