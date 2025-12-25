@@ -37,7 +37,7 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001
         try:
             subprocess.run(
                 [
-                    "git",
+                    "/usr/bin/git",
                     "clone",
                     "https://github.com/AdnanHodzic/auto-cpufreq.git",
                     str(repo_path / "auto-cpufreq"),
@@ -46,7 +46,7 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.error(
+            logger.exception(
                 "Failed to clone auto-cpufreq repository (exit code %s). "
                 "See output above.",
                 e.returncode,
@@ -81,7 +81,7 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            logger.error(
+            logger.exception(
                 "auto-cpufreq installation failed (exit code %s). "
                 "See installer output above.",
                 e.returncode,
