@@ -1,13 +1,10 @@
 """Hardware configuration modules."""
 
-from aps.hardware.amd import AMDConfig
-from aps.hardware.intel import IntelConfig
-from aps.hardware.nvidia import NvidiaConfig
-from aps.hardware.touchpad import TouchpadConfig
+from aps.hardware import amd, intel, nvidia, touchpad
 
 __all__ = [
-    "AMDConfig",
-    "IntelConfig",
-    "NvidiaConfig",
-    "TouchpadConfig",
+    "amd",
+    "intel",
+    "nvidia",
+    "touchpad",
 ]

@@ -7,36 +7,29 @@ from typing import Any, ClassVar
 
 from aps.core.distro import DistroInfo, PackageManagerType
 from aps.core.logger import get_logger
-from aps.hardware import (
-    AMDConfig,
-    IntelConfig,
-    NvidiaConfig,
-    TouchpadConfig,
-)
+from aps.hardware import amd, intel, nvidia, touchpad
 from aps.installers import (
-    AutoCPUFreqInstaller,
-    BraveInstaller,
-    NfancurveInstaller,
-    OhMyZshInstaller,
-    ProtonVPNInstaller,
-    SyncthingInstaller,
-    ThinkfanInstaller,
-    TLPInstaller,
-    TrashCLIInstaller,
-    UeberzugppInstaller,
-    VirtManagerInstaller,
-    VSCodeInstaller,
+    autocpufreq,
+    brave,
+    ohmyzsh,
+    syncthing,
+    thinkfan,
+    tlp,
+    trashcli,
+    ueberzugpp,
+    virtmanager,
+    vscode,
 )
 from aps.system import (
-    MultimediaConfig,
-    PackageManagerOptimizer,
-    RepositoryConfig,
-    SSHConfig,
-    SudoersConfig,
-    UFWConfig,
+    firewall,
+    multimedia,
+    pm_optimizer,
+    repositories,
+    ssh,
+    sudoers,
 )
 from aps.utils.privilege import run_privileged
-from aps.wm import QtileConfig
+from aps.wm import qtile
 
 logger = get_logger(__name__)
 
@@ -46,7 +39,7 @@ class SetupError(Exception):
 
 
 class SetupManager:
-    """Manages setup operations for AUR helpers, ollama, and other components."""
+    """Manages setup operations for AUR helpers, ollama, and components."""
 
     # Registry of available setup components
     COMPONENT_REGISTRY: ClassVar[dict[str, dict[str, Any]]] = {
@@ -60,102 +53,94 @@ class SetupManager:
         },
         "ohmyzsh": {
             "description": "Install Oh-My-Zsh with custom plugins",
-            "installer": OhMyZshInstaller,
+            "installer_module": ohmyzsh,
         },
         "brave": {
             "description": "Install Brave browser",
-            "installer": BraveInstaller,
-        },
-        "protonvpn": {
-            "description": "Install ProtonVPN",
-            "installer": ProtonVPNInstaller,
-        },
-        "thinkfan": {
-            "description": "Install Thinkfan thermal management",
-            "installer": ThinkfanInstaller,
+            "installer_module": brave,
         },
         "tlp": {
             "description": "Install TLP power management",
-            "installer": TLPInstaller,
+            "installer_module": tlp,
         },
         "autocpufreq": {
             "description": "Install Auto-CPUFreq power optimization",
-            "installer": AutoCPUFreqInstaller,
-        },
-        "nfancurve": {
-            "description": "Install NVIDIA fan curve control",
-            "installer": NfancurveInstaller,
+            "installer_module": autocpufreq,
         },
         "syncthing": {
             "description": "Install Syncthing file synchronization",
-            "installer": SyncthingInstaller,
+            "installer_module": syncthing,
+        },
+        "thinkfan": {
+            "description": "Install ThinkPad fan control",
+            "installer_module": thinkfan,
         },
         "trashcli": {
             "description": "Install Trash-CLI utilities",
-            "installer": TrashCLIInstaller,
+            "installer_module": trashcli,
         },
         "ueberzugpp": {
             "description": "Install Ueberzug++ image preview",
-            "installer": UeberzugppInstaller,
+            "installer_module": ueberzugpp,
         },
         "virtmanager": {
             "description": "Install Virtual Machine Manager",
-            "installer": VirtManagerInstaller,
+            "installer_module": virtmanager,
         },
         "vscode": {
             "description": "Install Visual Studio Code",
-            "installer": VSCodeInstaller,
+            "installer_module": vscode,
         },
         # Hardware configuration components
         "amd": {
             "description": "Configure AMD CPU (zenpower setup for Ryzen)",
-            "config_class": AMDConfig,
+            "config_module": amd,
         },
         "intel": {
             "description": "Configure Intel CPU power management",
-            "config_class": IntelConfig,
+            "config_module": intel,
         },
         "nvidia": {
             "description": "Configure NVIDIA GPU drivers and CUDA",
-            "config_class": NvidiaConfig,
+            "config_module": nvidia,
         },
         "touchpad": {
             "description": "Configure touchpad settings",
-            "config_class": TouchpadConfig,
+            "config_module": touchpad,
         },
         # System configuration components
         "firewall": {
             "description": "Configure UFW firewall",
-            "config_class": UFWConfig,
+            "config_module": firewall,
         },
         "multimedia": {
             "description": "Configure multimedia codecs and settings",
-            "config_class": MultimediaConfig,
+            "config_module": multimedia,
         },
         "pm-optimizer": {
             "description": "Optimize package manager settings",
-            "config_class": PackageManagerOptimizer,
+            "config_module": pm_optimizer,
         },
         "repositories": {
             "description": "Configure additional repositories",
-            "config_class": RepositoryConfig,
+            "config_module": repositories,
         },
         "ssh": {
             "description": "Configure SSH server and client",
-            "config_class": SSHConfig,
+            "config_module": ssh,
         },
         "sudoers": {
             "description": "Configure sudo privileges and settings",
-            "config_class": SudoersConfig,
+            "config_module": sudoers,
         },
         # Window manager configuration components
         "qtile": {
             "description": "Configure Qtile window manager",
-            "config_class": QtileConfig,
+            "config_module": qtile,
         },
     }
 
-    def __init__(self, distro_info: DistroInfo):
+    def __init__(self, distro_info: DistroInfo) -> None:
         """Initialize setup manager.
 
         Args:
@@ -177,7 +162,7 @@ class SetupManager:
             for name, info in cls.COMPONENT_REGISTRY.items()
         }
 
-    def setup_component(self, component: str) -> None:
+    def setup_component(self, component: str) -> None:  # noqa: C901
         """Setup a component by name.
 
         Args:
@@ -193,22 +178,25 @@ class SetupManager:
 
         component_info = self.COMPONENT_REGISTRY[component]
         installer_class = component_info.get("installer")
-        config_class = component_info.get("config_class")
+        installer_module = component_info.get("installer_module")
+        config_module = component_info.get("config_module")
 
         # Use built-in methods for aur-helper and ollama
-        if installer_class is None and config_class is None:
+        if (
+            installer_class is None
+            and installer_module is None
+            and config_module is None
+        ):
             if component == "aur-helper":
                 self.setup_aur_helper()
             elif component == "ollama":
                 self.setup_ollama()
             return
 
-        # Use config class for configuration components
-        if config_class is not None:
+        # Use functional config module for configuration components
+        if config_module is not None:
             logger.info("Configuring %s...", component)
             try:
-                config = config_class(self.distro.id)
-
                 # Default kwargs for configuration components
                 default_kwargs = {
                     "amd": {"zenpower": True},
@@ -217,7 +205,6 @@ class SetupManager:
                         "cuda": True
                     },  # Enable CUDA by default if NVIDIA GPU present
                     "touchpad": {},
-                    "hostname": {},
                     "firewall": {},
                     "multimedia": {},
                     "pm-optimizer": {},
@@ -227,10 +214,13 @@ class SetupManager:
                     "qtile": {},
                 }.get(component, {})
 
-                success = config.configure(**default_kwargs)
+                # Call the functional configure() function
+                success = config_module.configure(
+                    distro=self.distro.id, **default_kwargs
+                )
                 if not success:
                     msg = f"Failed to configure {component}"
-                    raise SetupError(msg)
+                    raise SetupError(msg)  # noqa: TRY301
                 logger.info(
                     "%s configuration completed successfully", component
                 )
@@ -239,18 +229,18 @@ class SetupManager:
                 raise SetupError(msg) from e
             return
 
-        # Use installer class for other components
-        logger.info("Setting up %s...", component)
-        try:
-            installer = installer_class()
-            success = installer.install()
-            if not success:
-                msg = f"Failed to setup {component}"
-                raise SetupError(msg)
-            logger.info("%s setup completed successfully", component)
-        except Exception as e:
-            msg = f"Error during {component} setup: {e}"
-            raise SetupError(msg) from e
+        # Use functional installer module for installer components
+        if installer_module is not None:
+            logger.info("Setting up %s...", component)
+            try:
+                success = installer_module.install(distro=self.distro.id)
+                if not success:
+                    msg = f"Failed to setup {component}"
+                    raise SetupError(msg)  # noqa: TRY301
+                logger.info("%s setup completed successfully", component)
+            except Exception as e:
+                msg = f"Error during {component} setup: {e}"
+                raise SetupError(msg) from e
 
     def setup_aur_helper(self) -> None:
         """Install paru AUR helper for Arch Linux.
@@ -263,7 +253,10 @@ class SetupManager:
 
         """
         if self.distro.package_manager != PackageManagerType.PACMAN:
-            msg = "AUR helper setup is only available for Arch-based distributions"
+            msg = (
+                "AUR helper setup is only available for "
+                "Arch-based distributions"
+            )
             raise SetupError(msg)
 
         # Check if already installed
@@ -326,7 +319,7 @@ class SetupManager:
         if not keyring_exists:
             logger.info("Creating GPG keyring...")
             subprocess.run(
-                ["gpg", "--list-keys"],
+                ["gpg", "--list-keys"],  # noqa: S607
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,
@@ -389,7 +382,7 @@ class SetupManager:
             # Build and install
             logger.info("Building and installing paru...")
             result = subprocess.run(
-                ["makepkg", "-si", "--noconfirm"],
+                ["makepkg", "-si", "--noconfirm"],  # noqa: S607
                 cwd=build_dir,
                 capture_output=True,
                 text=True,
@@ -445,11 +438,14 @@ class SetupManager:
         """Setup Ollama using official install script."""
         logger.info("Downloading and running Ollama install script...")
 
-        # Execute the curl | sed | sh pipeline directly like the bash version
-        # This is necessary because the Ollama installer needs interactive execution
-        cmd = "curl -fsSL https://ollama.com/install.sh | sed 's/--add-repo/addrepo/' | sh"
+        # Execute the curl | sed | sh pipeline directly like bash version
+        # Necessary because Ollama installer needs interactive execution
+        cmd = (
+            "curl -fsSL https://ollama.com/install.sh | "
+            "sed 's/--add-repo/addrepo/' | sh"
+        )
 
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S602
             cmd,
             shell=True,
             check=False,
@@ -472,7 +468,7 @@ class SetupManager:
 
         # Check for AMD (ROCm)
         result = subprocess.run(
-            ["lspci"],
+            ["lspci"],  # noqa: S607
             capture_output=True,
             text=True,
             check=False,

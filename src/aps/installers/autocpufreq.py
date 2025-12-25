@@ -8,98 +8,98 @@ from pathlib import Path
 from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
 
-from .base import BaseInstaller
-
 logger = get_logger(__name__)
 
 
-class AutoCPUFreqInstaller(BaseInstaller):
-    """Installer for auto-cpufreq from GitHub repository.
+def install(distro: str | None = None) -> bool:  # noqa: ARG001
+    """Install auto-cpufreq from GitHub repository.
 
-    Available in AUR, snap, and auto-cpufreq-installer from GitHub.
-    Using GitHub installer for consistency across all distributions.
+    Args:
+        distro: Distribution name (optional, will auto-detect if None)
+
+    Returns:
+        True if installation successful, False otherwise
+
     """
+    logger.info("Installing auto-cpufreq...")
 
-    def install(self) -> bool:
-        """Install auto-cpufreq from GitHub repository.
+    # Check if git is available
+    if not shutil.which("git"):
+        logger.error("git is not installed. Please install git first.")
+        return False
 
-        Returns:
-            True if installation successful, False otherwise
+    # Create temporary directory for cloning
+    with tempfile.TemporaryDirectory() as temp_dir:
+        repo_path = Path(temp_dir)
 
-        """
-        logger.info("Installing auto-cpufreq...")
-
-        # Check if git is available
-        if not shutil.which("git"):
-            logger.error("git is not installed. Please install git first.")
+        # Clone repository
+        logger.info("Cloning auto-cpufreq repository...")
+        try:
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "https://github.com/AdnanHodzic/auto-cpufreq.git",
+                    str(repo_path / "auto-cpufreq"),
+                ],
+                check=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "Failed to clone auto-cpufreq repository (exit code %s). "
+                "See output above.",
+                e.returncode,
+            )
             return False
 
-        # Create temporary directory for cloning
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_path = Path(temp_dir)
+        installer_dir = repo_path / "auto-cpufreq"
+        installer_script = installer_dir / "auto-cpufreq-installer"
 
-            # Clone repository
-            logger.info("Cloning auto-cpufreq repository...")
-            try:
-                subprocess.run(
-                    [
-                        "git",
-                        "clone",
-                        "https://github.com/AdnanHodzic/auto-cpufreq.git",
-                        str(repo_path / "auto-cpufreq"),
-                    ],
-                    check=True,
-                    text=True,
-                )
-            except subprocess.CalledProcessError as e:
-                logger.error(
-                    "Failed to clone auto-cpufreq repository (exit code %s). See output above.",
-                    e.returncode,
-                )
-                return False
+        if not installer_script.exists():
+            logger.error("Installer script not found in cloned repository")
+            return False
 
-            installer_dir = repo_path / "auto-cpufreq"
-            installer_script = installer_dir / "auto-cpufreq-installer"
+        # Run installer with automatic "Install" option
+        logger.info("Running auto-cpufreq installer...")
+        logger.info(
+            "NOTE: The installer will ask for confirmation during installation."
+        )
+        logger.info(
+            "Please respond to the prompts as needed (typically 'y' to proceed)."
+        )
+        logger.info(
+            "Installer output will be streamed directly from the script."
+        )
 
-            if not installer_script.exists():
-                logger.error("Installer script not found in cloned repository")
-                return False
-
-            # Run installer with automatic "Install" option
-            logger.info("Running auto-cpufreq installer...")
-            logger.info(
-                "NOTE: The installer will ask for confirmation during installation."
+        try:
+            # Pipe "I" into installer to automatically select Install option
+            run_privileged(
+                [str(installer_script)],
+                stdin_input="I\n",
+                check=True,
+                text=True,
             )
-            logger.info(
-                "Please respond to the prompts as needed (typically 'y' to proceed)."
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                "auto-cpufreq installation failed (exit code %s). "
+                "See installer output above.",
+                e.returncode,
             )
-            logger.info(
-                "Installer output will be streamed directly from the script."
-            )
+            return False
 
-            try:
-                # Pipe "I" into installer to automatically select Install option
-                run_privileged(
-                    [str(installer_script)],
-                    stdin_input="I\n",
-                    check=True,
-                    text=True,
-                )
-            except subprocess.CalledProcessError as e:
-                logger.error(
-                    "auto-cpufreq installation failed (exit code %s). See installer output above.",
-                    e.returncode,
-                )
-                return False
+    logger.info("auto-cpufreq installation completed")
+    return True
 
-        logger.info("auto-cpufreq installation completed")
-        return True
 
-    def is_installed(self) -> bool:
-        """Check if auto-cpufreq is installed.
+def is_installed(distro: str | None = None) -> bool:  # noqa: ARG001
+    """Check if auto-cpufreq is installed.
 
-        Returns:
-            True if installed, False otherwise
+    Args:
+        distro: Distribution name (optional, will auto-detect if None)
 
-        """
-        return shutil.which("auto-cpufreq") is not None
+    Returns:
+        True if installed, False otherwise
+
+    """
+    return shutil.which("auto-cpufreq") is not None

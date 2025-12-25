@@ -3,103 +3,41 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.system.pm_optimizer import PackageManagerOptimizer
+from aps.system import pm_optimizer
 
 
 class TestPackageManagerOptimizer:
     """Tests for package manager optimizer."""
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_configure_fedora(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    @patch("aps.system.pm_optimizer._optimize_dnf")
+    def test_configure_fedora(self, mock_optimize_dnf: Mock) -> None:
         """Test optimization for Fedora."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = Mock()
+        mock_optimize_dnf.return_value = True
 
-        optimizer = PackageManagerOptimizer()
-
-        with patch.object(optimizer, "_optimize_dnf", return_value=True):
-            result = optimizer.configure()
+        result = pm_optimizer.configure(distro="fedora")
 
         assert result is True
+        mock_optimize_dnf.assert_called_once()
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_configure_arch(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    @patch("aps.system.pm_optimizer._optimize_pacman")
+    def test_configure_arch(self, mock_optimize_pacman: Mock) -> None:
         """Test optimization for Arch."""
-        arch_distro = DistroInfo(
-            name="Arch Linux",
-            version="rolling",
-            id="arch",
-            id_like=["archlinux"],
-            package_manager=PackageManagerType.PACMAN,
-            family=DistroFamily.ARCH,
-        )
-        mock_detect_distro.return_value = arch_distro
-        mock_get_pm.return_value = Mock()
+        mock_optimize_pacman.return_value = True
 
-        optimizer = PackageManagerOptimizer()
-
-        with patch.object(optimizer, "_optimize_pacman", return_value=True):
-            result = optimizer.configure()
+        result = pm_optimizer.configure(distro="arch")
 
         assert result is True
+        mock_optimize_pacman.assert_called_once()
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_configure_unsupported(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    def test_configure_unsupported(self) -> None:
         """Test optimization for unsupported distro."""
-        unsupported_distro = DistroInfo(
-            name="Unknown",
-            version="1.0",
-            id="unknown",
-            id_like=[],
-            package_manager=PackageManagerType.UNKNOWN,
-            family=DistroFamily.UNKNOWN,
-        )
-        mock_detect_distro.return_value = unsupported_distro
-        mock_get_pm.return_value = Mock()
-
-        optimizer = PackageManagerOptimizer()
-        result = optimizer.configure()
+        result = pm_optimizer.configure(distro="unknown")
 
         assert result is False
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_create_backup_success(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    def test_create_backup_success(self) -> None:
         """Test successful backup creation."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = Mock()
-
-        optimizer = PackageManagerOptimizer()
-
         with patch("aps.system.pm_optimizer.Path.exists", return_value=False):
-            result = optimizer._create_backup(Path("/etc/dnf/dnf.conf"))
+            result = pm_optimizer._create_backup(Path("/etc/dnf/dnf.conf"))
 
         assert result is True

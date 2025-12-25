@@ -1,18 +1,17 @@
-"""Tests for window manager and display manager configuration modules."""
+"""Tests for window manager configuration modules."""
 
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.display.sddm import SDDMConfig
-from aps.wm.qtile import QtileConfig
+from aps.wm import qtile
 
 
 class TestQtileConfig:
     """Tests for Qtile window manager configuration."""
 
-    @patch("aps.wm.base.detect_distro")
-    @patch("aps.wm.base.get_package_manager")
+    @patch("aps.wm.qtile.detect_distro")
+    @patch("aps.wm.qtile.get_package_manager")
     def test_install_success(
         self, mock_get_pm: Mock, mock_detect_distro: Mock
     ) -> None:
@@ -30,151 +29,24 @@ class TestQtileConfig:
         mock_pm.install.return_value = (True, "Success")
         mock_get_pm.return_value = mock_pm
 
-        qtile = QtileConfig()
-        result = qtile.install(["qtile", "python3-qtile"])
+        result = qtile.install("fedora", ["qtile", "python3-qtile"])
 
         assert result is True
         mock_pm.install.assert_called_once_with(["qtile", "python3-qtile"])
 
-    @patch("aps.wm.base.detect_distro")
-    @patch("aps.wm.base.get_package_manager")
     @patch("aps.wm.qtile.run_privileged")
-    def test_setup_backlight_rules(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    def test_setup_backlight_rules(self, mock_run: Mock) -> None:
         """Test backlight rules setup."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
         mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-
-        qtile = QtileConfig()
 
         with patch.object(Path, "exists", return_value=True):
             result = qtile.setup_backlight_rules()
 
         assert result is True
 
-    @patch("aps.wm.base.detect_distro")
-    @patch("aps.wm.base.get_package_manager")
-    def test_configure(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    def test_configure(self) -> None:
         """Test Qtile configuration."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
-
-        qtile = QtileConfig()
-        result = qtile.configure()
-
-        assert result is True
-
-
-class TestSDDMConfig:
-    """Tests for SDDM display manager configuration."""
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.sddm.subprocess.run")
-    def test_install_already_installed(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test SDDM installation when already installed."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
-        mock_run.return_value = Mock(
-            returncode=0, stdout="sddm-1.0", stderr=""
-        )
-
-        sddm = SDDMConfig()
-        result = sddm.install()
-
-        assert result is True
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.sddm.subprocess.run")
-    def test_switch_to_sddm(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
-        """Test switching to SDDM."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_pm = MagicMock()
-        mock_pm.install.return_value = (True, "Success")
-        mock_get_pm.return_value = mock_pm
-
-        # First call checks if installed (returns non-zero, not installed)
-        # Subsequent calls for systemctl commands
-        mock_run.side_effect = [
-            Mock(
-                returncode=1, stdout="", stderr=""
-            ),  # rpm -q sddm (not installed)
-            Mock(returncode=0, stdout="gdm.service", stderr=""),  # list-units
-            Mock(returncode=0, stdout="", stderr=""),  # disable gdm
-            Mock(returncode=0, stdout="", stderr=""),  # enable sddm
-        ]
-
-        sddm = SDDMConfig()
-        result = sddm.switch_to_sddm()
-
-        assert result is True
-
-    @patch("aps.display.base.detect_distro")
-    @patch("aps.display.base.get_package_manager")
-    @patch("aps.display.sddm.subprocess.run")
-    @patch("aps.display.sddm.Path.exists", return_value=False)
-    def test_configure_autologin(
-        self,
-        mock_exists: Mock,
-        mock_run: Mock,
-        mock_get_pm: Mock,
-        mock_detect_distro: Mock,
-    ) -> None:
-        """Test SDDM autologin configuration."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
-        mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-
-        sddm = SDDMConfig()
-        result = sddm.configure_autologin("testuser", "qtile")
+        with patch.object(qtile, "setup_backlight_rules", return_value=True):
+            result = qtile.configure("fedora")
 
         assert result is True

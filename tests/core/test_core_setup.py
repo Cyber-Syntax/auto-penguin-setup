@@ -396,11 +396,9 @@ class TestComponentRegistry:
             "ollama",
             "ohmyzsh",
             "brave",
-            "protonvpn",
             "thinkfan",
             "tlp",
             "autocpufreq",
-            "nfancurve",
             "syncthing",
             "trashcli",
             "ueberzugpp",
@@ -448,50 +446,24 @@ class TestComponentRegistry:
     def test_setup_component_ohmyzsh(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component instantiates and calls installer for ohmyzsh."""
-        mock_installer = Mock()
-        mock_installer.install.return_value = True
-        mock_installer_class = Mock(return_value=mock_installer)
-
-        # Temporarily replace the installer class in the registry
-        original_installer = SetupManager.COMPONENT_REGISTRY["ohmyzsh"][
-            "installer"
-        ]
-        try:
-            SetupManager.COMPONENT_REGISTRY["ohmyzsh"]["installer"] = (
-                mock_installer_class
-            )
+        """Test setup_component calls installer module for ohmyzsh."""
+        # Mock the ohmyzsh module's install function
+        with patch("aps.installers.ohmyzsh.install") as mock_install:
+            mock_install.return_value = True
             setup_manager_arch.setup_component("ohmyzsh")
-            mock_installer_class.assert_called_once()
-            mock_installer.install.assert_called_once()
-        finally:
-            SetupManager.COMPONENT_REGISTRY["ohmyzsh"]["installer"] = (
-                original_installer
+            mock_install.assert_called_once_with(
+                distro=setup_manager_arch.distro.id
             )
 
     def test_setup_component_brave(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component instantiates and calls installer for brave."""
-        mock_installer = Mock()
-        mock_installer.install.return_value = True
-        mock_installer_class = Mock(return_value=mock_installer)
-
-        # Temporarily replace the installer class in the registry
-        original_installer = SetupManager.COMPONENT_REGISTRY["brave"][
-            "installer"
-        ]
-        try:
-            SetupManager.COMPONENT_REGISTRY["brave"]["installer"] = (
-                mock_installer_class
-            )
+        """Test setup_component calls installer module for brave."""
+        # Mock the brave module's install function
+        with patch("aps.installers.brave.install") as mock_install:
+            mock_install.return_value = True
             setup_manager_arch.setup_component("brave")
-            mock_installer_class.assert_called_once()
-            mock_installer.install.assert_called_once()
-        finally:
-            SetupManager.COMPONENT_REGISTRY["brave"]["installer"] = (
-                original_installer
-            )
+            mock_install.assert_called_once()
 
     def test_setup_component_unknown(
         self, setup_manager_arch: SetupManager
@@ -503,47 +475,21 @@ class TestComponentRegistry:
     def test_setup_component_installer_failure(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component raises error when installer returns False."""
-        mock_installer = Mock()
-        mock_installer.install.return_value = False
-        mock_installer_class = Mock(return_value=mock_installer)
-
-        # Temporarily replace the installer class in the registry
-        original_installer = SetupManager.COMPONENT_REGISTRY["tlp"][
-            "installer"
-        ]
-        try:
-            SetupManager.COMPONENT_REGISTRY["tlp"]["installer"] = (
-                mock_installer_class
-            )
+        """Test setup_component raises error when installer module returns False."""
+        # Mock the tlp module's install function to return False
+        with patch("aps.installers.tlp.install") as mock_install:
+            mock_install.return_value = False
             with pytest.raises(SetupError, match="Failed to setup tlp"):
                 setup_manager_arch.setup_component("tlp")
-        finally:
-            SetupManager.COMPONENT_REGISTRY["tlp"]["installer"] = (
-                original_installer
-            )
 
     def test_setup_component_installer_exception(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component raises error when installer raises exception."""
-        mock_installer = Mock()
-        mock_installer.install.side_effect = Exception("Installation error")
-        mock_installer_class = Mock(return_value=mock_installer)
-
-        # Temporarily replace the installer class in the registry
-        original_installer = SetupManager.COMPONENT_REGISTRY["thinkfan"][
-            "installer"
-        ]
-        try:
-            SetupManager.COMPONENT_REGISTRY["thinkfan"]["installer"] = (
-                mock_installer_class
-            )
+        """Test setup_component raises error when installer module raises exception."""
+        # Mock the thinkfan module's install function to raise exception
+        with patch("aps.installers.thinkfan.install") as mock_install:
+            mock_install.side_effect = Exception("Installation error")
             with pytest.raises(
                 SetupError, match="Error during thinkfan setup"
             ):
                 setup_manager_arch.setup_component("thinkfan")
-        finally:
-            SetupManager.COMPONENT_REGISTRY["thinkfan"]["installer"] = (
-                original_installer
-            )

@@ -4,51 +4,55 @@ import subprocess
 
 from aps.core.logger import get_logger
 
-from .base import BaseInstaller
-
 logger = get_logger(__name__)
 
 
-class SyncthingInstaller(BaseInstaller):
-    """Installer for Syncthing file synchronization."""
+def install(distro: str | None = None) -> bool:  # noqa: ARG001
+    """Install and enable Syncthing user service.
 
-    def install(self) -> bool:
-        """Install and enable Syncthing user service.
+    Args:
+        distro: Distribution name (optional, will auto-detect if None)
 
-        Returns:
-            True if installation successful, False otherwise
+    Returns:
+        True if installation successful, False otherwise
 
-        """
-        logger.info("Setting up Syncthing...")
+    """
+    logger.info("Setting up Syncthing...")
 
-        # Enable and start Syncthing user service
-        try:
-            subprocess.run(
-                ["systemctl", "--user", "enable", "--now", "syncthing"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            logger.info("Syncthing enabled successfully.")
-            return True
-        except subprocess.CalledProcessError as e:
-            logger.error("Failed to enable Syncthing service: %s", e.stderr)
-            return False
+    # Enable and start Syncthing user service
+    try:
+        subprocess.run(
+            ["/usr/bin/systemctl", "--user", "enable", "--now", "syncthing"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        logger.exception("Failed to enable Syncthing service")
+        return False
+    else:
+        logger.info("Syncthing enabled successfully.")
+        return True
 
-    def is_installed(self) -> bool:
-        """Check if Syncthing service is enabled.
 
-        Returns:
-            True if enabled, False otherwise
+def is_installed(distro: str | None = None) -> bool:  # noqa: ARG001
+    """Check if Syncthing service is enabled.
 
-        """
-        try:
-            result = subprocess.run(
-                ["systemctl", "--user", "is-enabled", "syncthing"],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            return result.returncode == 0
-        except (subprocess.SubprocessError, OSError):
-            return False
+    Args:
+        distro: Distribution name (optional, will auto-detect if None)
+
+    Returns:
+        True if enabled, False otherwise
+
+    """
+    try:
+        result = subprocess.run(
+            ["/usr/bin/systemctl", "--user", "is-enabled", "syncthing"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return False
+    else:
+        return result.returncode == 0
