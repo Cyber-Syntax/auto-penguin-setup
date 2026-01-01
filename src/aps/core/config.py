@@ -41,7 +41,8 @@ class APSConfigParser:
 
         """
         if not config_path.exists():
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+            msg = f"Config file not found: {config_path}"
+            raise FileNotFoundError(msg)
 
         self._path = config_path
         processed_content = self._preprocess_config_file(config_path)
@@ -264,10 +265,12 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
     """Ensure configuration files exist, creating them from examples if needed.
 
     Args:
-        config_dir: Directory for config files (default: ~/.config/auto-penguin-setup)
+        config_dir: Directory for config files
+            (default: ~/.config/auto-penguin-setup)
 
     Returns:
-        Dictionary mapping filename to whether it was created (True) or already existed (False)
+        Dictionary mapping filename to whether it was created (True)
+        or already existed (False)
 
     """
     if config_dir is None:
@@ -277,9 +280,8 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
     examples_dir = get_default_configs_dir()
 
     if not examples_dir.exists():
-        raise FileNotFoundError(
-            f"Config examples directory not found: {examples_dir}"
-        )
+        msg = f"Config examples directory not found: {examples_dir}"
+        raise FileNotFoundError(msg)
 
     # Ensure config directory exists
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -299,9 +301,8 @@ def ensure_config_files(config_dir: Path | None = None) -> dict[str, bool]:
                 shutil.copy2(source, destination)
                 results[filename] = True
             else:
-                raise FileNotFoundError(
-                    f"Example config file not found: {source}"
-                )
+                msg = f"Example config file not found: {source}"
+                raise FileNotFoundError(msg)
         else:
             results[filename] = False
 

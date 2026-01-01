@@ -2,7 +2,6 @@
 
 import shutil
 import subprocess
-from typing import TYPE_CHECKING
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.core.logger import get_logger
@@ -11,10 +10,8 @@ from aps.core.package_manager import (
     PackageManagerError,
     PacmanManager,
 )
+from aps.core.package_mapper import PackageMapping
 from aps.utils.privilege import run_privileged
-
-if TYPE_CHECKING:
-    from aps.core.package_mapper import PackageMapping
 
 
 class RepositoryManager:
@@ -48,9 +45,8 @@ class RepositoryManager:
 
         """
         if self.distro.family != DistroFamily.FEDORA:
-            raise PackageManagerError(
-                f"COPR is only available on Fedora, not {self.distro.name}"
-            )
+            msg = f"COPR is only available on Fedora, not {self.distro.name}"
+            raise PackageManagerError(msg)
 
         self.logger.debug("Enabling COPR repository: %s", repo)
         cmd = ["dnf", "copr", "enable", "-y", repo]
@@ -73,9 +69,8 @@ class RepositoryManager:
 
         """
         if self.distro.family != DistroFamily.FEDORA:
-            raise PackageManagerError(
-                f"COPR is only available on Fedora, not {self.distro.name}"
-            )
+            msg = f"COPR is only available on Fedora, not {self.distro.name}"
+            raise PackageManagerError(msg)
 
         cmd = ["dnf", "copr", "disable", "-y", repo]
         result = run_privileged(cmd, capture_output=True, check=False)
@@ -96,14 +91,15 @@ class RepositoryManager:
 
         # List enabled repos and check if our COPR is present
         cmd = ["dnf", "repolist", "--enabled"]
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603
             cmd, capture_output=True, text=True, check=False
         )
 
         if result.returncode != 0:
             return False
 
-        # COPR repos show up with format like "copr:copr.fedorainfracloud.org:user:repo"
+        # COPR repos show up with format like
+        # copr:copr.fedorainfracloud.org:user:repo
         # Convert "user/repo" to "copr:copr.fedorainfracloud.org:user:repo"
         repo_id = f"copr:copr.fedorainfracloud.org:{repo.replace('/', ':')}"
         return repo_id in result.stdout
@@ -122,12 +118,10 @@ class RepositoryManager:
             mapping: Mapping from pkgmap.ini
 
         Returns:
-            Updated mapping with resolved source (either original or "official")
+            Updated mapping with resolved source
+            (either original or "official")
 
         """
-        # Import here to avoid circular dependency
-        from aps.core.package_mapper import PackageMapping
-
         # Only check third-party mappings (COPR, AUR)
         if not (mapping.is_copr or mapping.is_aur):
             return mapping
@@ -137,8 +131,9 @@ class RepositoryManager:
             source_type = mapping.source.split(":")[0]  # Extract COPR/AUR
             self.logger.warning(
                 "Package '%s' is mapped to %s in pkgmap.ini but is available "
-                "in official repositories. Installing from official repos instead. "
-                "Consider updating pkgmap.ini to remove the %s mapping.",
+                "in official repositories. Installing from official repos "
+                "instead. Consider updating pkgmap.ini to remove the %s "
+                "mapping.",
                 package,
                 source_type,
                 source_type,
@@ -164,16 +159,17 @@ class RepositoryManager:
             True if package was installed successfully
 
         Raises:
-            PackageManagerError: If not running on Arch or no AUR helper available
+            PackageManagerError: If not running on Arch or
+            no AUR helper available
 
         """
         if self.distro.family != DistroFamily.ARCH:
-            raise PackageManagerError(
-                f"AUR is only available on Arch, not {self.distro.name}"
-            )
+            msg = f"AUR is only available on Arch, not {self.distro.name}"
+            raise PackageManagerError(msg)
 
         if not isinstance(self.pm, PacmanManager):
-            raise PackageManagerError("Package manager is not PacmanManager")
+            msg = "Package manager is not PacmanManager"
+            raise PackageManagerError(msg)
 
         return self.pm.install_aur([package])
 
@@ -186,14 +182,15 @@ class RepositoryManager:
         """
         return shutil.which("flatpak") is not None
 
-    def ensure_flatpak_installed(self, assume_yes: bool = False) -> bool:
+    def ensure_flatpak_installed(self, *, assume_yes: bool = False) -> bool:
         """Ensure flatpak is installed, installing it if necessary.
 
         Args:
             assume_yes: Auto-confirm installation (default: False)
 
         Returns:
-            True if flatpak is available (already installed or successfully installed)
+            True if flatpak is available
+            (already installed or successfully installed)
 
         Raises:
             PackageManagerError: If flatpak installation fails
@@ -208,13 +205,15 @@ class RepositoryManager:
         # Install flatpak using system package manager
         success, error = self.pm.install(["flatpak"], assume_yes=assume_yes)
         if not success:
-            raise PackageManagerError(f"Failed to install flatpak: {error}")
+            msg = f"Failed to install flatpak: {error}"
+            raise PackageManagerError(msg)
 
         # Verify installation
         if self.is_flatpak_installed():
             self.logger.info("flatpak installed successfully")
             return True
-        raise PackageManagerError("flatpak installation verification failed")
+        msg = "flatpak installation verification failed"
+        raise PackageManagerError(msg)
 
     def enable_flatpak_remote(
         self, remote_name: str, remote_url: str | None = None
@@ -229,16 +228,14 @@ class RepositoryManager:
             True if remote was enabled successfully
 
         """
-        # Ensure flatpak is installed before trying to use it
         self.ensure_flatpak_installed()
 
         if remote_url is None and remote_name.lower() == "flathub":
             remote_url = "https://flathub.org/repo/flathub.flatpakrepo"
 
         if remote_url is None:
-            raise ValueError(
-                f"remote_url is required for remote: {remote_name}"
-            )
+            msg = f"remote_url is required for remote: {remote_name}"
+            raise ValueError(msg)
 
         cmd = [
             "flatpak",
@@ -268,7 +265,7 @@ class RepositoryManager:
             return False
 
         cmd = ["flatpak", "remotes"]
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603
             cmd, capture_output=True, text=True, check=False
         )
 
@@ -289,10 +286,9 @@ class RepositoryManager:
             True if package was installed successfully
 
         """
-        # Ensure flatpak is installed before trying to use it
         self.ensure_flatpak_installed()
 
-        # Don't use -y flag - let user see and approve permissions interactively
+        # Don't use -y flag - let user see and approve permissions
         cmd = ["flatpak", "install", remote, package]
         result = run_privileged(cmd, check=False, capture_output=False)
         return result.returncode == 0

@@ -199,9 +199,9 @@ class PackageTracker:
             return []
 
         packages: list[PackageRecord] = []
-        with open(self.db_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
+        with self.db_path.open(encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
                 if not line:
                     continue
                 data = orjson.loads(line)
@@ -225,7 +225,9 @@ class PackageTracker:
 
         # Return most recent record for this package
         for record in reversed(packages):
-            if record.name == name or record.mapped_name == name:
+            if record.name == name or (
+                record.mapped_name is not None and record.mapped_name == name
+            ):
                 return record
 
         return None
@@ -259,7 +261,12 @@ class PackageTracker:
 
         # Filter out the package to remove
         filtered_packages = [
-            p for p in packages if p.name != name and p.mapped_name != name
+            p
+            for p in packages
+            if not (
+                p.name == name
+                or (p.mapped_name is not None and p.mapped_name == name)
+            )
         ]
 
         if len(filtered_packages) == original_count:
@@ -316,7 +323,7 @@ class PackageTracker:
         """Get all packages from a specific source.
 
         Args:
-            source_prefix: Source prefix to filter by (e.g., "COPR:", "AUR:", "official")
+            source_prefix: Source prefix (e.g., COPR:, AUR:, official)
 
         Returns:
             List of PackageRecord objects matching the source
@@ -366,7 +373,7 @@ class PackageTracker:
             packages: List of PackageRecord objects to write
 
         """
-        with open(self.db_path, "w", encoding="utf-8") as f:
+        with self.db_path.open("w", encoding="utf-8") as f:
             for record in packages:
                 json_line = orjson.dumps(record.to_dict()).decode("utf-8")
                 f.write(json_line + "\n")

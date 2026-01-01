@@ -2,7 +2,9 @@
 
 import shutil
 import subprocess
+import tempfile
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.utils.privilege import run_privileged
@@ -179,7 +181,7 @@ class DnfManager(PackageManager):
             List of matching package names
 
         """
-        cmd: list[str] = ["dnf", "search", "--quiet", query]
+        cmd: list[str] = ["/usr/bin/dnf", "search", "--quiet", query]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -206,7 +208,7 @@ class DnfManager(PackageManager):
             True if package is installed, False otherwise
 
         """
-        cmd = ["rpm", "-q", package]
+        cmd = ["/usr/bin/rpm", "-q", package]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -217,7 +219,7 @@ class DnfManager(PackageManager):
             True if update succeeded, False otherwise
 
         """
-        cmd = ["dnf", "makecache"]
+        cmd = ["/usr/bin/dnf", "makecache"]
         result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -239,7 +241,7 @@ class DnfManager(PackageManager):
 
         """
         # First check if package exists at all
-        cmd = ["dnf", "repoquery", package]
+        cmd = ["/usr/bin/dnf", "repoquery", package]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -249,7 +251,7 @@ class DnfManager(PackageManager):
 
         # Package found - verify it's not from an already-enabled COPR repo
         # by checking with dnf list to see which repo provides it
-        list_cmd = ["dnf", "list", package]
+        list_cmd = ["/usr/bin/dnf", "list", package]
         list_result = subprocess.run(
             list_cmd, capture_output=True, text=True, check=False
         )
@@ -285,12 +287,13 @@ class PacmanManager(PackageManager):
         Preference order: paru > yay > None
 
         Returns:
-            Name of AUR helper if found, None otherwise
+            Full path of AUR helper if found, None otherwise
 
         """
         for helper in ["paru", "yay"]:
-            if shutil.which(helper):
-                return helper
+            path = shutil.which(helper)
+            if path:
+                return path
         return None
 
     def install_paru(self, assume_yes: bool = False) -> bool:
@@ -303,8 +306,6 @@ class PacmanManager(PackageManager):
             True if paru was installed successfully, False otherwise
 
         """
-        import tempfile
-
         logger.info("Installing paru AUR helper...")
 
         # Check if paru is already installed
@@ -314,7 +315,7 @@ class PacmanManager(PackageManager):
 
         # Install base-devel first
         logger.info("Installing base-devel...")
-        cmd = ["pacman", "-S", "--needed"]
+        cmd = ["/usr/bin/pacman", "-S", "--needed"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.append("base-devel")
@@ -327,17 +328,19 @@ class PacmanManager(PackageManager):
         # Clone and build paru
         with tempfile.TemporaryDirectory() as tmpdir:
             logger.info("Cloning paru from AUR...")
-            clone_cmd = ["git", "clone", "https://aur.archlinux.org/paru.git"]
+            clone_cmd = [
+                "/usr/bin/git",
+                "clone",
+                "https://aur.archlinux.org/paru.git",
+            ]
             result = subprocess.run(clone_cmd, cwd=tmpdir, check=False)
             if result.returncode != 0:
                 logger.error("Failed to clone paru repository")
                 return False
 
-            from pathlib import Path
-
             paru_dir = Path(tmpdir) / "paru"
             logger.info("Building paru...")
-            build_cmd = ["makepkg", "-si"]
+            build_cmd = ["/usr/bin/makepkg", "-si"]
             if assume_yes:
                 build_cmd.append("--noconfirm")
 
@@ -349,7 +352,7 @@ class PacmanManager(PackageManager):
         # Verify installation
         if shutil.which("paru"):
             logger.info("paru installed successfully")
-            self.aur_helper = "paru"
+            self.aur_helper = shutil.which("paru")
             return True
         logger.error("paru installation verification failed")
         return False
@@ -464,7 +467,7 @@ class PacmanManager(PackageManager):
             List of matching package names
 
         """
-        cmd = ["pacman", "-Ss", query]
+        cmd = ["/usr/bin/pacman", "-Ss", query]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -491,7 +494,7 @@ class PacmanManager(PackageManager):
             True if package is installed, False otherwise
 
         """
-        cmd = ["pacman", "-Q", package]
+        cmd = ["/usr/bin/pacman", "-Q", package]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -502,7 +505,7 @@ class PacmanManager(PackageManager):
             True if update succeeded, False otherwise
 
         """
-        cmd = ["pacman", "-Sy"]
+        cmd = ["/usr/bin/pacman", "-Sy"]
         result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -519,7 +522,7 @@ class PacmanManager(PackageManager):
             True if package is available in official repos, False otherwise
 
         """
-        cmd = ["pacman", "-Ss", f"^{package}$"]
+        cmd = ["/usr/bin/pacman", "-Ss", f"^{package}$"]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
