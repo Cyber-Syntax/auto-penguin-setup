@@ -337,7 +337,7 @@ class PacmanManager(PackageManager):
 
             paru_dir = Path(tmpdir) / "paru"
             logger.info("Building paru...")
-            build_cmd = ["makepkg", "-si"]
+            build_cmd = ["/usr/bin/makepkg", "-si"]
             if assume_yes:
                 build_cmd.append("--noconfirm")
 
