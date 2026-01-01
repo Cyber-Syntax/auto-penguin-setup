@@ -35,8 +35,6 @@
 ## in-progress
 
 - [ ] checkout: <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff>
-- [ ] It is save the token somewhere but couldn't figure out where it which it is
-not shown on kdewallet, so probably not configured for kdewallet saves.
 - [ ] add gnome-kerying to packages.ini and make sure to disable kdewallet.
 - [ ] add `ttf-jetbrains-mono-nerd` for arch font, and find it for fedora?
 - [ ] It isn't show pacman output
@@ -66,6 +64,9 @@ Installing Ollama package: ollama-cuda
 
 ## todo
 
+- [ ] better to have util function to backup any config file to keep DRY principle
+- [ ] extra official repo check for cachyos/nobara, install vscode to test it
+- [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
 - [ ] add tuned setup:
       - testing `tuned-adm profile desktop` -> remember to activate it `sudo tuned-adm active`
       - after that enable `sudo cpupower frequency-set --governor performance` which
@@ -81,6 +82,17 @@ sudo cpupower frequency-info
   hardware limits: 561 MHz - 4.65 GHz
 ```
 
+- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances
+
+- [ ] better code structure? <https://docs.python-guide.org/writing/structure/>
+- [ ] <https://github.com/bahamas10/bash-style-guide> for setup.sh
+- [ ] add ohmyzsh uninstall command? That command not work for custom ohmyzsh folder.
+      If you want to uninstall oh-my-zsh, just run `uninstall_oh_my_zsh` from the command-line. It will remove itself and revert your previous bash or zsh configuration.
+
+- [ ] add acknowledgements to readme.md
+- [ ] add tracking feature to setup applications like ohmyzsh, auto-cpufreq etc. Maybe we can firslty use the package manager to install the tlp, ohmyzsh before setup it and track it that way would be easier. Ollama probably not possible because we use the directl offical install.sh script.
+- [ ] exclude configs/readme.md from uv builds
+
 - [ ] disable p2p for fwupd.service
 Disable local cache server (passim)
 
@@ -94,19 +106,6 @@ As a consequence, if you wish to disable passimd you should follow the advice gi
 
 - Make sure the optional dependency udisks2 is installed and the associated systemd unit is started before fwupd unit; it will provide UEFI firmware upgrade support.
 
-- [ ] better to have util function to backup any config file to keep DRY principle
-
-- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances
-- [ ] extra official repo check for cachyos/nobara, install vscode to test it
-- [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
-- [ ] better code structure? <https://docs.python-guide.org/writing/structure/>
-- [ ] <https://github.com/bahamas10/bash-style-guide> for setup.sh
-- [ ] add ohmyzsh uninstall command? That command not work for custom ohmyzsh folder.
-      If you want to uninstall oh-my-zsh, just run `uninstall_oh_my_zsh` from the command-line. It will remove itself and revert your previous bash or zsh configuration.
-
-- [ ] add acknowledgements to readme.md
-- [ ] track setup's too like ohmyzsh, tmux, neovim, hyprland, i3 etc.
-- [ ] exclude configs/readme.md from uv builds
 - [ ] add lightdm auto unlock keyring subcommand
 - [ ] BUG: lightdm auto keyring unlock not work:
 
@@ -172,12 +171,10 @@ As a consequence, if you wish to disable passimd you should follow the advice gi
       so better to make thinkfan and similar to command not laptop package.
 - [ ] create default config util
       config_examples copy not good because it is cumbersome, need to use create default config.sh util to handle it
-- [ ] update docs
 - [ ] setup custom_configs folder usage for user
       Setup custom_configs directory for user-specific config files would be better because current configs folder is only my configs which may not suit others.
 - [ ] my-unicorn, autotarcompres add their setup
 - [ ] my-unicorn compatibility for mimeapp.list
-- [ ] bats unittest updates
 - [ ] tmux dotfiles need to git clone tpm to tmux/plugins folder than install the plugins prefix and press shift and I to install
 
 ## backlog

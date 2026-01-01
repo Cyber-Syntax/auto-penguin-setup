@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- --noconfirm flag to install, remove, list, sync, and setup commands
+- Dry run option for enabling flatpak and COPR repos
+
+### Changed
+
+- Update import statements to use absolute paths and clean up test cases
+- Remove unnecessary pass statements in abstract methods and update test fixtures
+- Enhance docstrings
+- Display installed packages on a single line for better readability
+- Improve code style
+- Improve ohmyzsh.py for security
+- Use functional programming for setups
+- Update ruff configuration
+- Use full path for executables
+- Update agents and todo
+
+### Removed
+
+- Hostname setup
+- PPA references from documentation and code
+- Nfancurve
+- Protonvpn.rpm from .gitignore
+
+### Fixed
+
+- Show pacman manager output to user for remove command
+- Wrong if statement on ohmyzsh
+- Dry-run mode for COPR repository enabling
+
 ## [0.4.0-alpha]
 
 ### Added
