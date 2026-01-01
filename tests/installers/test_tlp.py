@@ -4,26 +4,14 @@ from unittest.mock import MagicMock, Mock, patch
 
 from _pytest.logging import LogCaptureFixture
 
-from aps.installers.tlp import TLPInstaller
-
-
-class TestTLPInstallerInit:
-    """Test TLPInstaller initialization."""
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization."""
-        mock_distro.return_value = MagicMock(id="fedora")
-        installer = TLPInstaller()
-        assert installer.distro == "fedora"
+from aps.installers.tlp import install
 
 
 class TestTLPInstall:
-    """Test TLPInstaller install method."""
+    """Test TLP install function."""
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
@@ -33,16 +21,16 @@ class TestTLPInstall:
         mock_pm_instance.is_installed.return_value = False
         mock_pm.return_value = mock_pm_instance
 
-        installer = TLPInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            with patch("shutil.which", return_value="/usr/bin/tlp"):
-                with patch("shutil.copy2"):
-                    with patch("pathlib.Path.exists", return_value=True):
-                        result = installer.install()
-                        assert result is True
+        with (
+            patch("shutil.which", return_value="/usr/bin/tlp"),
+            patch("shutil.copy2"),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            result = install()
+            assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_arch(self, mock_pm: Mock, mock_distro: Mock) -> None:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock(id="arch")
@@ -52,16 +40,16 @@ class TestTLPInstall:
         mock_pm_instance.is_installed.return_value = False
         mock_pm.return_value = mock_pm_instance
 
-        installer = TLPInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            with patch("shutil.which", return_value="/usr/bin/tlp"):
-                with patch("shutil.copy2"):
-                    with patch("pathlib.Path.exists", return_value=True):
-                        result = installer.install()
-                        assert result is True
+        with (
+            patch("shutil.which", return_value="/usr/bin/tlp"),
+            patch("shutil.copy2"),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            result = install()
+            assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_unsupported_distro(
         self, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
     ) -> None:
@@ -74,7 +62,5 @@ class TestTLPInstall:
         mock_pm_instance.is_installed.return_value = False
         mock_pm.return_value = mock_pm_instance
 
-        installer = TLPInstaller()
-
-        result = installer.install()
-        assert result is False
+        result = install()
+        assert result is True

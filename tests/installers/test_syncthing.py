@@ -1,69 +1,61 @@
 """Tests for Syncthing installer module."""
 
+import subprocess
 from unittest.mock import MagicMock, Mock, patch
 
 from _pytest.logging import LogCaptureFixture
 
-from aps.installers.syncthing import SyncthingInstaller
-
-
-class TestSyncthingInstallerInit:
-    """Test SyncthingInstaller initialization."""
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization."""
-        mock_distro.return_value = MagicMock(id="fedora")
-        installer = SyncthingInstaller()
-        assert installer.distro == "fedora"
+from aps.installers.syncthing import install, is_installed
 
 
 class TestSyncthingInstall:
-    """Test SyncthingInstaller install method."""
+    """Test Syncthing install function."""
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_install_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test install on Fedora."""
-        mock_distro.return_value = MagicMock(id="fedora")
-        mock_pm_instance = MagicMock()
-        mock_pm_instance.install.return_value = (True, None)
-        mock_pm.return_value = mock_pm_instance
+    @patch("subprocess.run")
+    def test_install_success(self, mock_run: Mock) -> None:
+        """Test successful installation."""
+        mock_run.return_value = MagicMock(returncode=0)
 
-        installer = SyncthingInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            result = installer.install()
-            assert result is True
+        result = install()
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_install_arch(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test install on Arch."""
-        mock_distro.return_value = MagicMock(id="arch")
-        mock_pm_instance = MagicMock()
-        mock_pm_instance.install.return_value = (True, None)
-        mock_pm.return_value = mock_pm_instance
-
-        installer = SyncthingInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            result = installer.install()
-            assert result is True
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_install_unsupported_distro(
-        self, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
-    ) -> None:
-        """Test install on unsupported distribution."""
-        caplog.set_level("ERROR")
-        mock_distro.return_value = MagicMock(id="unknown")
-        mock_pm_instance = MagicMock()
-        mock_pm_instance.install.return_value = (False, "Unsupported")
-        mock_pm_instance.remove.return_value = (False, "Unsupported")
-        mock_pm.return_value = mock_pm_instance
-
-        installer = SyncthingInstaller()
-
-        result = installer.install()
         assert result is True
+        mock_run.assert_called_with(
+            ["/usr/bin/systemctl", "--user", "enable", "--now", "syncthing"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    @patch("subprocess.run")
+    def test_install_failure(
+        self, mock_run: Mock, caplog: LogCaptureFixture
+    ) -> None:
+        """Test install failure."""
+        caplog.set_level("ERROR")
+        mock_run.side_effect = subprocess.CalledProcessError(1, "systemctl")
+
+        result = install()
+
+        assert result is False
+
+
+class TestSyncthingIsInstalled:
+    """Test Syncthing is_installed function."""
+
+    @patch("subprocess.run")
+    def test_is_installed_true(self, mock_run: Mock) -> None:
+        """Test is_installed returns True when enabled."""
+        mock_run.return_value = MagicMock(returncode=0)
+
+        result = is_installed()
+
+        assert result is True
+
+    @patch("subprocess.run")
+    def test_is_installed_false(self, mock_run: Mock) -> None:
+        """Test is_installed returns False when not enabled."""
+        mock_run.return_value = MagicMock(returncode=1)
+
+        result = is_installed()
+
+        assert result is False

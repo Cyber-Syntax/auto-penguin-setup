@@ -139,7 +139,7 @@ class TestSetupLogging:
         assert "INFO" in content
         assert "Detailed message" in content
         # Should contain timestamp (year)
-        assert "2025" in content or "2024" in content
+        assert "2025" in content or "2024" in content or "2026" in content
 
 
 class TestGetLogger:

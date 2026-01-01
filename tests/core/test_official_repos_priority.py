@@ -38,10 +38,10 @@ class TestOfficialReposPriority:
         assert mock_run.call_count == 2
         # Check first call was dnf repoquery
         cmd1 = mock_run.call_args_list[0][0][0]
-        assert cmd1 == ["dnf", "repoquery", "git"]
+        assert cmd1 == ["/usr/bin/dnf", "repoquery", "git"]
         # Check second call was dnf list
         cmd2 = mock_run.call_args_list[1][0][0]
-        assert cmd2 == ["dnf", "list", "git"]
+        assert cmd2 == ["/usr/bin/dnf", "list", "git"]
 
     def test_dnf_is_available_in_official_repos_not_found(self) -> None:
         """Test DnfManager doesn't find package in official repos."""
@@ -115,7 +115,7 @@ class TestOfficialReposPriority:
         assert result is True
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert "pacman" in cmd
+        assert cmd[0] == "/usr/bin/pacman"
         assert "-Ss" in cmd
 
     def test_pacman_is_available_in_official_repos_aur_only(self) -> None:
