@@ -10,205 +10,197 @@ This module provides automated SSH setup including:
 import re
 import socket
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from aps.core.logger import get_logger
-from aps.system.base import BaseSystemConfig
 from aps.utils.privilege import run_privileged
 
 logger = get_logger(__name__)
 
+# Module-level constants for SSH paths
+SSH_DIR = Path.home() / ".ssh"
+KEY_PATH = SSH_DIR / "id_ed25519"
+PUB_KEY_PATH = SSH_DIR / "id_ed25519.pub"
+CONFIG_FILE = SSH_DIR / "config"
 
-class SSHConfig(BaseSystemConfig):
-    """SSH configuration and key management."""
 
-    def __init__(self):
-        """Initialize SSH configuration."""
-        super().__init__()
-        self.ssh_dir = Path.home() / ".ssh"
-        self.key_path = self.ssh_dir / "id_ed25519"
-        self.pub_key_path = self.ssh_dir / "id_ed25519.pub"
-        self.config_file = self.ssh_dir / "config"
+def _get_ssh_service_name(distro: str) -> str:
+    """Get the SSH service name for the current distribution.
 
-    def _get_ssh_service_name(self) -> str:
-        """Get the SSH service name for the current distribution.
+    Args:
+        distro: Distribution identifier.
 
-        Returns:
-            Service name ("sshd" for Fedora/Arch)
+    Returns:
+        Service name ("sshd" for Fedora/Arch)
 
-        Raises:
-            RuntimeError: If SSH service cannot be determined
+    Raises:
+        RuntimeError: If SSH service cannot be determined
 
-        """
-        distro = self.distro
+    """
+    if distro in ["fedora", "arch"]:
+        return "sshd"
 
-        if distro in ["fedora", "arch"]:
-            return "sshd"
+    # Fallback detection
+    result = subprocess.run(
+        ["systemctl", "list-unit-files"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-        # Fallback detection
-        result = subprocess.run(
-            ["systemctl", "list-unit-files"],
-            capture_output=True,
-            text=True,
-            check=False,
+    if "sshd.service" in result.stdout:
+        return "sshd"
+    if "ssh.service" in result.stdout:
+        return "ssh"
+
+    raise RuntimeError("Could not detect SSH service name")
+
+
+def _check_host_reachable(ip: str, port: int, timeout: int = 3) -> bool:
+    """Check if remote host is reachable on specified port.
+
+    Args:
+        ip: IP address to check
+        port: Port number to check
+        timeout: Connection timeout in seconds
+
+    Returns:
+        True if host is reachable, False otherwise
+
+    """
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((ip, port))
+        sock.close()
+        return result == 0
+    except (TimeoutError, OSError):
+        return False
+
+
+def _parse_remote_host(host_string: str) -> tuple[str, str, int]:
+    """Parse user@ip:port format into components.
+
+    Args:
+        host_string: String in format "user@ip:port"
+
+    Returns:
+        Tuple of (user, ip, port)
+
+    Raises:
+        ValueError: If format is invalid
+
+    """
+    pattern = r"^([^@]+)@([^:]+):([0-9]+)$"
+    match = re.match(pattern, host_string)
+
+    if not match:
+        raise ValueError(
+            f"Invalid host format: {host_string} (expected user@ip:port)"
         )
 
-        if "sshd.service" in result.stdout:
-            return "sshd"
-        if "ssh.service" in result.stdout:
-            return "ssh"
+    user = match.group(1)
+    ip = match.group(2)
+    port = int(match.group(3))
 
-        raise RuntimeError("Could not detect SSH service name")
+    return user, ip, port
 
-    def _check_host_reachable(
-        self, ip: str, port: int, timeout: int = 3
-    ) -> bool:
-        """Check if remote host is reachable on specified port.
 
-        Args:
-            ip: IP address to check
-            port: Port number to check
-            timeout: Connection timeout in seconds
+def create_ssh_keys(force: bool = False) -> bool:
+    """Create Ed25519 SSH keys if they don't exist.
 
-        Returns:
-            True if host is reachable, False otherwise
+    Args:
+        force: If True, overwrite existing keys
 
-        """
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            result = sock.connect_ex((ip, port))
-            sock.close()
-            return result == 0
-        except (TimeoutError, OSError):
-            return False
+    Returns:
+        True if keys were created or already exist
 
-    def _parse_remote_host(self, host_string: str) -> tuple[str, str, int]:
-        """Parse user@ip:port format into components.
-
-        Args:
-            host_string: String in format "user@ip:port"
-
-        Returns:
-            Tuple of (user, ip, port)
-
-        Raises:
-            ValueError: If format is invalid
-
-        """
-        pattern = r"^([^@]+)@([^:]+):([0-9]+)$"
-        match = re.match(pattern, host_string)
-
-        if not match:
-            raise ValueError(
-                f"Invalid host format: {host_string} (expected user@ip:port)"
-            )
-
-        user = match.group(1)
-        ip = match.group(2)
-        port = int(match.group(3))
-
-        return user, ip, port
-
-    def create_ssh_keys(self, force: bool = False) -> bool:
-        """Create Ed25519 SSH keys if they don't exist.
-
-        Args:
-            force: If True, overwrite existing keys
-
-        Returns:
-            True if keys were created or already exist
-
-        """
-        if self.key_path.exists() and self.pub_key_path.exists() and not force:
-            logger.debug("Ed25519 SSH keys already exist at %s", self.key_path)
-            return True
-
-        logger.info("Generating Ed25519 SSH keys...")
-
-        # Create .ssh directory
-        self.ssh_dir.mkdir(mode=0o700, exist_ok=True)
-
-        # Generate Ed25519 key with no passphrase
-        hostname = subprocess.run(
-            ["hostname"], capture_output=True, text=True, check=True
-        ).stdout.strip()
-
-        result = subprocess.run(
-            [
-                "ssh-keygen",
-                "-t",
-                "ed25519",
-                "-f",
-                str(self.key_path),
-                "-N",
-                "",
-                "-C",
-                f"auto-penguin-setup@{hostname}",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        if result.returncode != 0:
-            logger.error(
-                "Failed to generate Ed25519 SSH keys: %s", result.stderr
-            )
-            return False
-
-        # Set proper permissions
-        self.key_path.chmod(0o600)
-        self.pub_key_path.chmod(0o644)
-
-        logger.info(
-            "Ed25519 SSH keys generated successfully at %s", self.key_path
-        )
+    """
+    if KEY_PATH.exists() and PUB_KEY_PATH.exists() and not force:
+        logger.debug("Ed25519 SSH keys already exist at %s", KEY_PATH)
         return True
 
-    def configure_sshd_security(
-        self,
-        port: int = 22,
-        password_auth: bool = False,
-        permit_root_login: bool = False,
-    ) -> bool:
-        """Configure SSH daemon security settings.
+    logger.info("Generating Ed25519 SSH keys...")
 
-        Creates /etc/ssh/sshd_config.d/50-autopenguin.conf with security settings.
+    # Create .ssh directory
+    SSH_DIR.mkdir(mode=0o700, exist_ok=True)
 
-        Args:
-            port: SSH port number (default: 22)
-            password_auth: Allow password authentication (default: False)
-            permit_root_login: Allow root login (default: False)
+    # Generate Ed25519 key with no passphrase
+    hostname = subprocess.run(
+        ["hostname"], capture_output=True, text=True, check=True
+    ).stdout.strip()
 
-        Returns:
-            True on success
+    result = subprocess.run(
+        [
+            "ssh-keygen",
+            "-t",
+            "ed25519",
+            "-f",
+            str(KEY_PATH),
+            "-N",
+            "",
+            "-C",
+            f"auto-penguin-setup@{hostname}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-        """
-        logger.info("Configuring SSH security settings...")
+    if result.returncode != 0:
+        logger.error("Failed to generate Ed25519 SSH keys: %s", result.stderr)
+        return False
 
-        sshd_config_dir = Path("/etc/ssh/sshd_config.d")
-        config_file = sshd_config_dir / "50-autopenguin.conf"
+    # Set proper permissions
+    KEY_PATH.chmod(0o600)
+    PUB_KEY_PATH.chmod(0o644)
 
-        # Create directory if it doesn't exist
-        if not sshd_config_dir.exists():
-            logger.debug(
-                "Creating SSH drop-in config directory: %s", sshd_config_dir
-            )
-            result = run_privileged(
-                ["mkdir", "-p", str(sshd_config_dir)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode != 0:
-                logger.error("Failed to create %s", sshd_config_dir)
-                return False
+    logger.info("Ed25519 SSH keys generated successfully at %s", KEY_PATH)
+    return True
 
-        # Create drop-in configuration
-        config_content = f"""# auto-penguin-setup SSH configuration
-# Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+def configure_sshd_security(
+    port: int = 22,
+    password_auth: bool = False,
+    permit_root_login: bool = False,
+) -> bool:
+    """Configure SSH daemon security settings.
+
+    Creates /etc/ssh/sshd_config.d/50-autopenguin.conf with security settings.
+
+    Args:
+        port: SSH port number (default: 22)
+        password_auth: Allow password authentication (default: False)
+        permit_root_login: Allow root login (default: False)
+
+    Returns:
+        True on success
+
+    """
+    logger.info("Configuring SSH security settings...")
+
+    sshd_config_dir = Path("/etc/ssh/sshd_config.d")
+    config_file = sshd_config_dir / "50-autopenguin.conf"
+
+    # Create directory if it doesn't exist
+    if not sshd_config_dir.exists():
+        logger.debug(
+            "Creating SSH drop-in config directory: %s", sshd_config_dir
+        )
+        result = run_privileged(
+            ["mkdir", "-p", str(sshd_config_dir)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            logger.error("Failed to create %s", sshd_config_dir)
+            return False
+
+    # Create drop-in configuration
+    config_content = f"""# auto-penguin-setup SSH configuration
+# Generated on {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}
 
 # Port configuration
 Port {port}
@@ -228,36 +220,83 @@ AcceptEnv LANG LC_*
 Subsystem sftp /usr/lib/openssh/sftp-server
 """
 
+    result = run_privileged(
+        ["tee", str(config_file)],
+        stdin_input=config_content,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        logger.error("Failed to write SSH configuration file")
+        return False
+
+    logger.info("SSH security configuration written to %s", config_file)
+    return True
+
+
+def enable_ssh_service(distro: str) -> bool:
+    """Enable and start SSH service.
+
+    Args:
+        distro: Distribution identifier.
+
+    Returns:
+        True on success
+
+    """
+    try:
+        service_name = _get_ssh_service_name(distro)
+        logger.info("Ensuring SSH service (%s) is running...", service_name)
+
         result = run_privileged(
-            ["tee", str(config_file)],
-            stdin_input=config_content,
+            ["systemctl", "enable", "--now", service_name],
             capture_output=True,
             text=True,
             check=False,
         )
 
         if result.returncode != 0:
-            logger.error("Failed to write SSH configuration file")
+            logger.error(
+                "Failed to enable and start SSH service: %s", result.stderr
+            )
             return False
 
-        logger.info("SSH security configuration written to %s", config_file)
+        logger.info("SSH service (%s) is running", service_name)
         return True
 
-    def enable_ssh_service(self) -> bool:
-        """Enable and start SSH service.
+    except RuntimeError:
+        logger.exception("Failed to enable SSH service")
+        return False
 
-        Returns:
-            True on success
 
-        """
-        try:
-            service_name = self._get_ssh_service_name()
-            logger.info(
-                "Ensuring SSH service (%s) is running...", service_name
-            )
+def reload_sshd_config(distro: str) -> bool:
+    """Reload SSH daemon to apply configuration changes.
 
+    Args:
+        distro: Distribution identifier.
+
+    Returns:
+        True on success
+
+    """
+    try:
+        service_name = _get_ssh_service_name(distro)
+        logger.info("Reloading SSH service to apply configuration...")
+
+        # Try reload first
+        result = run_privileged(
+            ["systemctl", "reload", service_name],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            logger.warning("Reload failed, attempting restart...")
             result = run_privileged(
-                ["systemctl", "enable", "--now", service_name],
+                ["systemctl", "restart", service_name],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -265,323 +304,282 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 
             if result.returncode != 0:
                 logger.error(
-                    "Failed to enable and start SSH service: %s", result.stderr
+                    "Failed to reload/restart SSH service: %s",
+                    result.stderr,
                 )
                 return False
 
-            logger.info("SSH service (%s) is running", service_name)
-            return True
+        logger.info("SSH configuration reloaded successfully")
+        return True
 
-        except RuntimeError as e:
-            logger.error("Failed to enable SSH service: %s", e)
-            return False
+    except RuntimeError:
+        logger.exception("Failed to reload SSH service")
+        return False
 
-    def reload_sshd_config(self) -> bool:
-        """Reload SSH daemon to apply configuration changes.
 
-        Returns:
-            True on success
+def copy_key_to_remote(
+    user: str, ip: str, port: int, device_name: str | None = None
+) -> bool:
+    """Copy Ed25519 public key to remote host using ssh-copy-id.
 
-        """
+    Args:
+        user: Remote username
+        ip: Remote IP address
+        port: Remote SSH port
+        device_name: Optional device name for logging
+
+    Returns:
+        True on success
+
+    """
+    device_label = device_name or f"{user}@{ip}:{port}"
+
+    # Check if host is reachable
+    if not _check_host_reachable(ip, port):
+        logger.warning(
+            "Host %s (%s:%d) is not reachable, skipping",
+            device_label,
+            ip,
+            port,
+        )
+        return False
+
+    logger.info(
+        "Copying SSH key to %s (%s@%s:%d)...", device_label, user, ip, port
+    )
+    logger.info("You may be prompted for password on the remote host")
+
+    result = subprocess.run(
+        [
+            "ssh-copy-id",
+            "-i",
+            str(PUB_KEY_PATH),
+            "-p",
+            str(port),
+            f"{user}@{ip}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        logger.error("Failed to copy SSH key to %s", device_label)
+        return False
+
+    logger.info("SSH key copied successfully to %s", device_label)
+    return True
+
+
+def test_ssh_connection(user: str, ip: str, port: int) -> bool:
+    """Test passwordless SSH connection to remote host.
+
+    Args:
+        user: Remote username
+        ip: Remote IP address
+        port: Remote SSH port
+
+    Returns:
+        True if passwordless connection works
+
+    """
+    result = subprocess.run(
+        [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=5",
+            "-p",
+            str(port),
+            f"{user}@{ip}",
+            "exit",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    return result.returncode == 0
+
+
+def generate_ssh_config(devices: dict[str, str]) -> bool:
+    """Generate ~/.ssh/config from device definitions.
+
+    Args:
+        devices: Dictionary mapping device names to "user@ip:port" strings
+
+    Returns:
+        True on success
+
+    """
+    logger.info("Generating SSH client configuration...")
+
+    # Create .ssh directory
+    SSH_DIR.mkdir(mode=0o700, exist_ok=True)
+
+    # Backup existing config
+    if CONFIG_FILE.exists():
+        backup_suffix = datetime.now(UTC).strftime(".bak.%Y%m%d%H%M%S")
+        backup_path = Path(str(CONFIG_FILE) + backup_suffix)
+        logger.debug("Backing up existing SSH config to %s", backup_path)
+        CONFIG_FILE.rename(backup_path)
+
+    # Generate config content
+    hostname = subprocess.run(
+        ["hostname"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+
+    config_lines = [
+        "# SSH Client Configuration",
+        (
+            "# Generated by auto-penguin-setup on "
+            f"{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}"
+        ),
+        f"# Device: {hostname}",
+        "",
+        "# Default settings for all hosts",
+        "Host *",
+        "  ServerAliveInterval 60",
+        "  ServerAliveCountMax 3",
+        "  ControlMaster auto",
+        "  ControlPath ~/.ssh/control-%r@%h:%p",
+        "  ControlPersist 10m",
+        "",
+        "# Auto-generated host entries",
+    ]
+
+    # Add device entries
+    for device_name, device_config in devices.items():
         try:
-            service_name = self._get_ssh_service_name()
-            logger.info("Reloading SSH service to apply configuration...")
-
-            # Try reload first
-            result = run_privileged(
-                ["systemctl", "reload", service_name],
-                capture_output=True,
-                text=True,
-                check=False,
+            user, ip, port = _parse_remote_host(device_config)
+            config_lines.extend(
+                [
+                    "",
+                    f"Host {device_name}",
+                    f"  HostName {ip}",
+                    f"  User {user}",
+                    f"  Port {port}",
+                    "  IdentityFile ~/.ssh/id_ed25519",
+                ]
+            )
+            logger.debug("Added SSH config entry for %s", device_name)
+        except ValueError:
+            logger.exception(
+                "Skipping invalid device config: %s=%s",
+                device_name,
+                device_config,
             )
 
-            if result.returncode != 0:
-                logger.warning("Reload failed, attempting restart...")
-                result = run_privileged(
-                    ["systemctl", "restart", service_name],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
+    # Write config file
+    CONFIG_FILE.write_text("\n".join(config_lines) + "\n")
+    CONFIG_FILE.chmod(0o600)
 
-                if result.returncode != 0:
-                    logger.error(
-                        "Failed to reload/restart SSH service: %s",
-                        result.stderr,
-                    )
-                    return False
+    logger.info("SSH config generated successfully at %s", CONFIG_FILE)
+    return True
 
-            logger.info("SSH configuration reloaded successfully")
-            return True
 
-        except RuntimeError as e:
-            logger.error("Failed to reload SSH service: %s", e)
-            return False
+def configure(distro: str, **kwargs) -> bool:  # noqa: ANN003, C901, PLR0912, PLR0915
+    """Apply SSH configuration.
 
-    def copy_key_to_remote(
-        self, user: str, ip: str, port: int, device_name: str | None = None
-    ) -> bool:
-        """Copy Ed25519 public key to remote host using ssh-copy-id.
-
-        Args:
-            user: Remote username
-            ip: Remote IP address
-            port: Remote SSH port
-            device_name: Optional device name for logging
-
-        Returns:
-            True on success
-
-        """
-        device_label = device_name or f"{user}@{ip}:{port}"
-
-        # Check if host is reachable
-        if not self._check_host_reachable(ip, port):
-            logger.warning(
-                "Host %s (%s:%d) is not reachable, skipping",
-                device_label,
-                ip,
-                port,
-            )
-            return False
-
-        logger.info(
-            "Copying SSH key to %s (%s@%s:%d)...", device_label, user, ip, port
-        )
-        logger.info("You may be prompted for password on the remote host")
-
-        result = subprocess.run(
-            [
-                "ssh-copy-id",
-                "-i",
-                str(self.pub_key_path),
-                "-p",
-                str(port),
-                f"{user}@{ip}",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        if result.returncode != 0:
-            logger.error("Failed to copy SSH key to %s", device_label)
-            return False
-
-        logger.info("SSH key copied successfully to %s", device_label)
-        return True
-
-    def test_ssh_connection(self, user: str, ip: str, port: int) -> bool:
-        """Test passwordless SSH connection to remote host.
-
-        Args:
-            user: Remote username
-            ip: Remote IP address
-            port: Remote SSH port
-
-        Returns:
-            True if passwordless connection works
-
-        """
-        result = subprocess.run(
-            [
-                "ssh",
-                "-o",
-                "BatchMode=yes",
-                "-o",
-                "ConnectTimeout=5",
-                "-p",
-                str(port),
-                f"{user}@{ip}",
-                "exit",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        return result.returncode == 0
-
-    def generate_ssh_config(self, devices: dict[str, str]) -> bool:
-        """Generate ~/.ssh/config from device definitions.
-
-        Args:
-            devices: Dictionary mapping device names to "user@ip:port" strings
-
-        Returns:
-            True on success
-
-        """
-        logger.info("Generating SSH client configuration...")
-
-        # Create .ssh directory
-        self.ssh_dir.mkdir(mode=0o700, exist_ok=True)
-
-        # Backup existing config
-        if self.config_file.exists():
-            backup_suffix = datetime.now().strftime(".bak.%Y%m%d%H%M%S")
-            backup_path = Path(str(self.config_file) + backup_suffix)
-            logger.debug("Backing up existing SSH config to %s", backup_path)
-            self.config_file.rename(backup_path)
-
-        # Generate config content
-        hostname = subprocess.run(
-            ["hostname"], capture_output=True, text=True, check=True
-        ).stdout.strip()
-
-        config_lines = [
-            "# SSH Client Configuration",
-            f"# Generated by auto-penguin-setup on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"# Device: {hostname}",
-            "",
-            "# Default settings for all hosts",
-            "Host *",
-            "  ServerAliveInterval 60",
-            "  ServerAliveCountMax 3",
-            "  ControlMaster auto",
-            "  ControlPath ~/.ssh/control-%r@%h:%p",
-            "  ControlPersist 10m",
-            "",
-            "# Auto-generated host entries",
-        ]
-
-        # Add device entries
-        for device_name, device_config in devices.items():
-            try:
-                user, ip, port = self._parse_remote_host(device_config)
-                config_lines.extend(
-                    [
-                        "",
-                        f"Host {device_name}",
-                        f"  HostName {ip}",
-                        f"  User {user}",
-                        f"  Port {port}",
-                        "  IdentityFile ~/.ssh/id_ed25519",
-                    ]
-                )
-                logger.debug("Added SSH config entry for %s", device_name)
-            except ValueError as e:
-                logger.warning(
-                    "Skipping invalid device config: %s=%s (%s)",
-                    device_name,
-                    device_config,
-                    e,
-                )
-
-        # Write config file
-        self.config_file.write_text("\n".join(config_lines) + "\n")
-        self.config_file.chmod(0o600)
-
-        logger.info(
-            "SSH config generated successfully at %s", self.config_file
-        )
-        return True
-
-    def configure(self, **kwargs) -> bool:
-        """Apply SSH configuration.
-
-        Supported kwargs:
+    Args:
+        distro: Distribution identifier.
+        **kwargs: Configuration keyword arguments.
             port (int): SSH port (default: 22)
-            password_auth (bool): Allow password authentication (default: False)
+            password_auth (bool): Allow password authentication
+                (default: False)
             permit_root_login (bool): Allow root login (default: False)
             enable_service (bool): Enable SSH service (default: True)
             devices (dict): Device name -> "user@ip:port" mappings
             targets (list): List of device names to copy keys to
 
-        Returns:
-            True on success
+    Returns:
+        True on success
 
-        """
-        port = kwargs.get("port", 22)
-        password_auth = kwargs.get("password_auth", False)
-        permit_root_login = kwargs.get("permit_root_login", False)
-        enable_service = kwargs.get("enable_service", True)
-        devices = kwargs.get("devices", {})
-        targets = kwargs.get("targets", [])
+    """
+    port = kwargs.get("port", 22)
+    password_auth = kwargs.get("password_auth", False)
+    permit_root_login = kwargs.get("permit_root_login", False)
+    enable_service = kwargs.get("enable_service", True)
+    devices = kwargs.get("devices", {})
+    targets = kwargs.get("targets", [])
 
-        logger.info("=" * 50)
-        logger.info("Starting SSH Automated Setup")
-        logger.info("=" * 50)
+    logger.info("=" * 50)
+    logger.info("Starting SSH Automated Setup")
+    logger.info("=" * 50)
 
-        # Create SSH keys
-        if not self.create_ssh_keys():
-            logger.error("Failed to create SSH keys")
-            return False
+    # Create SSH keys
+    if not create_ssh_keys():
+        logger.error("Failed to create SSH keys")
+        return False
 
-        # Configure sshd security
-        if not self.configure_sshd_security(
-            port, password_auth, permit_root_login
-        ):
-            logger.error("Failed to configure SSH security")
-            return False
+    # Configure sshd security
+    if not configure_sshd_security(port, password_auth, permit_root_login):
+        logger.error("Failed to configure SSH security")
+        return False
 
-        # Enable SSH service
-        if enable_service:
-            if not self.enable_ssh_service():
-                logger.warning("Failed to enable SSH service")
+    # Enable SSH service
+    if enable_service:
+        if not enable_ssh_service(distro):
+            logger.warning("Failed to enable SSH service")
 
-            if not self.reload_sshd_config():
-                logger.warning("Failed to reload SSH configuration")
+        if not reload_sshd_config(distro):
+            logger.warning("Failed to reload SSH configuration")
 
-        # Copy keys to targets
-        if devices and targets:
-            success_count = 0
-            fail_count = 0
+    # Copy keys to targets
+    if devices and targets:
+        success_count = 0
+        fail_count = 0
 
-            for target in targets:
-                if target not in devices:
+        for target in targets:
+            if target not in devices:
+                logger.warning(
+                    "Target device '%s' not found in device list", target
+                )
+                fail_count += 1
+                continue
+
+            try:
+                user, ip, target_port = _parse_remote_host(devices[target])
+                if copy_key_to_remote(user, ip, target_port, target):
+                    success_count += 1
+                else:
+                    fail_count += 1
+            except ValueError:
+                logger.exception("Failed to parse target %s", target)
+                fail_count += 1
+
+        logger.info(
+            "SSH key distribution complete: %d successful, %d failed",
+            success_count,
+            fail_count,
+        )
+
+    # Generate SSH config
+    if devices and not generate_ssh_config(devices):
+        logger.error("Failed to generate SSH client configuration")
+        return False
+
+    # Test connections
+    if devices and targets:
+        logger.info("Testing SSH connections to all targets...")
+        for target in targets:
+            if target not in devices:
+                continue
+
+            try:
+                user, ip, target_port = _parse_remote_host(devices[target])
+                if test_ssh_connection(user, ip, target_port):
+                    logger.info("✓ %s - Connection OK", target)
+                else:
                     logger.warning(
-                        "Target device '%s' not found in device list", target
+                        "✗ %s - Connection failed (password may be required)",
+                        target,
                     )
-                    fail_count += 1
-                    continue
+            except ValueError:
+                logger.warning("✗ %s - Invalid configuration", target)
 
-                try:
-                    user, ip, target_port = self._parse_remote_host(
-                        devices[target]
-                    )
-                    if self.copy_key_to_remote(user, ip, target_port, target):
-                        success_count += 1
-                    else:
-                        fail_count += 1
-                except ValueError as e:
-                    logger.error("Failed to parse target %s: %s", target, e)
-                    fail_count += 1
-
-            logger.info(
-                "SSH key distribution complete: %d successful, %d failed",
-                success_count,
-                fail_count,
-            )
-
-        # Generate SSH config
-        if devices:
-            if not self.generate_ssh_config(devices):
-                logger.error("Failed to generate SSH client configuration")
-                return False
-
-        # Test connections
-        if devices and targets:
-            logger.info("Testing SSH connections to all targets...")
-            for target in targets:
-                if target not in devices:
-                    continue
-
-                try:
-                    user, ip, target_port = self._parse_remote_host(
-                        devices[target]
-                    )
-                    if self.test_ssh_connection(user, ip, target_port):
-                        logger.info("✓ %s - Connection OK", target)
-                    else:
-                        logger.warning(
-                            "✗ %s - Connection failed (password may be required)",
-                            target,
-                        )
-                except ValueError:
-                    logger.warning("✗ %s - Invalid configuration", target)
-
-        logger.info("=" * 50)
-        logger.info("SSH Setup Complete")
-        logger.info("=" * 50)
-        return True
+    logger.info("=" * 50)
+    logger.info("SSH Setup Complete")
+    logger.info("=" * 50)
+    return True

@@ -572,7 +572,6 @@ class TestCLICommands:
         mock_mapping.is_official = True
         mock_mapping.is_copr = False
         mock_mapping.is_aur = False
-        mock_mapping.is_ppa = False
         mock_mapping.is_flatpak = False
 
         mock_repo_mgr.check_official_before_enabling.return_value = (

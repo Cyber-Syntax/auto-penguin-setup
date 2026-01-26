@@ -4,26 +4,14 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from _pytest.logging import LogCaptureFixture
 
-from aps.installers.thinkfan import ThinkfanInstaller
-
-
-class TestThinkfanInstallerInit:
-    """Test ThinkfanInstaller initialization."""
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization."""
-        mock_distro.return_value = MagicMock(id="fedora")
-        installer = ThinkfanInstaller()
-        assert installer.distro == "fedora"
+from aps.installers.thinkfan import install
 
 
 class TestThinkfanInstall:
-    """Test ThinkfanInstaller install method."""
+    """Test thinkfan install function."""
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     @patch("shutil.which", return_value="/usr/bin/thinkfan")
     @patch("pathlib.Path.open", new_callable=mock_open)
     def test_install_fedora(
@@ -39,15 +27,15 @@ class TestThinkfanInstall:
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
 
-        installer = ThinkfanInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            with patch("shutil.copy2"):
-                with patch("pathlib.Path.exists", return_value=True):
-                    result = installer.install()
-                    assert result is True
+        with (
+            patch("shutil.copy2"),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            result = install()
+            assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     @patch("shutil.which", return_value="/usr/bin/thinkfan")
     @patch("pathlib.Path.open", new_callable=mock_open)
     def test_install_arch(
@@ -63,15 +51,15 @@ class TestThinkfanInstall:
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
 
-        installer = ThinkfanInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            with patch("shutil.copy2"):
-                with patch("pathlib.Path.exists", return_value=True):
-                    result = installer.install()
-                    assert result is True
+        with (
+            patch("shutil.copy2"),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            result = install()
+            assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_unsupported_distro(
         self, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
     ) -> None:
@@ -83,7 +71,5 @@ class TestThinkfanInstall:
         mock_pm_instance.remove.return_value = (False, "Unsupported")
         mock_pm.return_value = mock_pm_instance
 
-        installer = ThinkfanInstaller()
-
-        result = installer.install()
+        result = install()
         assert result is False

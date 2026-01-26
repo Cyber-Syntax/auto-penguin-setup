@@ -4,26 +4,14 @@ from unittest.mock import MagicMock, Mock, patch
 
 from _pytest.logging import LogCaptureFixture
 
-from aps.installers.trashcli import TrashCLIInstaller
-
-
-class TestTrashCLIInstallerInit:
-    """Test TrashCLIInstaller initialization."""
-
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
-    def test_init(self, mock_pm: Mock, mock_distro: Mock) -> None:
-        """Test initialization."""
-        mock_distro.return_value = MagicMock(id="fedora")
-        installer = TrashCLIInstaller()
-        assert installer.distro == "fedora"
+from aps.installers.trashcli import install
 
 
 class TestTrashCLIInstall:
-    """Test TrashCLIInstaller install method."""
+    """Test trash-cli install function."""
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
@@ -31,13 +19,11 @@ class TestTrashCLIInstall:
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
 
-        installer = TrashCLIInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            result = installer.install()
-            assert result is True
+        result = install()
+        assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_arch(self, mock_pm: Mock, mock_distro: Mock) -> None:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock(id="arch")
@@ -45,13 +31,11 @@ class TestTrashCLIInstall:
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
 
-        installer = TrashCLIInstaller()
-        with patch.object(installer, "try_official_first", return_value=True):
-            result = installer.install()
-            assert result is True
+        result = install()
+        assert result is True
 
-    @patch("aps.installers.base.detect_distro")
-    @patch("aps.installers.base.get_package_manager")
+    @patch("aps.core.distro.detect_distro")
+    @patch("aps.core.package_manager.get_package_manager")
     def test_install_unsupported_distro(
         self, mock_pm: Mock, mock_distro: Mock, caplog: LogCaptureFixture
     ) -> None:
@@ -63,7 +47,5 @@ class TestTrashCLIInstall:
         mock_pm_instance.remove.return_value = (False, "Unsupported")
         mock_pm.return_value = mock_pm_instance
 
-        installer = TrashCLIInstaller()
-
-        result = installer.install()
+        result = install()
         assert result is True

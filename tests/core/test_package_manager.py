@@ -324,7 +324,7 @@ class TestPacmanManager:
                 package_manager=PackageManagerType.PACMAN,
             )
         )
-        assert manager.aur_helper == "paru"
+        assert manager.aur_helper == "/usr/bin/paru"
 
     @patch("shutil.which")
     def test_detect_aur_helper_yay(self, mock_which: Mock) -> None:
@@ -342,7 +342,7 @@ class TestPacmanManager:
                 package_manager=PackageManagerType.PACMAN,
             )
         )
-        assert manager.aur_helper == "yay"
+        assert manager.aur_helper == "/usr/bin/yay"
 
     @patch("shutil.which")
     def test_detect_aur_helper_none(self, mock_which: Mock) -> None:

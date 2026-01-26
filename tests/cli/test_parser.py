@@ -217,12 +217,6 @@ class TestListCommand:
         args = parser.parse_args(["list", "--source", "aur"])
         assert args.source == "aur"
 
-    def test_list_with_source_ppa(self) -> None:
-        """Test list with PPA source filter."""
-        parser = create_parser()
-        args = parser.parse_args(["list", "--source", "ppa"])
-        assert args.source == "ppa"
-
     def test_list_with_source_flatpak(self) -> None:
         """Test list with flatpak source filter."""
         parser = create_parser()

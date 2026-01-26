@@ -2,7 +2,9 @@
 
 import shutil
 import subprocess
+import tempfile
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from aps.core.distro import DistroFamily, DistroInfo
 from aps.utils.privilege import run_privileged
@@ -14,8 +16,6 @@ logger = get_logger(__name__)
 
 class PackageManagerError(Exception):
     """Base exception for package manager operations."""
-
-    pass
 
 
 class PackageManager(ABC):
@@ -45,7 +45,6 @@ class PackageManager(ABC):
             error_message is empty string if success
 
         """
-        pass
 
     @abstractmethod
     def remove(
@@ -62,7 +61,6 @@ class PackageManager(ABC):
             error_message is empty string if success
 
         """
-        pass
 
     @abstractmethod
     def search(self, query: str) -> list[str]:
@@ -75,7 +73,6 @@ class PackageManager(ABC):
             List of matching package names
 
         """
-        pass
 
     @abstractmethod
     def is_installed(self, package: str) -> bool:
@@ -88,7 +85,6 @@ class PackageManager(ABC):
             True if package is installed, False otherwise
 
         """
-        pass
 
     @abstractmethod
     def update_cache(self) -> bool:
@@ -98,7 +94,6 @@ class PackageManager(ABC):
             True if update succeeded, False otherwise
 
         """
-        pass
 
     @abstractmethod
     def is_available_in_official_repos(self, package: str) -> bool:
@@ -111,7 +106,6 @@ class PackageManager(ABC):
             True if package is available in official repos, False otherwise
 
         """
-        pass
 
 
 class DnfManager(PackageManager):
@@ -120,6 +114,17 @@ class DnfManager(PackageManager):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
+        """Install packages.
+
+        Args:
+            packages: List of package names to install
+            assume_yes: Auto-confirm installation (default: False)
+
+        Returns:
+            Tuple of (success: bool, error_message: str)
+            error_message is empty string if success
+
+        """
         logger.info("Installing packages: %s", ", ".join(packages))
 
         cmd: list[str] = ["dnf", "install"]
@@ -137,8 +142,19 @@ class DnfManager(PackageManager):
         return False, "Package installation failed"
 
     def remove(
-        self, packages: list[str], assume_yes: bool = True
+        self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
+        """Remove packages.
+
+        Args:
+            packages: List of package names to remove
+            assume_yes: Auto-confirm removal (default: False)
+
+        Returns:
+            Tuple of (success: bool, error_message: str)
+            error_message is empty string if success
+
+        """
         logger.info("Removing packages: %s", ", ".join(packages))
 
         cmd: list[str] = ["dnf", "remove"]
@@ -156,7 +172,16 @@ class DnfManager(PackageManager):
         return False, "Package removal failed"
 
     def search(self, query: str) -> list[str]:
-        cmd: list[str] = ["dnf", "search", "--quiet", query]
+        """Search for packages matching query.
+
+        Args:
+            query: Search query string
+
+        Returns:
+            List of matching package names
+
+        """
+        cmd: list[str] = ["/usr/bin/dnf", "search", "--quiet", query]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -174,12 +199,27 @@ class DnfManager(PackageManager):
         return packages
 
     def is_installed(self, package: str) -> bool:
-        cmd = ["rpm", "-q", package]
+        """Check if a package is installed.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is installed, False otherwise
+
+        """
+        cmd = ["/usr/bin/rpm", "-q", package]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def update_cache(self) -> bool:
-        cmd = ["dnf", "makecache"]
+        """Update package manager cache/database.
+
+        Returns:
+            True if update succeeded, False otherwise
+
+        """
+        cmd = ["/usr/bin/dnf", "makecache"]
         result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -201,7 +241,7 @@ class DnfManager(PackageManager):
 
         """
         # First check if package exists at all
-        cmd = ["dnf", "repoquery", package]
+        cmd = ["/usr/bin/dnf", "repoquery", package]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -211,7 +251,7 @@ class DnfManager(PackageManager):
 
         # Package found - verify it's not from an already-enabled COPR repo
         # by checking with dnf list to see which repo provides it
-        list_cmd = ["dnf", "list", package]
+        list_cmd = ["/usr/bin/dnf", "list", package]
         list_result = subprocess.run(
             list_cmd, capture_output=True, text=True, check=False
         )
@@ -233,6 +273,11 @@ class PacmanManager(PackageManager):
     """Package manager for Arch-based distributions using pacman."""
 
     def __init__(self, distro: DistroInfo) -> None:
+        """Initialize the PacmanManager.
+
+        Args:
+            distro: Distribution information.
+        """
         super().__init__(distro)
         self.aur_helper = self._detect_aur_helper()
 
@@ -242,12 +287,13 @@ class PacmanManager(PackageManager):
         Preference order: paru > yay > None
 
         Returns:
-            Name of AUR helper if found, None otherwise
+            Full path of AUR helper if found, None otherwise
 
         """
         for helper in ["paru", "yay"]:
-            if shutil.which(helper):
-                return helper
+            path = shutil.which(helper)
+            if path:
+                return path
         return None
 
     def install_paru(self, assume_yes: bool = False) -> bool:
@@ -260,8 +306,6 @@ class PacmanManager(PackageManager):
             True if paru was installed successfully, False otherwise
 
         """
-        import tempfile
-
         logger.info("Installing paru AUR helper...")
 
         # Check if paru is already installed
@@ -271,7 +315,7 @@ class PacmanManager(PackageManager):
 
         # Install base-devel first
         logger.info("Installing base-devel...")
-        cmd = ["pacman", "-S", "--needed"]
+        cmd = ["/usr/bin/pacman", "-S", "--needed"]
         if assume_yes:
             cmd.append("--noconfirm")
         cmd.append("base-devel")
@@ -284,17 +328,19 @@ class PacmanManager(PackageManager):
         # Clone and build paru
         with tempfile.TemporaryDirectory() as tmpdir:
             logger.info("Cloning paru from AUR...")
-            clone_cmd = ["git", "clone", "https://aur.archlinux.org/paru.git"]
+            clone_cmd = [
+                "/usr/bin/git",
+                "clone",
+                "https://aur.archlinux.org/paru.git",
+            ]
             result = subprocess.run(clone_cmd, cwd=tmpdir, check=False)
             if result.returncode != 0:
                 logger.error("Failed to clone paru repository")
                 return False
 
-            from pathlib import Path
-
             paru_dir = Path(tmpdir) / "paru"
             logger.info("Building paru...")
-            build_cmd = ["makepkg", "-si"]
+            build_cmd = ["/usr/bin/makepkg", "-si"]
             if assume_yes:
                 build_cmd.append("--noconfirm")
 
@@ -306,7 +352,7 @@ class PacmanManager(PackageManager):
         # Verify installation
         if shutil.which("paru"):
             logger.info("paru installed successfully")
-            self.aur_helper = "paru"
+            self.aur_helper = shutil.which("paru")
             return True
         logger.error("paru installation verification failed")
         return False
@@ -314,6 +360,17 @@ class PacmanManager(PackageManager):
     def install(
         self, packages: list[str], assume_yes: bool = False
     ) -> tuple[bool, str]:
+        """Install packages.
+
+        Args:
+            packages: List of package names to install
+            assume_yes: Auto-confirm installation (default: False)
+
+        Returns:
+            Tuple of (success: bool, error_message: str)
+            error_message is empty string if success
+
+        """
         logger.info("Installing packages: %s", ", ".join(packages))
 
         cmd = ["pacman", "-S", "--needed"]
@@ -392,9 +449,7 @@ class PacmanManager(PackageManager):
         cmd.extend(packages)
 
         logger.debug("Executing command: %s", " ".join(cmd))
-        result = run_privileged(
-            cmd, capture_output=True, text=True, check=False
-        )
+        result = run_privileged(cmd, capture_output=False, check=False)
         if result.returncode == 0:
             return True, ""
         logger.error(
@@ -403,7 +458,16 @@ class PacmanManager(PackageManager):
         return False, result.stderr
 
     def search(self, query: str) -> list[str]:
-        cmd = ["pacman", "-Ss", query]
+        """Search for packages matching query.
+
+        Args:
+            query: Search query string
+
+        Returns:
+            List of matching package names
+
+        """
+        cmd = ["/usr/bin/pacman", "-Ss", query]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )
@@ -421,12 +485,27 @@ class PacmanManager(PackageManager):
         return packages
 
     def is_installed(self, package: str) -> bool:
-        cmd = ["pacman", "-Q", package]
+        """Check if a package is installed.
+
+        Args:
+            package: Package name to check
+
+        Returns:
+            True if package is installed, False otherwise
+
+        """
+        cmd = ["/usr/bin/pacman", "-Q", package]
         result = subprocess.run(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
     def update_cache(self) -> bool:
-        cmd = ["pacman", "-Sy"]
+        """Update package manager cache/database.
+
+        Returns:
+            True if update succeeded, False otherwise
+
+        """
+        cmd = ["/usr/bin/pacman", "-Sy"]
         result = run_privileged(cmd, capture_output=True, check=False)
         return result.returncode == 0
 
@@ -443,7 +522,7 @@ class PacmanManager(PackageManager):
             True if package is available in official repos, False otherwise
 
         """
-        cmd = ["pacman", "-Ss", f"^{package}$"]
+        cmd = ["/usr/bin/pacman", "-Ss", f"^{package}$"]
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=False
         )

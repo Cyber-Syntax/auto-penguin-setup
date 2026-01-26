@@ -1,77 +1,35 @@
 """Tests for multimedia configuration module."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-from aps.core.distro import DistroFamily, DistroInfo, PackageManagerType
-from aps.system.multimedia import MultimediaConfig
+from aps.system import multimedia
 
 
 class TestMultimediaConfig:
     """Tests for multimedia configuration."""
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
-    def test_configure_non_fedora(
-        self, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    @patch("aps.system.multimedia.run_privileged")
+    def test_configure_non_fedora(self, mock_run: Mock) -> None:
         """Test multimedia config on non-Fedora (should skip)."""
-        arch_distro = DistroInfo(
-            name="Arch Linux",
-            version="rolling",
-            id="arch",
-            id_like=["archlinux"],
-            package_manager=PackageManagerType.PACMAN,
-            family=DistroFamily.ARCH,
-        )
-        mock_detect_distro.return_value = arch_distro
-        mock_get_pm.return_value = MagicMock()
-
-        multimedia = MultimediaConfig()
-        result = multimedia.configure()
+        result = multimedia.configure(distro="arch")
 
         assert result is True
+        mock_run.assert_not_called()
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
     @patch("aps.system.multimedia.run_privileged")
-    def test_configure_fedora_no_ffmpeg_free(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
-    ) -> None:
+    def test_configure_fedora_no_ffmpeg_free(self, mock_run: Mock) -> None:
         """Test multimedia config when ffmpeg-free not installed."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
         mock_run.return_value = Mock(returncode=1)  # Not installed
 
-        multimedia = MultimediaConfig()
-        result = multimedia.configure()
+        result = multimedia.configure(distro="fedora")
 
         assert result is True
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
     @patch("aps.system.multimedia.run_privileged")
     def test_configure_fedora_ffmpeg_free_installed_swap_success(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+        self, mock_run: Mock
     ) -> None:
         """Test multimedia config when ffmpeg-free installed, swap succeeds."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
         # First call: list installed, returncode=0 (installed)
         # Second call: swap, returncode=0 (success)
         mock_run.side_effect = [
@@ -79,28 +37,15 @@ class TestMultimediaConfig:
             Mock(returncode=0),
         ]
 
-        multimedia = MultimediaConfig()
-        result = multimedia.configure()
+        result = multimedia.configure(distro="fedora")
 
         assert result is True
 
-    @patch("aps.system.base.detect_distro")
-    @patch("aps.system.base.get_package_manager")
     @patch("aps.system.multimedia.run_privileged")
     def test_configure_fedora_ffmpeg_free_installed_swap_failure(
-        self, mock_run: Mock, mock_get_pm: Mock, mock_detect_distro: Mock
+        self, mock_run: Mock
     ) -> None:
         """Test multimedia config when ffmpeg-free installed but swap fails."""
-        fedora_distro = DistroInfo(
-            name="Fedora Linux",
-            version="39",
-            id="fedora",
-            id_like=[],
-            package_manager=PackageManagerType.DNF,
-            family=DistroFamily.FEDORA,
-        )
-        mock_detect_distro.return_value = fedora_distro
-        mock_get_pm.return_value = MagicMock()
         # First call: list installed, returncode=0 (installed)
         # Second call: swap, returncode=1 (failure)
         mock_run.side_effect = [
@@ -108,7 +53,6 @@ class TestMultimediaConfig:
             Mock(returncode=1),
         ]
 
-        multimedia = MultimediaConfig()
-        result = multimedia.configure()
+        result = multimedia.configure(distro="fedora")
 
         assert result is False

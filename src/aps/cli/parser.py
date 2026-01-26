@@ -2,8 +2,8 @@
 
 import argparse
 
+from aps.cli.utils import get_version
 from aps.core.setup import SetupManager
-from aps.utils.version import get_version
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -44,7 +44,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="Install packages",
         epilog="""
 Available categories:
-  @core, @apps, @dev, @desktop, @laptop, @homeserver, @qtile, @i3, @wm-common, @games, @flatpak
+  @core, @apps, @dev, @desktop, @laptop, @homeserver, @qtile, @i3,
+  @wm-common, @games, @flatpak
 
 Examples:
   aps install @dev
@@ -61,6 +62,11 @@ Examples:
         action="store_true",
         help="Enable verbose output (show debug messages)",
     )
+    install_parser.add_argument(
+        "--noconfirm",
+        action="store_true",
+        help="Skip confirmation prompts (auto-confirm all operations)",
+    )
 
     # aps remove
     remove_parser = subparsers.add_parser("remove", help="Remove packages")
@@ -73,11 +79,16 @@ Examples:
         action="store_true",
         help="Enable verbose output (show debug messages)",
     )
+    remove_parser.add_argument(
+        "--noconfirm",
+        action="store_true",
+        help="Skip confirmation prompts (auto-confirm all operations)",
+    )
 
     # aps list
     list_parser = subparsers.add_parser("list", help="List tracked packages")
     list_parser.add_argument(
-        "--source", choices=["official", "copr", "aur", "ppa", "flatpak"]
+        "--source", choices=["official", "copr", "aur", "flatpak"]
     )
     list_parser.add_argument(
         "--verbose",
@@ -96,6 +107,11 @@ Examples:
         "--verbose",
         action="store_true",
         help="Enable verbose output (show debug messages)",
+    )
+    sync_parser.add_argument(
+        "--noconfirm",
+        action="store_true",
+        help="Skip confirmation prompts (auto-confirm all operations)",
     )
 
     # aps status
@@ -151,6 +167,11 @@ Examples:
         "--verbose",
         action="store_true",
         help="Enable verbose output (show debug messages)",
+    )
+    setup_parser.add_argument(
+        "--noconfirm",
+        action="store_true",
+        help="Skip confirmation prompts (auto-confirm all operations)",
     )
 
     return parser

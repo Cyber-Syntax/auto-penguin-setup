@@ -45,7 +45,7 @@ def mock_run_privileged() -> Generator[MagicMock, None, None]:
     _run_privileged_mock.return_value = MagicMock(
         returncode=0, stdout="", stderr=""
     )
-    yield _run_privileged_mock
+    return _run_privileged_mock
 
 
 @pytest.fixture

@@ -52,7 +52,7 @@ alacritty
 
 #### 3. `pkgmap.ini`
 
-Maps generic package names to distro-specific names or providers (AUR, COPR, PPA).
+Maps generic package names to distro-specific names or providers (AUR, COPR).
 
 **Example:**
 

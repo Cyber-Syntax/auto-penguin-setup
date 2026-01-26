@@ -19,7 +19,13 @@ This file provides guidance to agents when working with code in this repository.
 - Use only the helpers in `aps/utils/privilege.py` for any privileged operations.
 - Always call `ensure_sudo()` once at the start of commands that require privileges (not in helpers).
 - Use `run_privileged()` for all commands needing sudo/root.
-- Always pass the command and its arguments as a list (e.g., `["ls", "-l"]`) in subprocess calls.
+- Always pass the command and its arguments as a list (e.g., `["/usr/bin/ls", "-l"]`) in subprocess calls.
+- Let user see command output unless there's a specific reason to suppress it.
+
+## Security Guidelines
+
+- Use a fully qualified path for the executable in subprocess calls (e.g., `/usr/bin/ls` instead of just `ls`).
+- Avoid using `shell=True` in subprocess calls unless absolutely necessary.
 
 ## Testing Instructions
 

@@ -57,9 +57,8 @@ class DistroInfo:
 
         """
         if not os_release_path.exists():
-            raise FileNotFoundError(
-                f"OS release file not found: {os_release_path}"
-            )
+            msg = f"OS release file not found: {os_release_path}"
+            raise FileNotFoundError(msg)
 
         data = cls._parse_os_release(os_release_path)
 
@@ -197,10 +196,11 @@ def detect_distro() -> DistroInfo:
         # Fallback to package manager detection if os-release doesn't exist
         pm_type = detect_package_manager()
         if pm_type == PackageManagerType.UNKNOWN:
-            raise ValueError(
+            msg = (
                 "Could not detect distribution: /etc/os-release not found and "
                 "no supported package manager detected"
-            ) from exc
+            )
+            raise ValueError(msg) from exc
 
         # Create a minimal DistroInfo based on package manager
         family = {
@@ -241,10 +241,11 @@ def detect_distro() -> DistroInfo:
                 "Supported: Fedora (dnf), Arch (pacman)",
                 distro.id,
             )
-            raise ValueError(
+            msg = (
                 f"Unsupported distribution: {distro.id}. "
                 f"Supported: Fedora (dnf), Arch (pacman)"
             )
+            raise ValueError(msg)
     elif detected_pm not in (
         PackageManagerType.UNKNOWN,
         distro.package_manager,

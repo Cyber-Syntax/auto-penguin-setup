@@ -113,10 +113,13 @@ def cmd_install(args: Namespace) -> None:
     for m in flatpak_mapped:
         remote = m.get_repo_name()
         if remote and not repo_mgr.is_flatpak_remote_enabled(remote):
-            logger.info("Enabling flatpak remote %s...", remote)
-            if not repo_mgr.enable_flatpak_remote(remote):
-                logger.error("Failed to enable flatpak remote %s", remote)
-                return
+            if args.dry_run:
+                logger.info("Would enable flatpak remote %s", remote)
+            else:
+                logger.info("Enabling flatpak remote %s...", remote)
+                if not repo_mgr.enable_flatpak_remote(remote):
+                    logger.error("Failed to enable flatpak remote %s", remote)
+                    return
         flatpak_packages.append(m.mapped_name)
         package_categories[m.original_name] = m.category
 
@@ -126,11 +129,14 @@ def cmd_install(args: Namespace) -> None:
             repo = m.get_repo_name()
             if repo:
                 if not repo_mgr.is_copr_enabled(repo):
-                    logger.info("Enabling COPR repo %s...", repo)
-                    if not repo_mgr.enable_copr(repo):
-                        logger.error("Failed to enable COPR repo %s", repo)
-                        return
-                else:
+                    if args.dry_run:
+                        logger.info("Would enable COPR repo %s", repo)
+                    else:
+                        logger.info("Enabling COPR repo %s...", repo)
+                        if not repo_mgr.enable_copr(repo):
+                            logger.error("Failed to enable COPR repo %s", repo)
+                            return
+                elif not args.dry_run:
                     logger.info("COPR repo %s is already enabled", repo)
 
     all_packages: list[str] = [
@@ -187,7 +193,9 @@ def cmd_install(args: Namespace) -> None:
                 logger.error("Failed to install flatpak packages")
                 return
 
-        # Track packages
+        # Track packages and collect installed names
+        installed_packages = []
+
         for m in official_pkgs + copr_pkgs + aur_pkgs + flatpak_mapped:
             record = PackageRecord.create(
                 name=m.original_name,
@@ -199,7 +207,7 @@ def cmd_install(args: Namespace) -> None:
             logger.debug(
                 "Tracked package: %s from %s", m.original_name, m.source
             )
-            logger.info("Installed: %s", m.original_name)
+            installed_packages.append(m.original_name)
 
         # Track category flatpak packages
         for p in flatpak_packages:
@@ -213,6 +221,10 @@ def cmd_install(args: Namespace) -> None:
             )
             tracker.track_install(record)
             logger.debug("Tracked flatpak package: %s", p)
-            logger.info("Installed: %s", p)
+            installed_packages.append(p)
+
+        # Display all installed packages on one line
+        if installed_packages:
+            logger.info("Installed: %s", ", ".join(installed_packages))
 
     logger.debug("aps install command completed")

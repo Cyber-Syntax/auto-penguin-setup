@@ -29,12 +29,6 @@ def _parse_package_source(config_value: str) -> str:
         if len(parts) >= 2:
             return f"COPR:{parts[1]}"  # Return "COPR:user/repo"
 
-    # Handle PPA:user/repo format
-    if config_value.startswith("PPA:"):
-        parts = config_value.split(":")
-        if len(parts) >= 2:
-            return f"PPA:{parts[1]}"
-
     return "official"
 
 
@@ -54,13 +48,6 @@ def _extract_package_name(config_value: str) -> str:
         if len(parts) >= 3:
             return parts[2]
         # If only COPR:user/repo, package name same as key
-        return config_value
-
-    # PPA:user/repo:package -> package
-    if config_value.startswith("PPA:"):
-        parts = config_value.split(":")
-        if len(parts) >= 3:
-            return parts[2]
         return config_value
 
     return config_value
