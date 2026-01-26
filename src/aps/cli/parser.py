@@ -2,8 +2,8 @@
 
 import argparse
 
+from aps.cli.utils import get_version
 from aps.core.setup import SetupManager
-from aps.utils.version import get_version
 
 
 def create_parser() -> argparse.ArgumentParser:

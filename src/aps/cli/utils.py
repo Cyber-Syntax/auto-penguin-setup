@@ -1,5 +1,6 @@
 """Shared utilities for CLI commands."""
 
+import importlib.metadata
 from pathlib import Path
 
 from aps.core.config import APSConfigParser, ensure_config_files
@@ -24,3 +25,20 @@ def load_category_packages(category: str) -> list[str]:
         raise ValueError(f"Category '{category}' not found in packages.ini")
 
     return parser.get_section_packages(category)
+
+
+def get_version() -> str:
+    """Get the version of auto-penguin-setup.
+
+    Returns version from package metadata if installed,
+    otherwise reads from pyproject.toml (development mode).
+
+    Returns:
+        str: Version string (e.g., "0.2.0-alpha" or "dev")
+
+    """
+    try:
+        return importlib.metadata.version("auto-penguin-setup")
+    except importlib.metadata.PackageNotFoundError:
+        # This happens if the package isn't installed (e.g., running raw scripts)
+        return "dev"
