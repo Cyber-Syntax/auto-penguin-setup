@@ -103,7 +103,7 @@ ensure_uv() {
 install_aps_cli() {
   echo "📦 Installing ${CLI_NAME} CLI..."
   if has_uv; then
-    uv tool install git+https://github.com/Cyber-Syntax/auto-penguin-setup
+    uv tool install git+https://github.com/Cyber-Syntax/auto-penguin-setup --force
     echo "✅ ${CLI_NAME} installed successfully"
   else
     echo "❌ UV not found. Cannot install ${CLI_NAME}"
