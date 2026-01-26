@@ -27,7 +27,9 @@ def setup(config_source: str | None = None) -> bool:
     destination = "/etc/X11/xorg.conf.d/99-touchpad.conf"
 
     if not Path(config_source).exists():
-        logger.error("Touchpad configuration file not found: %s", config_source)
+        logger.error(
+            "Touchpad configuration file not found: %s", config_source
+        )
         return False
 
     if copy_config_file(config_source, destination):

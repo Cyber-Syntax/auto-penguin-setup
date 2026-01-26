@@ -162,15 +162,11 @@ def _verify_cuda_installation() -> bool:
 
     """
     try:
-        subprocess.run(
-            ["nvcc", "--version"], capture_output=True, check=True
-        )
+        subprocess.run(["nvcc", "--version"], capture_output=True, check=True)
         logger.info("CUDA setup completed successfully")
         return True
     except (FileNotFoundError, subprocess.CalledProcessError):
-        logger.error(
-            "CUDA toolkit installation failed - nvcc not found"
-        )
+        logger.error("CUDA toolkit installation failed - nvcc not found")
         logger.info(
             "You may need to add CUDA to your PATH: "
             "export PATH=/usr/local/cuda/bin:$PATH"
@@ -226,18 +222,14 @@ def _switch_to_open_fedora() -> bool:
         f.write("%_with_kmod_nvidia_open 1\n")
 
     current_kernel = os.uname().release
-    logger.debug(
-        "Rebuilding NVIDIA modules for kernel %s...", current_kernel
-    )
+    logger.debug("Rebuilding NVIDIA modules for kernel %s...", current_kernel)
 
     result = subprocess.run(
         ["akmods", "--kernels", current_kernel, "--rebuild"],
         check=False,
     )
     if result.returncode != 0:
-        logger.warning(
-            "Initial rebuild failed, attempting with --force..."
-        )
+        logger.warning("Initial rebuild failed, attempting with --force...")
         result = subprocess.run(
             [
                 "akmods",
@@ -252,9 +244,7 @@ def _switch_to_open_fedora() -> bool:
             logger.error("Failed to rebuild NVIDIA modules")
             return False
 
-    logger.debug(
-        "Disabling RPMFusion non-free NVIDIA driver repository..."
-    )
+    logger.debug("Disabling RPMFusion non-free NVIDIA driver repository...")
     run_privileged(
         ["dnf", "--disablerepo", "rpmfusion-nonfree-nvidia-driver"],
         check=False,

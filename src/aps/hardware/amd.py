@@ -146,7 +146,9 @@ def setup_zenpower(distro: str) -> bool:
 
     if not _is_k10temp_blacklisted():
         blacklist_file = "/etc/modprobe.d/k10temp-blacklist.conf"
-        logger.debug("Creating k10temp blacklist file at %s...", blacklist_file)
+        logger.debug(
+            "Creating k10temp blacklist file at %s...", blacklist_file
+        )
 
         command = f"echo 'blacklist k10temp' > '{blacklist_file}'"
         result = run_privileged(
