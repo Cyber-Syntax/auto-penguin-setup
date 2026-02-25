@@ -148,12 +148,28 @@ qtile-extras=COPR:frostyx/qtile
 
 ### Flatpak Package (All Distros)
 
+**As of v0.6.0**, Flatpak is treated as a provider source in `pkgmap.ini`, allowing distro-specific preferences (Flatpak on Fedora, official/AUR on Arch).
+
 **`packages.ini`:**
 
-```
-[flatpak]
-org.signal.Signal
-com.spotify.Client
+```ini
+[apps]
+signal
+spotify
 ```
 
-*Result: Installed via Flatpak from Flathub.*
+**`pkgmap.ini`:**
+
+```ini
+[pkgmap.arch]
+signal=signal-desktop
+spotify=spotify
+
+[pkgmap.fedora]
+signal=flatpak:flathub:org.signal.Signal
+spotify=flatpak:flathub:com.spotify.Client
+```
+
+*Result: On Arch, installed from official repos. On Fedora, installed via Flatpak from Flathub.*
+
+**Migration Note:** If you have existing `[flatpak]` sections in your config, see [Migration Guide](migration/flatpak-to-pkgmap.md).

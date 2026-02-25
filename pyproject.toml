@@ -1,6 +1,6 @@
 [project]
 name = "auto-penguin-setup"
-version = "0.5.0-alpha"
+version = "0.6.0-alpha"
 license = { text = "BSD-3-Clause" }
 description = "Automated Linux setup tool supporting Fedora and Arch base distributions."
 keywords = ["linux", "automation", "setup", "package-manager"]
@@ -30,7 +30,11 @@ documentation = "https://github.com/Cyber-Syntax/auto-penguin-setup#readme"
 aps = "aps.main:main"
 
 [dependency-groups]
-dev = ["pytest", "pytest-cov"]
+dev = [
+    "mypy",
+    "pytest",
+    "pytest-cov",
+]
 lint = ["ruff"]
 
 [build-system]
