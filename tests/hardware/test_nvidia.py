@@ -130,13 +130,11 @@ class TestNvidiaConfigSetupCudaDetailed:
         """Test detailed CUDA setup on Arch with subprocess calls."""
         caplog.set_level("INFO")
         mock_gpu.return_value = True
-        mock_run.side_effect = [
-            Mock(returncode=0),  # pacman -S
-            # nvcc --version
-            Mock(returncode=0, stdout="nvcc: NVIDIA (R) Cuda compiler\n"),
-        ]
+        mock_run.return_value = Mock(
+            returncode=0, stdout="nvcc: NVIDIA (R) Cuda compiler\n"
+        )
 
-        result = nvidia.setup_cuda("fedora")
+        result = nvidia.setup_cuda("arch")
 
         assert result is True
 

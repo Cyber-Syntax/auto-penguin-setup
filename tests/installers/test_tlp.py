@@ -10,9 +10,12 @@ from aps.installers.tlp import install
 class TestTLPInstall:
     """Test TLP install function."""
 
+    @patch("subprocess.run")
     @patch("aps.core.distro.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
-    def test_install_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_fedora(
+        self, mock_pm: Mock, mock_distro: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_pm_instance = MagicMock()
@@ -20,6 +23,7 @@ class TestTLPInstall:
         mock_pm_instance.remove.return_value = (True, None)
         mock_pm_instance.is_installed.return_value = False
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         with (
             patch("shutil.which", return_value="/usr/bin/tlp"),
@@ -29,9 +33,12 @@ class TestTLPInstall:
             result = install()
             assert result is True
 
+    @patch("subprocess.run")
     @patch("aps.core.distro.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
-    def test_install_arch(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_arch(
+        self, mock_pm: Mock, mock_distro: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock(id="arch")
         mock_pm_instance = MagicMock()
@@ -39,6 +46,7 @@ class TestTLPInstall:
         mock_pm_instance.remove.return_value = (True, None)
         mock_pm_instance.is_installed.return_value = False
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         with (
             patch("shutil.which", return_value="/usr/bin/tlp"),

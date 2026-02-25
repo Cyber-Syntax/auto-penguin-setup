@@ -10,26 +10,34 @@ from aps.installers.virtmanager import install
 class TestVirtManagerInstall:
     """Test virt-manager install function."""
 
-    @patch("aps.core.distro.detect_distro")
+    @patch("subprocess.run")
+    @patch("aps.installers.virtmanager.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
-    def test_install_fedora(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_fedora(
+        self, mock_pm: Mock, mock_distro: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         result = install()
         assert result is True
 
-    @patch("aps.core.distro.detect_distro")
+    @patch("subprocess.run")
+    @patch("aps.installers.virtmanager.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
-    def test_install_arch(self, mock_pm: Mock, mock_distro: Mock) -> None:
+    def test_install_arch(
+        self, mock_pm: Mock, mock_distro: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock(id="arch")
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         result = install()
         assert result is True

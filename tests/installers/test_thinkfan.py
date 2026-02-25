@@ -10,6 +10,7 @@ from aps.installers.thinkfan import install
 class TestThinkfanInstall:
     """Test thinkfan install function."""
 
+    @patch("subprocess.run")
     @patch("aps.core.distro.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
     @patch("shutil.which", return_value="/usr/bin/thinkfan")
@@ -20,12 +21,14 @@ class TestThinkfanInstall:
         mock_which: Mock,
         mock_pm: Mock,
         mock_distro: Mock,
+        mock_subprocess: Mock,
     ) -> None:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock(id="fedora")
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         with (
             patch("shutil.copy2"),
@@ -34,6 +37,7 @@ class TestThinkfanInstall:
             result = install()
             assert result is True
 
+    @patch("subprocess.run")
     @patch("aps.core.distro.detect_distro")
     @patch("aps.core.package_manager.get_package_manager")
     @patch("shutil.which", return_value="/usr/bin/thinkfan")
@@ -44,12 +48,14 @@ class TestThinkfanInstall:
         mock_which: Mock,
         mock_pm: Mock,
         mock_distro: Mock,
+        mock_subprocess: Mock,
     ) -> None:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock(id="arch")
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         with (
             patch("shutil.copy2"),
