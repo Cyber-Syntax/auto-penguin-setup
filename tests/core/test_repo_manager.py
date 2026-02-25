@@ -158,7 +158,7 @@ class TestRepositoryManager:
         pm = Mock(spec=PackageManager)
         repo_mgr = RepositoryManager(fedora_distro, pm)
 
-        with patch("aps.core.repo_manager.run_privileged") as mock_run:
+        with patch("subprocess.run") as mock_run:
             mock_run.return_value = Mock(returncode=1, stdout="")
             result = repo_mgr.is_copr_enabled("user/repo")
 
@@ -336,7 +336,7 @@ class TestRepositoryManager:
 
         with (
             patch("shutil.which") as mock_which,
-            patch("aps.core.repo_manager.run_privileged") as mock_run,
+            patch("subprocess.run") as mock_run,
         ):
             # Simulate flatpak installed
             mock_which.return_value = "/usr/bin/flatpak"

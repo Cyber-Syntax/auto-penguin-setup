@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-alpha] - 2026-02-25
+
+### Added
+
+- Flatpak provider support in `pkgmap.ini` for unified package resolution
+- Configuration validation with clear error messages for legacy `[flatpak]` sections
+- Migration guide for users transitioning from `[flatpak]` category
+
+### Changed
+
+- Package resolution now treats Flatpak as a provider (like AUR/COPR), not a special category
+- `pkgmap.ini` now supports `flatpak:<remote>:<app-id>` syntax (e.g., `flatpak:flathub:org.signal.Signal`)
+
+### Removed
+
+- Support for `[flatpak]` section in `packages.ini` (breaking change)
+- `@flatpak` category syntax is no longer supported
+
+### Deprecated
+
+- Legacy `[flatpak]` section configuration (see [migration guide](docs/migration/flatpak-to-pkgmap.md))
+
+### Fixed
+
+- Inconsistent package resolution behavior across distros
+
+### BREAKING CHANGE
+
+The `[flatpak]` section in `packages.ini` and `@flatpak` category syntax are no longer supported. Users must migrate to the new model where Flatpak apps are listed in regular categories (e.g., `[apps]`) and mapped to Flatpak sources via `pkgmap.ini`. See [Migration Guide: Flatpak Configuration Changes](docs/migration/flatpak-to-pkgmap.md) for detailed instructions.
+
 ## [0.5.0-alpha] - 2025-01-26
 
 ### Added

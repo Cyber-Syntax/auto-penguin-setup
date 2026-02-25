@@ -3,6 +3,7 @@
 from argparse import Namespace
 from unittest.mock import Mock, patch
 
+import pytest
 from _pytest.logging import LogCaptureFixture
 
 from aps.cli.commands.install import cmd_install
@@ -741,3 +742,322 @@ class TestInstallCommand:
         # Both official and COPR should be processed
         mock_repo_mgr.enable_copr.assert_called_once()
         mock_pm.install.assert_called_once()
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.load_category_packages")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_install_flatpak_via_pkgmap(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_load_category: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+    ) -> None:
+        """Test Flatpak apps install when mapped via pkgmap.ini."""
+        mock_distro = Mock()
+        mock_distro.name = "Fedora"
+        mock_distro.family = DistroFamily.FEDORA
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock()
+        mock_pm.install.return_value = (True, None)
+        mock_get_pm.return_value = mock_pm
+
+        mock_mapper = Mock()
+        mapping = Mock()
+        mapping.original_name = "signal"
+        mapping.mapped_name = "org.signal.Signal"
+        mapping.source = "flatpak:flathub"
+        mapping.is_official = False
+        mapping.is_copr = False
+        mapping.is_aur = False
+        mapping.is_flatpak = True
+        mapping.category = None
+        mapping.get_repo_name.return_value = "flathub"
+        mock_mapper.mappings = [mapping]
+        mock_mapper.map_package.return_value = mapping
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_flatpak_remote_enabled.return_value = False
+        mock_repo_mgr.enable_flatpak_remote.return_value = True
+        mock_repo_mgr.check_official_before_enabling.return_value = mapping
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        mock_subprocess.return_value = Mock(returncode=0)
+
+        args = Namespace(packages=["signal"], dry_run=False, noconfirm=False)
+        cmd_install(args)
+
+        # Verify flatpak remote is enabled
+        mock_repo_mgr.enable_flatpak_remote.assert_called_once_with("flathub")
+        # Verify flatpak install is called
+        assert mock_subprocess.called
+        call_args = mock_subprocess.call_args[0][0]
+        assert call_args[0] == "flatpak"
+        assert call_args[1] == "install"
+        assert "flathub" in call_args
+        assert "org.signal.Signal" in call_args
+        # Verify tracking
+        mock_tracker.track_install.assert_called_once()
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.load_category_packages")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_install_no_flatpak_category_bypass(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_load_category: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+    ) -> None:
+        """Test @flatpak category is NOT special-cased and goes through mapper."""
+        mock_distro = Mock()
+        mock_distro.name = "Fedora"
+        mock_distro.family = DistroFamily.FEDORA
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock()
+        mock_pm.install.return_value = (True, None)
+        mock_get_pm.return_value = mock_pm
+
+        # Simulate loading @flatpak category with some packages
+        mock_load_category.return_value = ["signal", "discord"]
+
+        mock_mapper = Mock()
+
+        def create_flatpak_mapping(name: str, app_id: str) -> Mock:
+            mapping = Mock()
+            mapping.original_name = name
+            mapping.mapped_name = app_id
+            mapping.source = "flatpak:flathub"
+            mapping.is_official = False
+            mapping.is_copr = False
+            mapping.is_aur = False
+            mapping.is_flatpak = True
+            mapping.category = "flatpak"
+            mapping.get_repo_name.return_value = "flathub"
+            return mapping
+
+        mappings = [
+            create_flatpak_mapping("signal", "org.signal.Signal"),
+            create_flatpak_mapping("discord", "com.discordapp.Discord"),
+        ]
+        mock_mapper.mappings = mappings
+        mock_mapper.map_package.side_effect = mappings
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_flatpak_remote_enabled.return_value = True
+        mock_repo_mgr.check_official_before_enabling.side_effect = mappings
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        mock_subprocess.return_value = Mock(returncode=0)
+
+        args = Namespace(packages=["@flatpak"], dry_run=False, noconfirm=False)
+        cmd_install(args)
+
+        # Verify mapper was called for both packages
+        assert mock_mapper.map_package.call_count == 2
+        # Verify both packages were tracked
+        assert mock_tracker.track_install.call_count == 2
+        # Verify flatpak install was called
+        assert mock_subprocess.called
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_flatpak_remote_enabled_from_mapping(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+    ) -> None:
+        """Test correct flatpak remote is enabled based on pkgmap source."""
+        mock_distro = Mock()
+        mock_distro.name = "Fedora"
+        mock_distro.family = DistroFamily.FEDORA
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock()
+        mock_pm.install.return_value = (True, None)
+        mock_get_pm.return_value = mock_pm
+
+        mock_mapper = Mock()
+        mapping = Mock()
+        mapping.original_name = "signal"
+        mapping.mapped_name = "org.signal.Signal"
+        mapping.source = "flatpak:customremote"
+        mapping.is_official = False
+        mapping.is_copr = False
+        mapping.is_aur = False
+        mapping.is_flatpak = True
+        mapping.category = None
+        mapping.get_repo_name.return_value = "customremote"
+        mock_mapper.mappings = [mapping]
+        mock_mapper.map_package.return_value = mapping
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_flatpak_remote_enabled.return_value = False
+        mock_repo_mgr.enable_flatpak_remote.return_value = True
+        mock_repo_mgr.check_official_before_enabling.return_value = mapping
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        mock_subprocess.return_value = Mock(returncode=0)
+
+        args = Namespace(packages=["signal"], dry_run=False, noconfirm=False)
+        cmd_install(args)
+
+        # Verify CUSTOM remote is enabled, not just flathub
+        mock_repo_mgr.enable_flatpak_remote.assert_called_once_with(
+            "customremote"
+        )
+        # Verify flatpak install uses correct remote
+        assert mock_subprocess.called
+        call_args = mock_subprocess.call_args[0][0]
+        assert "customremote" in call_args
+        assert "org.signal.Signal" in call_args
+
+    @patch("aps.cli.commands.install.subprocess.run")
+    @patch("aps.cli.commands.install.PackageTracker")
+    @patch("aps.cli.commands.install.RepositoryManager")
+    @patch("aps.cli.commands.install.PackageMapper")
+    @patch("aps.cli.commands.install.get_package_manager")
+    @patch("aps.cli.commands.install.detect_distro")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_mixed_sources_install(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_detect_distro: Mock,
+        mock_get_pm: Mock,
+        mock_mapper_cls: Mock,
+        mock_repo_mgr_cls: Mock,
+        mock_tracker_cls: Mock,
+        mock_subprocess: Mock,
+    ) -> None:
+        """Test installing official, AUR, COPR, and Flatpak in one command."""
+        from aps.core.package_manager import PacmanManager
+
+        mock_distro = Mock()
+        mock_distro.name = "Arch"
+        mock_distro.family = DistroFamily.ARCH
+        mock_detect_distro.return_value = mock_distro
+
+        mock_pm = Mock(spec=PacmanManager)
+        mock_pm.install.return_value = (True, None)
+        mock_pm.install_aur.return_value = True
+        mock_get_pm.return_value = mock_pm
+
+        mock_mapper = Mock()
+
+        def create_mapping(
+            name: str, source: str, app_id: str | None = None
+        ) -> Mock:
+            mapping = Mock()
+            mapping.original_name = name
+            mapping.mapped_name = app_id or name
+            mapping.source = source
+            mapping.is_official = source == "official"
+            mapping.is_copr = source.startswith("COPR:")
+            mapping.is_aur = source.startswith("AUR:")
+            mapping.is_flatpak = source.startswith("flatpak:")
+            mapping.category = None
+            if mapping.is_aur or mapping.is_flatpak:
+                mapping.get_repo_name.return_value = (
+                    name if mapping.is_aur else "flathub"
+                )
+            return mapping
+
+        mappings = [
+            create_mapping("vim", "official"),
+            create_mapping("lazygit", "AUR:lazygit"),
+            create_mapping("signal", "flatpak:flathub", "org.signal.Signal"),
+        ]
+        mock_mapper.mappings = mappings
+        mock_mapper.map_package.side_effect = mappings
+        mock_mapper_cls.return_value = mock_mapper
+
+        mock_repo_mgr = Mock()
+        mock_repo_mgr.is_flatpak_remote_enabled.return_value = False
+        mock_repo_mgr.enable_flatpak_remote.return_value = True
+        mock_repo_mgr.check_official_before_enabling.side_effect = mappings
+        mock_repo_mgr_cls.return_value = mock_repo_mgr
+
+        mock_tracker = Mock()
+        mock_tracker_cls.return_value = mock_tracker
+
+        mock_subprocess.return_value = Mock(returncode=0)
+
+        args = Namespace(
+            packages=["vim", "lazygit", "signal"],
+            dry_run=False,
+            noconfirm=False,
+        )
+        cmd_install(args)
+
+        # Verify all sources were installed
+        mock_pm.install.assert_called_once()
+        mock_pm.install_aur.assert_called_once()
+        mock_repo_mgr.enable_flatpak_remote.assert_called_once()
+        assert mock_subprocess.called
+        # Verify all tracked
+        assert mock_tracker.track_install.call_count == 3
+
+    @patch("aps.cli.commands.install.APSConfigParser")
+    @patch("aps.cli.commands.install.ensure_sudo")
+    def test_install_fails_with_legacy_config(
+        self,
+        mock_ensure_sudo: Mock,
+        mock_parser_cls: Mock,
+    ) -> None:
+        """Verify install command fails early with legacy [flatpak] config."""
+        from aps.core.config import ConfigValidationError
+
+        # Setup parser mock to have [flatpak] section
+        mock_parser = Mock()
+        mock_parser.validate_no_flatpak_category.side_effect = ConfigValidationError(
+            "Configuration error: Found deprecated [flatpak] section in packages.ini."
+        )
+        mock_parser_cls.return_value = mock_parser
+
+        args = Namespace(packages=["@core"], dry_run=False, noconfirm=False)
+
+        # Call cmd_install expects ConfigValidationError to be raised
+        with pytest.raises(ConfigValidationError):
+            cmd_install(args)

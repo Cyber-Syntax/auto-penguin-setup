@@ -143,6 +143,21 @@ class TestInstallCommand:
         args = parser.parse_args(["install", "curl"])
         assert args.dry_run is False
 
+    def test_parser_install_help_no_flatpak_category(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that @flatpak is NOT in install help text."""
+        parser = create_parser()
+        # Trigger help for install command - this raises SystemExit
+        with pytest.raises(SystemExit):
+            parser.parse_args(["install", "--help"])
+
+        # Capture the printed help output
+        captured = capsys.readouterr()
+        help_text = captured.out
+        # Verify @flatpak is not mentioned in available categories
+        assert "@flatpak" not in help_text
+
 
 class TestRemoveCommand:
     """Test remove command parsing."""

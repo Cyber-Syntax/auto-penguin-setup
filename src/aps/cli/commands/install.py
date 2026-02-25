@@ -5,6 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from aps.cli.utils import get_tracking_db_path, load_category_packages
+from aps.core.config import APSConfigParser
 from aps.core.distro import DistroFamily, detect_distro
 from aps.core.logger import get_logger
 from aps.core.package_manager import PacmanManager, get_package_manager
@@ -23,6 +24,11 @@ def cmd_install(args: Namespace) -> None:
     # Pre-authenticate sudo for privileged operations
     ensure_sudo()
 
+    # Validate configuration - check for legacy [flatpak] section
+    config_dir = Path.home() / ".config" / "auto-penguin-setup"
+    packages_config = APSConfigParser(config_dir / "packages.ini")
+    packages_config.validate_no_flatpak_category()
+
     distro_info = detect_distro()
     logger.debug(
         "Detected distro: %s %s", distro_info.name, distro_info.version
@@ -31,48 +37,36 @@ def cmd_install(args: Namespace) -> None:
     pm = get_package_manager(distro_info)
     repo_mgr = RepositoryManager(distro_info, pm)
     tracker = PackageTracker(get_tracking_db_path())
-    config_dir = Path.home() / ".config" / "auto-penguin-setup"
     mapper = PackageMapper(config_dir / "pkgmap.ini", distro_info)
 
     logger.debug("Package mapper loaded from %s", config_dir / "pkgmap.ini")
     logger.debug("Mapper has %s mappings", len(mapper.mappings))
 
     # Collect all packages to install
-    system_packages: list[str] = []
-    flatpak_packages: list[str] = []
-    package_categories: dict[str, str | None] = {}  # pkg -> category
+    packages_to_map: list[tuple[str, str | None]] = []  # (package, category)
 
     for pkg in args.packages:
         if pkg.startswith("@"):
             # Install category
             category = pkg[1:]
-            packages = load_category_packages(category)
-            logger.debug("Loaded category '%s': %s", category, packages)
-            if category == "flatpak":
-                flatpak_packages.extend(packages)
-                for p in packages:
-                    package_categories[p] = category
-            else:
-                system_packages.extend(packages)
-                for p in packages:
-                    package_categories[p] = category
+            cat_packages = load_category_packages(category)
+            logger.debug("Loaded category '%s': %s", category, cat_packages)
+            packages_to_map.extend([(p, category) for p in cat_packages])
         else:
-            system_packages.append(pkg)
-            package_categories[pkg] = None
+            packages_to_map.append((pkg, None))
 
-    logger.debug("System packages to install: %s", system_packages)
-    logger.debug("Flatpak packages to install: %s", flatpak_packages)
+    logger.debug("Packages to map: %s", packages_to_map)
 
-    # Map system packages
-    mapped_system: list[PackageMapping] = []
-    for pkg in system_packages:
-        mapping = mapper.map_package(pkg, package_categories.get(pkg))
+    # Map all packages through the mapper
+    mapped_packages: list[PackageMapping] = []
+    for pkg, category in packages_to_map:
+        mapping = mapper.map_package(pkg, category)
 
         # Check official repos BEFORE we enable COPR/AUR
         # This is the critical timing fix - check before repo enablement
         mapping = repo_mgr.check_official_before_enabling(pkg, mapping)
 
-        mapped_system.append(mapping)
+        mapped_packages.append(mapping)
         logger.debug(
             "Mapped %s -> %s (source: %s)",
             pkg,
@@ -82,20 +76,20 @@ def cmd_install(args: Namespace) -> None:
 
     # Separate by source (only for relevant distro families)
     official_pkgs: list[PackageMapping] = [
-        m for m in mapped_system if m.is_official
+        m for m in mapped_packages if m.is_official
     ]
     copr_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_copr]
+        [m for m in mapped_packages if m.is_copr]
         if distro_info.family == DistroFamily.FEDORA
         else []
     )
     aur_pkgs: list[PackageMapping] = (
-        [m for m in mapped_system if m.is_aur]
+        [m for m in mapped_packages if m.is_aur]
         if distro_info.family == DistroFamily.ARCH
         else []
     )
-    flatpak_mapped: list[PackageMapping] = [
-        m for m in mapped_system if m.is_flatpak
+    flatpak_pkgs: list[PackageMapping] = [
+        m for m in mapped_packages if m.is_flatpak
     ]
 
     logger.debug(
@@ -105,23 +99,29 @@ def cmd_install(args: Namespace) -> None:
         logger.debug("COPR packages: %s", [m.mapped_name for m in copr_pkgs])
     if distro_info.family == DistroFamily.ARCH:
         logger.debug("AUR packages: %s", [m.mapped_name for m in aur_pkgs])
-    logger.debug(
-        "Flatpak mapped packages: %s", [m.mapped_name for m in flatpak_mapped]
-    )
+    logger.debug("Flatpak packages: %s", [m.mapped_name for m in flatpak_pkgs])
 
-    # Add mapped flatpak to flatpak_packages
-    for m in flatpak_mapped:
+    # Enable Flatpak remotes (based on mapped packages)
+    flatpak_remotes_to_enable: set[str] = set()
+    for m in flatpak_pkgs:
         remote = m.get_repo_name()
-        if remote and not repo_mgr.is_flatpak_remote_enabled(remote):
-            if args.dry_run:
-                logger.info("Would enable flatpak remote %s", remote)
-            else:
-                logger.info("Enabling flatpak remote %s...", remote)
-                if not repo_mgr.enable_flatpak_remote(remote):
-                    logger.error("Failed to enable flatpak remote %s", remote)
-                    return
-        flatpak_packages.append(m.mapped_name)
-        package_categories[m.original_name] = m.category
+        if remote:
+            flatpak_remotes_to_enable.add(remote)
+
+    if flatpak_remotes_to_enable:
+        for remote in flatpak_remotes_to_enable:
+            if not repo_mgr.is_flatpak_remote_enabled(remote):
+                if args.dry_run:
+                    logger.info("Would enable flatpak remote %s", remote)
+                else:
+                    logger.info("Enabling flatpak remote %s...", remote)
+                    if not repo_mgr.enable_flatpak_remote(remote):
+                        logger.error(
+                            "Failed to enable flatpak remote %s", remote
+                        )
+                        return
+            elif not args.dry_run:
+                logger.info("Flatpak remote %s is already enabled", remote)
 
     # Enable COPR repos (Fedora only)
     if distro_info.family == DistroFamily.FEDORA:
@@ -139,16 +139,14 @@ def cmd_install(args: Namespace) -> None:
                 elif not args.dry_run:
                     logger.info("COPR repo %s is already enabled", repo)
 
-    all_packages: list[str] = [
-        m.original_name for m in mapped_system
-    ] + flatpak_packages
+    all_packages: list[str] = [m.mapped_name for m in mapped_packages]
 
     if args.dry_run:
         for p in all_packages:
             logger.info("Would install: %s", p)
         logger.debug("Dry run completed")
     else:
-        # Install system packages
+        # Install system packages (official + COPR)
         system_to_install: list[str] = [
             m.mapped_name for m in official_pkgs + copr_pkgs
         ]
@@ -177,26 +175,28 @@ def cmd_install(args: Namespace) -> None:
                 return
 
         # Install flatpak packages
-        if flatpak_packages:
-            logger.debug("Installing flatpak packages: %s", flatpak_packages)
-            # Ensure flathub remote is enabled (for category flatpak)
-            if not repo_mgr.is_flatpak_remote_enabled("flathub"):
-                logger.info("Enabling flathub remote...")
-                if not repo_mgr.enable_flatpak_remote("flathub"):
-                    logger.error("Failed to enable flathub remote")
+        if flatpak_pkgs:
+            flatpak_names = [m.mapped_name for m in flatpak_pkgs]
+            logger.debug("Installing flatpak packages: %s", flatpak_names)
+            # Use remote from mapping (already enabled above)
+            for remote in flatpak_remotes_to_enable:
+                cmd = ["flatpak", "install", remote] + [
+                    m.mapped_name
+                    for m in flatpak_pkgs
+                    if m.get_repo_name() == remote
+                ]
+                logger.debug("Running: %s", cmd)
+                result = subprocess.run(cmd, check=False)  # noqa: S603
+                if result.returncode != 0:
+                    logger.error(
+                        "Failed to install flatpak packages from %s",
+                        remote,
+                    )
                     return
 
-            # Don't capture output - let user see flatpak installation progress and approve permissions
-            cmd = ["flatpak", "install", "flathub"] + flatpak_packages
-            result = subprocess.run(cmd, check=False)
-            if result.returncode != 0:
-                logger.error("Failed to install flatpak packages")
-                return
-
-        # Track packages and collect installed names
+        # Track all packages
         installed_packages = []
-
-        for m in official_pkgs + copr_pkgs + aur_pkgs + flatpak_mapped:
+        for m in mapped_packages:
             record = PackageRecord.create(
                 name=m.original_name,
                 source=m.source,
@@ -208,20 +208,6 @@ def cmd_install(args: Namespace) -> None:
                 "Tracked package: %s from %s", m.original_name, m.source
             )
             installed_packages.append(m.original_name)
-
-        # Track category flatpak packages
-        for p in flatpak_packages:
-            if p in [m.mapped_name for m in flatpak_mapped]:
-                continue  # already tracked
-            record = PackageRecord.create(
-                name=p,
-                source="flatpak:flathub",
-                category="flatpak",
-                mapped_name=p,
-            )
-            tracker.track_install(record)
-            logger.debug("Tracked flatpak package: %s", p)
-            installed_packages.append(p)
 
         # Display all installed packages on one line
         if installed_packages:
