@@ -144,7 +144,7 @@ def cmd_sync_repos(args: Namespace) -> None:
         )
 
         # Get the actual package name to install/remove
-        package_name = pkg.mapped_name if pkg.mapped_name else pkg.name
+        package_name = pkg.mapped_name or pkg.name
         new_package_name = _extract_package_name(
             mappings.get(pkg.name, pkg.name)
         )

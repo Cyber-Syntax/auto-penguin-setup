@@ -7,6 +7,10 @@ from pathlib import Path
 from aps.utils.paths import get_default_configs_dir
 
 
+class ConfigValidationError(Exception):
+    """Raised when configuration validation fails."""
+
+
 class APSConfigParser:
     """Parser for Auto Penguin Setup INI configuration files.
 
@@ -105,6 +109,29 @@ class APSConfigParser:
     def sections(self) -> list[str]:
         """Get list of all sections in configuration."""
         return self._parser.sections()
+
+    def validate_no_flatpak_category(self) -> None:
+        """Validate that [flatpak] section doesn't exist in configuration.
+
+        Raises:
+            ConfigValidationError: If [flatpak] section is found
+
+        """
+        if self._parser.has_section("flatpak"):
+            msg = (
+                "Configuration error: Found deprecated [flatpak] section "
+                "in packages.ini.\n\n"
+                "As of version 2.0, Flatpak packages must be specified via "
+                "pkgmap.ini mappings\n"
+                "instead of a separate [flatpak] category.\n\n"
+                "Please see migration guide at:\n"
+                "  ~/.config/auto-penguin-setup/docs/migration/"
+                "flatpak-to-pkgmap.md\n\n"
+                "Or view online at:\n"
+                "  https://github.com/Cyber-Syntax/auto-penguin-setup/"
+                "blob/main/docs/migration/flatpak-to-pkgmap.md"
+            )
+            raise ConfigValidationError(msg)
 
     def get_section_packages(self, section: str) -> list[str]:
         """Get list of packages from a section.

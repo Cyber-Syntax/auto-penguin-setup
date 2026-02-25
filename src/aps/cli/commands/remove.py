@@ -1,5 +1,6 @@
 """Remove command implementation."""
 
+import subprocess
 from argparse import Namespace
 
 from aps.cli.utils import get_tracking_db_path
@@ -25,9 +26,34 @@ def cmd_remove(args: Namespace) -> None:
         if args.dry_run:
             logger.info("Would remove: %s", pkg)
         else:
-            success, error = pm.remove([pkg], assume_yes=args.noconfirm)
-            if success:
-                tracker.remove_package(pkg)
-                logger.info("Removed: %s", pkg)
+            # Check if package came from Flatpak
+            package_record = tracker.get_package(pkg)
+            is_flatpak = (
+                package_record is not None
+                and package_record.source.startswith("flatpak:")
+            )
+
+            if is_flatpak and package_record is not None:
+                # Use flatpak uninstall for Flatpak-sourced packages
+                flatpak_cmd = [
+                    "flatpak",
+                    "uninstall",
+                    package_record.mapped_name or pkg,
+                ]
+                if args.noconfirm:
+                    flatpak_cmd.append("--assumeyes")
+
+                result = subprocess.run(flatpak_cmd, check=False)  # noqa: S603
+                if result.returncode == 0:
+                    tracker.remove_package(pkg)
+                    logger.info("Removed: %s", pkg)
+                else:
+                    logger.error("Failed to remove Flatpak package: %s", pkg)
             else:
-                logger.error("Failed to remove %s: %s", pkg, error)
+                # Use package manager for system packages or untracked packages
+                success, error = pm.remove([pkg], assume_yes=args.noconfirm)
+                if success:
+                    tracker.remove_package(pkg)
+                    logger.info("Removed: %s", pkg)
+                else:
+                    logger.error("Failed to remove %s: %s", pkg, error)

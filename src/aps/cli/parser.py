@@ -45,7 +45,7 @@ def create_parser() -> argparse.ArgumentParser:
         epilog="""
 Available categories:
   @core, @apps, @dev, @desktop, @laptop, @homeserver, @qtile, @i3,
-  @wm-common, @games, @flatpak
+  @wm-common, @games
 
 Examples:
   aps install @dev
