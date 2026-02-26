@@ -9,7 +9,7 @@
       - [x] ohmyzsh installer
       - [ ] syncthing setup
       - [ ] thinkfan setup test on thinkpad
-      - [ ] virtmanager
+      - [x] virtmanager
 
 - [ ] Test setups:
       - [ ] qtile setup test
@@ -24,8 +24,7 @@
       - [ ] nvidia hardware test on fedora
 
 - [ ] Test Hardware detection modules:
-      - [ ] nvidia (<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#faq2>)
-      - [ ] amd
+      - [ ] nvidia (<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#faq2>) - [ ] amd
       - [ ] intel
       - [ ] touchpad
 
@@ -34,8 +33,54 @@
 
 ## in-progress
 
+- [ ] cleanup hard issues from here and move the github issues
+- [ ] sudoers give permission error, sudoers file not able to written but it's backup created successfully.
+
+```bash
+➜ aps setup sudoers 
+[sudo] password for developer: 
+Configuring sudoers...
+Starting sudoers configuration...
+Configuring sudoers for extended terminal password timeout...
+Creating backup of sudoers file...
+Backup created: /etc/sudoers.bak.20260225153800
+Failed to update sudoers file
+Traceback (most recent call last):
+  File "/home/developer/.local/share/uv/tools/auto-penguin-setup/lib/python3.14/site-packages/aps/system/sudoers.py", line 87, in _update_sudoers_section
+    content = SUDOERS_FILE.read_text()
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 787, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/etc/sudoers'
+Terminal timeout sudoers setup failed
+Sudoers setup completed with 1 error(s)
+Setup failed: Error during sudoers configuration: Failed to configure sudoers
+```
+
+- [ ] add paru flag to skip app if it is already installed:
+
+```bash
+paru -S --needed syncthingtray-qt6
+:: Resolving dependencies...
+:: syncthingtray-qt6-2.0.7-1 is up to date -- skipping
+:: Calculating conflicts...
+:: Calculating inner conflicts...
+ there is nothing to do
+```
+
+- [ ] add new feature, export installed packages to a file to make it easy to save
+- [ ] seperate setup things to seperated modules in setup.py like ollama.py, etc.
+
+- [ ] remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
+- [x] `syncthingtray-qt6` from AUR package for flatpak syncthingtray
+- [ ] change fish -> bash `chsh -s /bin/bash` simple but can be made it somewhere on zsh setup?
+- [ ] P1: Ollama setup wrong location on core setup.py need to -> ollama.py
 - [ ] checkout: <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff>
 - [ ] add gnome-kerying to packages.ini and make sure to disable kdewallet.
+- [ ] Refactor configs folder, better to write it via script instead of copy-pasting.
 - [ ] add `ttf-jetbrains-mono-nerd` for arch font, and find it for fedora?
 - [ ] It isn't show pacman output
 
@@ -57,22 +102,35 @@ Installing Ollama package: ollama-cuda
 ```
 
 - [ ] install lact from ilya-zlobintsev instead of nfancurve
-      - [ ] or this: <https://gitlab.com/coolercontrol/coolercontrol/-/releases>
+- [ ] or this: <https://gitlab.com/coolercontrol/coolercontrol/-/releases>
 
 - [ ] one line install command to install via setup.sh script like:
       `bash <(curl -fsSL https://raw.githubusercontent.com/Cyber-Syntax/auto-penguin-setup/main/setup.sh)`
 
 ## todo
 
+- [ ] Duplicated print
+
+```bash
+Successfully installed AUR packages
+Visual Studio Code installation completed.
+vscode setup completed successfully
+vscode setup completed successfully
+# another example:
+Added firewall_backend = iptables
+Successfully configured network.conf
+Virtualization setup completed successfully
+Note: You may need to log out and back in for group changes to take effect
+virtmanager setup completed successfully
+virtmanager setup completed successfully
+```
+
+- [ ] command to save all the tracked/installed packages to packages.ini or another location to make it easy to save and install the packages. So, basically we can use `aps install task` to install taskwarrior for example and than we must be refactor packages.ini manually to make it saved persistently but that's not good, better to make a comand to automate this process.
 - [ ] better to have util function to backup any config file to keep DRY principle
 - [ ] extra official repo check for cachyos/nobara, install vscode to test it
 - [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
-- [ ] add tuned setup:
-      - testing `tuned-adm profile desktop` -> remember to activate it `sudo tuned-adm active`
-      - after that enable `sudo cpupower frequency-set --governor performance` which
-      stay powersave after auto-cpufreq
-      - check the status `sudo cpupower frequency-info`
-      - Enable turbo `sudo cpupower set --turbo-boost 1`
+- [ ] add tuned setup: - testing `tuned-adm profile desktop` -> remember to activate it `sudo tuned-adm active` - after that enable `sudo cpupower frequency-set --governor performance` which
+      stay powersave after auto-cpufreq - check the status `sudo cpupower frequency-info` - Enable turbo `sudo cpupower set --turbo-boost 1`
 
 ```bash
 # Last status of cpu info,
@@ -82,7 +140,7 @@ sudo cpupower frequency-info
   hardware limits: 561 MHz - 4.65 GHz
 ```
 
-- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances
+- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances: fnctl.flock would handle this easily.
 
 - [ ] better code structure? <https://docs.python-guide.org/writing/structure/>
 - [ ] <https://github.com/bahamas10/bash-style-guide> for setup.sh
@@ -94,7 +152,7 @@ sudo cpupower frequency-info
 - [ ] exclude configs/readme.md from uv builds
 
 - [ ] disable p2p for fwupd.service
-Disable local cache server (passim)
+      Disable local cache server (passim)
 
 fwupd v1.9.5 from September 2023 introduced a dependency on passim, a local cache server intended to help reduce LVFS bandwidth usage by making each machine able to serve the metadata file it downloads everyday to others[2][3].
 
@@ -105,55 +163,6 @@ On Arch the request from FS#79614 to make the dependency optional at compile-tim
 As a consequence, if you wish to disable passimd you should follow the advice given by the author[8]: add P2pPolicy=nothing to /etc/fwupd/fwupd.conf and/or mask passim.service.
 
 - Make sure the optional dependency udisks2 is installed and the associated systemd unit is started before fwupd unit; it will provide UEFI firmware upgrade support.
-
-- [ ] add lightdm auto unlock keyring subcommand
-- [ ] BUG: lightdm auto keyring unlock not work:
-
-```bash
-      "
-      pam setup for auto unlock gnome keyring
-      This is necessary for automatically opening the gnome-keyring on login
-      for the lightdm, it won't work for autologin but it is good to open the keyring
-      when the lightdm opens the session, so you won't write 2 times the password
-      passwords need to be same with login user and keyring password
-      Below is the automatically written to lightdm pam config file
-      we only need to remove `-` in front of the lines to enable it
-      of course we need to check if the lines already exist to avoid duplicates
-      else we need to write them without `-` this line
-
-      -auth       optional     pam_gnome_keyring.so
-      -session    optional     pam_gnome_keyring.so auto_start
-
-      #WARN: below isn't the one that make auto unlock gnome keyring
-
-      something else is needed, research needed (one of my machine unlock without below)"
-
-      ##%PAM-1.0
-      #auth     [success=done ignore=ignore default=bad] pam_selinux_permit.so
-      #auth       required    pam_env.so
-      #auth       substack    system-auth
-      #auth       optional    pam_gnome_keyring.so
-      #-auth       optional    pam_kwallet5.so
-      #-auth       optional    pam_kwallet.so
-      #auth       include     postlogin
-      #account    required    pam_nologin.so
-      #account    include     system-auth
-      #password   include     system-auth
-      #session    required    pam_selinux.so close
-      #session    required    pam_loginuid.so
-      #-session    optional    pam_ck_connector.so
-      #session    required    pam_selinux.so open
-      #session    optional    pam_keyinit.so force revoke
-      #session    required    pam_namespace.so
-      #session    include     system-auth
-      #session    optional    pam_gnome_keyring.so auto_start
-      #-session    optional    pam_kwallet5.so
-      #-session    optional    pam_kwallet.so
-      #session    optional    pam_lastlog.so silent
-      #session    include     postlogin
-      #auth        sufficient  pam_succeed_if.so user ingroup nopasswdlogin
-      #auth        include     system-login
-```
 
 - [ ] <https://wiki.cachyos.org/configuration/general_system_tweaks/#enable-rcu-lazy>
 - [ ] re: rcu_nocbs, I read that it's often recommended to be used together with rcu_lazy:
@@ -173,12 +182,13 @@ As a consequence, if you wish to disable passimd you should follow the advice gi
       config_examples copy not good because it is cumbersome, need to use create default config.sh util to handle it
 - [ ] setup custom_configs folder usage for user
       Setup custom_configs directory for user-specific config files would be better because current configs folder is only my configs which may not suit others.
-- [ ] my-unicorn, autotarcompres add their setup
+- [ ] my-unicorn, autotarcompres add their setup like clone repo and install cli etc.
 - [ ] my-unicorn compatibility for mimeapp.list
 - [ ] tmux dotfiles need to git clone tpm to tmux/plugins folder than install the plugins prefix and press shift and I to install
 
 ## backlog
 
+- [ ] add nvibrant setup, sddm setup(like sddm-wayland package install for fedora and arch), gammastep alternative(hyprland not use), wlsunset alternative can't decrease brightness...
 - [ ] Option to delete old, unmaintaned packages more easily. (Maybe with cli, or packages.ini new list)
 - [ ] Find a way to detect unmaintaned copr packages, AUR packages.
 - [ ] we can call the sddm setup on the command hyprland installation in setup.sh
@@ -247,6 +257,11 @@ sudo dnf remove irqbalance
 
 ## done
 
+- [x] signal on the extra repo in arch so we
+      need to change this flatpak packages to normal package name
+      and than write it flatpak on the pkpmap.ini file
+      so when on arch, it would install the normal package and on fedora it would install the flatpak package
+- [x] distro support issue cachyos
 - [x] pure functions for better testability on setups and installers
     - [x] Remove base.py and switch to function base programming for setups
 - [x] ohmyzsh, can be installed .config/oh-my-zsh config more easily with the new
@@ -263,7 +278,7 @@ sudo dnf remove irqbalance
 - [x] add option to remove the packages, which it would remove from tracked database
 - [x] add upgrade command to self-update the cli tool via uv
 - [x] add folder structure to tests/ folder similar to src/aps/ for better organization of tests
-- [x] move test_system test to their own modules like tests/system/test_<distro>.py
+- [x] move test*system test to their own modules like tests/system/test*<distro>.py
 - [x] add setup commands like system folder, hardware folder to cli which we didn't have yet
 - `uv tool install .` tested on cachyos and work as expected.
 - Brave setup works.
@@ -280,8 +295,7 @@ sudo dnf remove irqbalance
 - [x] test new tracking system for all of the packages.ini setups
     - [x] arch
     - [x] ubuntu qemu
-- [x] Sources not recognized correctly: COPR:atim/starship found but no lazygit
-      - now it is fixed with new tracking system
+- [x] Sources not recognized correctly: COPR:atim/starship found but no lazygit - now it is fixed with new tracking system
 - [x] Errors on sync-repos, we can't change flatpak to official the flatpak repos.
       If user want to get the official, than they can easily remove the package from flatpak
       and move it to correct category like core, laptop, dev etc. to be able to install

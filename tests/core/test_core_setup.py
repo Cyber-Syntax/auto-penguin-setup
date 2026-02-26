@@ -37,6 +37,19 @@ def fedora_distro() -> DistroInfo:
 
 
 @pytest.fixture
+def cachyos_distro() -> DistroInfo:
+    """Create CachyOS distro info (Arch derivative)."""
+    return DistroInfo(
+        name="CachyOS",
+        version="rolling",
+        id="cachyos",
+        id_like=["arch"],
+        package_manager=PackageManagerType.PACMAN,
+        family=DistroFamily.ARCH,
+    )
+
+
+@pytest.fixture
 def setup_manager_arch(arch_distro: DistroInfo) -> SetupManager:
     """Create SetupManager for Arch Linux."""
     return SetupManager(arch_distro)
@@ -46,6 +59,24 @@ def setup_manager_arch(arch_distro: DistroInfo) -> SetupManager:
 def setup_manager_fedora(fedora_distro: DistroInfo) -> SetupManager:
     """Create SetupManager for Fedora."""
     return SetupManager(fedora_distro)
+
+
+class TestSetupManagerDistroNormalization:
+    """Tests for distro key normalization in SetupManager."""
+
+    def test_setup_component_passes_family_key_for_arch_derivative(
+        self, cachyos_distro: DistroInfo
+    ) -> None:
+        """Ensure Arch derivatives pass 'arch' to installer modules."""
+        manager = SetupManager(cachyos_distro)
+
+        with patch("aps.core.setup.virtmanager.install") as mock_install:
+            mock_install.return_value = True
+            manager.setup_component("virtmanager")
+
+            mock_install.assert_called_once()
+            _, kwargs = mock_install.call_args
+            assert kwargs["distro"] == "arch"
 
 
 class TestSetupManagerAURHelper:

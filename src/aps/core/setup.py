@@ -149,6 +149,24 @@ class SetupManager:
         """
         self.distro = distro_info
 
+    def _platform_key(self) -> str:
+        """Return a canonical distro key for component modules.
+
+        Many installer/config modules implement logic keyed on distro *family*
+        (e.g. "arch" vs "fedora") rather than a specific derivative ID.
+        Normalizing here prevents Arch derivatives like CachyOS from being
+        treated as unsupported.
+
+        Returns:
+            Canonical distro key (e.g. "arch", "fedora"). Falls back to the
+            raw distro ID when the family is unknown.
+
+        """
+        family_key = self.distro.family.value
+        if family_key != "unknown":
+            return family_key
+        return self.distro.id
+
     @classmethod
     def get_available_components(cls) -> dict[str, str]:
         """Get all available setup components.
@@ -216,7 +234,7 @@ class SetupManager:
 
                 # Call the functional configure() function
                 success = config_module.configure(
-                    distro=self.distro.id, **default_kwargs
+                    distro=self._platform_key(), **default_kwargs
                 )
                 if not success:
                     msg = f"Failed to configure {component}"
@@ -233,7 +251,7 @@ class SetupManager:
         if installer_module is not None:
             logger.info("Setting up %s...", component)
             try:
-                success = installer_module.install(distro=self.distro.id)
+                success = installer_module.install(distro=self._platform_key())
                 if not success:
                     msg = f"Failed to setup {component}"
                     raise SetupError(msg)  # noqa: TRY301
