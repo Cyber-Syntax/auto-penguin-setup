@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flatpak provider support in `pkgmap.ini` for unified package resolution
 - Configuration validation with clear error messages for legacy `[flatpak]` sections
 - Migration guide for users transitioning from `[flatpak]` category
+- Added virt-manager setup integration to automate virtualization host configuration
+    - Introduced a dedicated `virtmanager` installer module for Fedora- and Arch-family distributions
+    - Implemented automated setup for virtualization components:
+        - Configures `libvirtd.conf`, `qemu.conf`, and `network.conf` with necessary settings for user permissions and network configuration
+        - Ensures necessary groups and permissions are established for the current user
+- Added comprehensive e2e tests
+    - for virtmanager.py
+    - for sudoers.py
 
 ### Changed
 
@@ -30,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Inconsistent package resolution behavior across distros
+- Fixed _update_sudoers_section to use run_privileged(["/usr/bin/cat", ...]) instead of Path.read_text(), fixed glob bug in `_restore_latest_backup` using find
 
 ### BREAKING CHANGE
 

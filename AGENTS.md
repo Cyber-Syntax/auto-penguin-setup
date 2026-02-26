@@ -269,9 +269,17 @@ tests/                             # Test suite (mirrors src structure)
 ├── conftest.py             # Pytest fixtures and configuration
 ├── integration/                   # Integration tests (network calls not allowed)
 ├── custom/                 # Custom tests (e.g., GitHub Action CI test, line count test)
-├── e2e/                           # End-to-end tests
-├── fixtures/                      # Test fixtures
-│   └── checksums/                 # Real checksum data for integration tests
+├── conftest.py                          # Global fixtures (mock_run_privileged)
+├── e2e/
+│   ├── conftest.py                      # E2E fixtures (Path redirection, command mocks)
+│   ├── test_virtmanager_e2e.py          # 12 virtmanager E2E tests
+│   └── test_sudoers_e2e.py              # 4 sudoers E2E tests
+└── fixtures/
+    ├── virt/                            # Real libvirt config files
+    │   ├── libvirtd.conf
+    │   ├── network.conf
+    │   └── qemu.conf
+    └── sudoers                          # Real sudoers fixture file
 └── [other subdirs mirror src/aps structure]
 ```
 

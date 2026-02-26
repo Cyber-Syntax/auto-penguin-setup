@@ -34,32 +34,6 @@
 ## in-progress
 
 - [ ] cleanup hard issues from here and move the github issues
-- [ ] sudoers give permission error, sudoers file not able to written but it's backup created successfully.
-
-```bash
-➜ aps setup sudoers 
-[sudo] password for developer: 
-Configuring sudoers...
-Starting sudoers configuration...
-Configuring sudoers for extended terminal password timeout...
-Creating backup of sudoers file...
-Backup created: /etc/sudoers.bak.20260225153800
-Failed to update sudoers file
-Traceback (most recent call last):
-  File "/home/developer/.local/share/uv/tools/auto-penguin-setup/lib/python3.14/site-packages/aps/system/sudoers.py", line 87, in _update_sudoers_section
-    content = SUDOERS_FILE.read_text()
-  File "/usr/lib/python3.14/pathlib/__init__.py", line 787, in read_text
-    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
-         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.14/pathlib/__init__.py", line 771, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-PermissionError: [Errno 13] Permission denied: '/etc/sudoers'
-Terminal timeout sudoers setup failed
-Sudoers setup completed with 1 error(s)
-Setup failed: Error during sudoers configuration: Failed to configure sudoers
-```
-
 - [ ] add paru flag to skip app if it is already installed:
 
 ```bash
@@ -257,6 +231,7 @@ sudo dnf remove irqbalance
 
 ## done
 
+- [x] sudoers give permission error, sudoers file not able to written but it's backup created successfully.
 - [x] signal on the extra repo in arch so we
       need to change this flatpak packages to normal package name
       and than write it flatpak on the pkpmap.ini file
