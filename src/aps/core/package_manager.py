@@ -414,7 +414,7 @@ class PacmanManager(PackageManager):
         if not self.aur_helper:
             raise PackageManagerError("AUR helper not available")
 
-        cmd = [self.aur_helper, "-S"]
+        cmd = [self.aur_helper, "-S", "--needed"]
         # Note: Do NOT use --noconfirm for AUR installs to allow interactive conflict resolution
         if assume_yes:
             cmd.append("--noconfirm")
