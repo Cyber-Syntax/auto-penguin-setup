@@ -263,3 +263,151 @@ def redirect_paths(  # noqa: C901
     )
 
     return (e2e_tmp_root, libvirt_dir)
+
+
+@pytest.fixture
+def sudoers_e2e_tmp_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Create E2E test root directory for sudoers tests.
+
+    Args:
+        tmp_path_factory: pytest's temporary directory factory
+
+    Returns:
+        Path to the E2E test root directory for sudoers
+    """
+    return tmp_path_factory.mktemp("sudoers-e2e")
+
+
+@pytest.fixture
+def mock_sudoers_filesystem(sudoers_e2e_tmp_root: Path) -> Path:
+    """Create mock sudoers filesystem with fixture data.
+
+    Copies the real sudoers fixture from tests/fixtures/sudoers
+    into the tmp filesystem at <tmp_root>/etc/sudoers.
+
+    Args:
+        sudoers_e2e_tmp_root: E2E test root directory for sudoers
+
+    Returns:
+        Path to the tmp etc directory containing the sudoers file.
+    """
+    etc_dir = sudoers_e2e_tmp_root / "etc"
+    etc_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy fixture sudoers file
+    fixture_file = Path(__file__).parent.parent / "fixtures" / "sudoers"
+    shutil.copy2(fixture_file, etc_dir / "sudoers")
+
+    return etc_dir
+
+
+MIN_CAT_CMD_LEN = 2
+MIN_TEE_CMD_LEN = 2
+MIN_CP_CMD_LEN = 3
+MIN_FIND_CMD_LEN = 3
+
+
+@pytest.fixture
+def mock_sudoers_commands(
+    mock_run_privileged: MagicMock, sudoers_e2e_tmp_root: Path
+) -> MagicMock:
+    """Configure run_privileged mock to handle sudoers commands.
+
+    Configures the global run_privileged mock to handle sudoers-related
+    commands: cat, tee, cp, find, visudo. For tee and cp, performs actual
+    file operations on the filesystem, with /etc/ paths redirected
+    to the temporary test filesystem.
+
+    Args:
+        mock_run_privileged: Global mock of run_privileged
+        sudoers_e2e_tmp_root: Temporary root directory for redirecting paths
+
+    Returns:
+        Configured mock_run_privileged for further customization if needed
+    """
+
+    def mock_run_command(cmd: list[str], **kwargs: object) -> MagicMock:
+        """Mock run_privileged for sudoers commands."""
+        return _handle_sudoers_command(cmd, kwargs, sudoers_e2e_tmp_root)
+
+    mock_run_privileged.side_effect = mock_run_command
+    return mock_run_privileged
+
+
+def _redirect_sudoers_path(path_str: str, tmp_root: Path) -> Path:
+    """Redirect /etc/* paths to tmp_root.
+
+    Args:
+        path_str: Path string to redirect
+        tmp_root: Root directory for redirection
+
+    Returns:
+        Redirected Path object
+    """
+    if path_str.startswith("/etc/") or path_str == "/etc":
+        return tmp_root / path_str.lstrip("/")
+    return Path(path_str)
+
+
+def _handle_sudoers_command(  # noqa: C901, PLR0911, PLR0912
+    cmd: list[str], kwargs: dict[str, object], tmp_root: Path
+) -> MagicMock:
+    """Handle sudoers-related mock commands.
+
+    Args:
+        cmd: Command list
+        kwargs: Keyword arguments
+        tmp_root: Temporary root directory
+
+    Returns:
+        MagicMock result
+    """
+    if not cmd:
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    command_name = cmd[0].split("/")[-1] if "/" in cmd[0] else cmd[0]
+
+    if command_name == "cat":
+        stdout = ""
+        if len(cmd) >= MIN_CAT_CMD_LEN:
+            file_path = _redirect_sudoers_path(cmd[1], tmp_root)
+            if file_path.exists():
+                stdout = file_path.read_text()
+        return MagicMock(returncode=0, stdout=stdout, stderr="")
+
+    if command_name == "tee":
+        if len(cmd) >= MIN_TEE_CMD_LEN:
+            target_file = _redirect_sudoers_path(cmd[1], tmp_root)
+            stdin_content = kwargs.get("stdin_input", "")
+            if stdin_content:
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                target_file.write_text(stdin_content)
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    if command_name == "cp":
+        if len(cmd) >= MIN_CP_CMD_LEN:
+            source = _redirect_sudoers_path(cmd[-2], tmp_root)
+            dest = _redirect_sudoers_path(cmd[-1], tmp_root)
+            if source.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, dest)
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    if command_name == "find":
+        if len(cmd) < MIN_FIND_CMD_LEN:
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        search_dir = _redirect_sudoers_path(cmd[1], tmp_root)
+        pattern = cmd[-1] if not cmd[-1].startswith("-") else ""
+
+        if not search_dir.exists():
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        matching_files = sorted(
+            [str(f) for f in search_dir.glob(pattern) if f.is_file()],
+            reverse=True,
+        )
+        stdout = "\n".join(matching_files)
+        return MagicMock(returncode=0, stdout=stdout, stderr="")
+
+    return MagicMock(returncode=0, stdout="", stderr="")
