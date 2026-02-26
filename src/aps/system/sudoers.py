@@ -83,8 +83,17 @@ def _update_sudoers_section(
 
     """
     try:
-        # Read current content
-        content = SUDOERS_FILE.read_text()
+        # Read current content using privileged cat
+        result = run_privileged(
+            ["/usr/bin/cat", str(SUDOERS_FILE)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            logger.error("Failed to read sudoers file")
+            return False
+        content = result.stdout
 
         # Remove existing section if present
         if marker_start in content:
@@ -115,15 +124,15 @@ def _update_sudoers_section(
         )
 
         # Validate sudoers file syntax
-        if not _validate_sudoers():
+        if _validate_sudoers():
+            logger.info("Sudoers configuration updated successfully")
+            return True
+        else:  # noqa: RET505
             logger.error(
                 "Sudoers file syntax validation failed, restoring from backup"
             )
             _restore_latest_backup()
             return False
-
-        logger.info("Sudoers configuration updated successfully")
-        return True
 
     except (OSError, PermissionError):
         logger.exception("Failed to update sudoers file")
@@ -143,7 +152,7 @@ def _create_backup() -> bool:
     logger.info("Creating backup of sudoers file...")
 
     result = run_privileged(
-        ["cp", "-p", str(SUDOERS_FILE), str(backup_file)],
+        ["/usr/bin/cp", "-p", str(SUDOERS_FILE), str(backup_file)],
         capture_output=True,
         text=True,
         check=False,
@@ -181,9 +190,9 @@ def _restore_latest_backup() -> bool:
         bool: True if restore was successful, False otherwise.
 
     """
-    # Find latest backup
+    # Find latest backup using find command
     result = run_privileged(
-        ["ls", "-t", f"{SUDOERS_FILE}.bak.*"],
+        ["/usr/bin/find", "/etc", "-maxdepth", "1", "-name", "sudoers.bak.*"],
         capture_output=True,
         text=True,
         check=False,
@@ -193,11 +202,13 @@ def _restore_latest_backup() -> bool:
         logger.error("No backup files found")
         return False
 
-    latest_backup = result.stdout.strip().split("\n")[0]
+    # Sort backups in reverse order (newest first)
+    backup_files = sorted(result.stdout.strip().split("\n"), reverse=True)
+    latest_backup = backup_files[0]
 
     # Restore backup
     restore_result = run_privileged(
-        ["cp", latest_backup, str(SUDOERS_FILE)],
+        ["/usr/bin/cp", latest_backup, str(SUDOERS_FILE)],
         capture_output=True,
         text=True,
         check=False,
