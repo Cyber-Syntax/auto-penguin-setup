@@ -348,7 +348,7 @@ class SetupManager:
         logger.info("Installing build dependencies...")
         result = run_privileged(
             ["pacman", "-S", "--needed", "--noconfirm", "base-devel", "git"],
-            capture_output=True,
+            capture_output=False,
             text=True,
             check=False,
         )
@@ -376,7 +376,7 @@ class SetupManager:
                     "https://aur.archlinux.org/paru-bin.git",
                     str(build_dir),
                 ],
-                capture_output=True,
+                capture_output=False,
                 text=True,
                 check=False,
             )
@@ -389,7 +389,7 @@ class SetupManager:
             user = Path.home().name
             result = run_privileged(
                 ["chown", "-R", f"{user}:{user}", str(build_dir)],
-                capture_output=True,
+                capture_output=False,
                 text=True,
                 check=False,
             )
@@ -402,7 +402,7 @@ class SetupManager:
             result = subprocess.run(
                 ["makepkg", "-si", "--noconfirm"],  # noqa: S607
                 cwd=build_dir,
-                capture_output=True,
+                capture_output=False,
                 text=True,
                 check=False,
             )
@@ -437,7 +437,7 @@ class SetupManager:
         # Try package manager installation
         result = run_privileged(
             ["pacman", "-S", "--needed", "--noconfirm", pkg],
-            capture_output=True,
+            capture_output=False,
             text=True,
             check=False,
         )
