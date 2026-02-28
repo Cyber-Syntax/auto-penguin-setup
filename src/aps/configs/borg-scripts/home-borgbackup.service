@@ -6,10 +6,11 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/opt/borg/home-borgbackup.sh
-User=root
-Nice=19
-IOSchedulingClass=idle
-IOSchedulingPriority=7
+User=borg
+
+# The CAP_DAC_READ_SEARCH capability gives Borg read-only access 
+# to all files and directories on the system.
+AmbientCapabilities=CAP_DAC_READ_SEARCH
 
 # Timeout after 6 hours
 TimeoutSec=21600

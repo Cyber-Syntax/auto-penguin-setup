@@ -20,7 +20,7 @@ borg_home_repo='/mnt/backups/borgbackup/home-repo'
 echo "Starting backup for home"
 
 # --show-rc: if return 0 code, then it's successful
-if ! sudo borg create --list --filter=AME --progress --stats --exclude-caches --show-rc \
+if ! borg create --list --filter=AME --progress --stats --exclude-caches --show-rc \
   --exclude-from /opt/borg/borg-home-excludes.txt \
   --compression zstd,15 "$borg_home_repo"::'{now:home-developer-%d-%m-%Y}' \
   /home/developer/; then
@@ -30,7 +30,7 @@ fi
 
 echo "Backup of home directory complete"
 
-if ! sudo borg prune -v "$borg_home_repo" --list --stats --show-rc \
+if ! borg prune -v "$borg_home_repo" --list --stats --show-rc \
   --keep-daily=7 \
   --keep-weekly=4 \
   --keep-monthly=1; then
@@ -40,13 +40,13 @@ fi
 
 echo "Pruning of home backups complete"
 
-if ! sudo borg check "$borg_home_repo"; then
+if ! borg check "$borg_home_repo"; then
   echo "Check of home backups failed" >&2
   exit 1
 fi
 echo "borg check completed successfully"
 
-if ! sudo borg compact "$borg_home_repo"; then
+if ! borg compact "$borg_home_repo"; then
   echo "Compaction of home backups failed" >&2
   exit 1
 fi
