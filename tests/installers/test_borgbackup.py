@@ -10,6 +10,7 @@ from aps.utils.paths import resolve_config_file
 class TestBorgbackupInstall:
     """Test borgbackup install function."""
 
+    @patch("aps.installers.borgbackup._borg_user_exists", return_value=False)
     @patch("aps.installers.borgbackup.get_package_manager")
     @patch("aps.installers.borgbackup.detect_distro")
     @patch("aps.installers.borgbackup.resolve_config_file")
@@ -18,6 +19,7 @@ class TestBorgbackupInstall:
         mock_resolve: MagicMock,
         mock_detect: MagicMock,
         mock_get_pm: MagicMock,
+        mock_user_exists: MagicMock,
         mock_run_privileged: MagicMock,
     ) -> None:
         """Test successful borgbackup installation on Fedora."""
@@ -30,12 +32,18 @@ class TestBorgbackupInstall:
         result = install()
 
         assert result is True
+        mock_user_exists.assert_called_once_with("borg")
         mock_pm.install.assert_called_once_with(
             ["borgbackup"], assume_yes=True
+        )
+        assert any(
+            call.args[0][0].endswith("useradd")
+            for call in mock_run_privileged.call_args_list
         )
         # mkdir, 4x cp, chmod, daemon-reload, enable timer
         assert mock_run_privileged.call_count >= 6
 
+    @patch("aps.installers.borgbackup._borg_user_exists", return_value=False)
     @patch("aps.installers.borgbackup.get_package_manager")
     @patch("aps.installers.borgbackup.detect_distro")
     @patch("aps.installers.borgbackup.resolve_config_file")
@@ -44,6 +52,7 @@ class TestBorgbackupInstall:
         mock_resolve: MagicMock,
         mock_detect: MagicMock,
         mock_get_pm: MagicMock,
+        mock_user_exists: MagicMock,
         mock_run_privileged: MagicMock,
     ) -> None:
         """Test successful borgbackup installation on Arch."""
@@ -56,10 +65,41 @@ class TestBorgbackupInstall:
         result = install()
 
         assert result is True
-        mock_pm.install.assert_called_once_with(
-            ["borg"], assume_yes=True
+        mock_user_exists.assert_called_once_with("borg")
+        mock_pm.install.assert_called_once_with(["borg"], assume_yes=True)
+        assert any(
+            call.args[0][0].endswith("useradd")
+            for call in mock_run_privileged.call_args_list
         )
         assert mock_run_privileged.call_count >= 6
+
+    @patch("aps.installers.borgbackup._borg_user_exists", return_value=True)
+    @patch("aps.installers.borgbackup.get_package_manager")
+    @patch("aps.installers.borgbackup.detect_distro")
+    @patch("aps.installers.borgbackup.resolve_config_file")
+    def test_install_skips_user_creation_when_user_exists(
+        self,
+        mock_resolve: MagicMock,
+        mock_detect: MagicMock,
+        mock_get_pm: MagicMock,
+        mock_user_exists: MagicMock,
+        mock_run_privileged: MagicMock,
+    ) -> None:
+        """Install should not call useradd when borg user already exists."""
+        mock_resolve.return_value = "/fake/path/to/config"
+        mock_detect.return_value.family.name = "FEDORA"
+        mock_pm = MagicMock()
+        mock_pm.install.return_value = (True, "")
+        mock_get_pm.return_value = mock_pm
+
+        result = install()
+
+        assert result is True
+        mock_user_exists.assert_called_once_with("borg")
+        assert not any(
+            call.args[0][0].endswith("useradd")
+            for call in mock_run_privileged.call_args_list
+        )
 
     @patch("aps.installers.borgbackup.get_package_manager")
     @patch("aps.installers.borgbackup.detect_distro")
@@ -116,5 +156,5 @@ class TestBorgbackupSystemdFiles:
         """Timer file should have daily schedule with persistence."""
         timer = resolve_config_file("borg-scripts/home-borgbackup.timer")
         content = timer.read_text()
-        assert "OnCalendar=daily" in content
+        assert "OnCalendar=*-*-* 07:00:00" in content
         assert "Persistent=true" in content

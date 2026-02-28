@@ -1,5 +1,6 @@
 """Borgbackup installer module."""
 
+import pwd
 import subprocess
 from pathlib import Path
 
@@ -10,6 +11,116 @@ from aps.utils.paths import resolve_config_file
 from aps.utils.privilege import run_privileged
 
 logger = get_logger(__name__)
+
+
+def _first_existing_path(candidates: list[str]) -> str:
+    """Return the first existing path from candidates.
+
+    Args:
+        candidates: Candidate absolute paths. The last entry is used as a
+            fallback if none exist.
+
+    Returns:
+        The first path that exists, else the last candidate.
+
+    """
+    for candidate in candidates:
+        if Path(candidate).exists():
+            return candidate
+    return candidates[-1]
+
+
+def _borg_user_exists(username: str = "borg") -> bool:
+    """Return True if the borg service user exists.
+
+    Uses Python's NSS-backed user lookup when possible and falls back to
+    `getent` if NSS lookup fails for environmental reasons.
+
+    Args:
+        username: Username to check.
+
+    Returns:
+        True if the user exists, False otherwise.
+
+    """
+    try:
+        pwd.getpwnam(username)
+    except KeyError:
+        return False
+    except OSError:
+        # Extremely defensive: if NSS is misconfigured, `pwd` can raise.
+        # Fall back to `getent` (also NSS-backed, but often works when `pwd`
+        # doesn't due to container/minimal env quirks).
+        try:
+            result = subprocess.run(  # noqa: S603
+                ["/usr/bin/getent", "passwd", username],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except (subprocess.SubprocessError, OSError):
+            return False
+        else:
+            return result.returncode == 0
+    else:
+        return True
+
+
+def _ensure_borg_user_exists() -> bool:
+    """Ensure the `borg` system user exists.
+
+    The shipped systemd service runs as `User=borg`, so installation must be
+    able to create the user on first run and be idempotent on subsequent runs.
+
+    Returns:
+        True if the user exists or was created successfully, False otherwise.
+
+    """
+    if _borg_user_exists("borg"):
+        logger.debug("borg user already exists")
+        return True
+
+    logger.info("Creating borg system user...")
+
+    useradd = _first_existing_path(
+        [
+            "/usr/sbin/useradd",
+            "/usr/bin/useradd",
+        ]
+    )
+    nologin = _first_existing_path(
+        [
+            "/usr/sbin/nologin",
+            "/usr/bin/nologin",
+            "/sbin/nologin",
+            "/bin/false",
+        ]
+    )
+
+    try:
+        run_privileged(
+            [
+                useradd,
+                "--system",
+                "--home-dir",
+                "/var/lib/borg",
+                "--no-create-home",
+                "--shell",
+                nologin,
+                "--comment",
+                "BorgBackup service user",
+                "borg",
+            ]
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (getattr(exc, "stderr", "") or "").strip()
+        if stderr:
+            logger.exception("Failed to create borg user (stderr: %s)", stderr)
+        else:
+            logger.exception("Failed to create borg user")
+        return False
+
+    return True
 
 
 def install(distro: str | None = None) -> bool:  # noqa: ARG001, C901, PLR0911
@@ -30,6 +141,9 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001, C901, PLR0911
         logger.debug("Created /opt/borg directory")
     except subprocess.CalledProcessError:
         logger.exception("Failed to create /opt/borg directory")
+        return False
+
+    if not _ensure_borg_user_exists():
         return False
 
     # Install borgbackup package via detected package manager
@@ -92,14 +206,6 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001, C901, PLR0911
         logger.exception("Failed to make borgbackup script executable")
         return False
 
-    # Reload systemd daemon
-    try:
-        run_privileged(["/usr/bin/systemctl", "daemon-reload"])
-        logger.debug("Reloaded systemd daemon")
-    except subprocess.CalledProcessError:
-        logger.exception("Failed to reload systemd daemon")
-        return False
-
     # Enable and start timer
     logger.info("Enabling borgbackup timer...")
     try:
@@ -108,6 +214,14 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001, C901, PLR0911
         )
     except subprocess.CalledProcessError:
         logger.exception("Failed to enable borgbackup timer")
+        return False
+
+    # Reload systemd daemon
+    try:
+        run_privileged(["/usr/bin/systemctl", "daemon-reload"])
+        logger.debug("Reloaded systemd daemon")
+    except subprocess.CalledProcessError:
+        logger.exception("Failed to reload systemd daemon")
         return False
 
     logger.info("borgbackup service setup completed.")
