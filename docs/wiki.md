@@ -99,13 +99,18 @@ Here are real-world examples for each mapping type:
 curl
 wget
 ufw
+gh
 ```
 
 **`pkgmap.ini`:**
 
+- For Arch, `gh` maps to `github-cli`.
+- For Fedora, `gh` maps to `gh` and you don't need a mapping if the name is the same because it will default to the generic name written in `packages.ini`.
+
 ```INI
 [pkgmap.arch]
 curl=curl
+gh=github-cli
 
 [pkgmap.fedora]
 curl=curl

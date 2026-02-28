@@ -7,64 +7,100 @@
       - [x] vscode copr install test with dnf
       - [x] zenpower3 copr install test with dnf
       - [x] ohmyzsh installer
+      - [x] virtmanager
       - [ ] syncthing setup
       - [ ] thinkfan setup test on thinkpad
-      - [x] virtmanager
 
 - [ ] Test setups:
+      - [x] sudoers setup test
       - [ ] qtile setup test
       - [ ] lightdm setup test
       - [ ] sddm setup test
       - [ ] firewall setup test
       - [ ] ssh setup test
-      - [ ] sudoers setup test
       - [ ] multimedia setup test
       - [ ] repositories setup test
       - [ ] pm_optimizer setup test
       - [ ] nvidia hardware test on fedora
-
 - [ ] Test Hardware detection modules:
       - [ ] nvidia (<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#faq2>) - [ ] amd
       - [ ] intel
       - [ ] touchpad
 
-- Better ruff linting rules
-- auto-cpufreq installer outputs to terminal properly
+- [x] add borgbackup setup
+- [x] P1: Ollama setup wrong location on core setup.py need to -> ollama.py
 
 ## in-progress
 
-- [ ] cleanup hard issues from here and move the github issues
-- [ ] add paru flag to skip app if it is already installed:
+- [ ] cleanup issues from here and move the github issues for hard ones, keep the dev issues here for now
+- [ ] P2: New architecture to detect pakacges on setups like ollama.py -> check package installed or not first and use pkgmap.ini for differen package names and than continue setting up.
+- [ ] more things for ollama-cuda:
 
 ```bash
-paru -S --needed syncthingtray-qt6
-:: Resolving dependencies...
-:: syncthingtray-qt6-2.0.7-1 is up to date -- skipping
-:: Calculating conflicts...
-:: Calculating inner conflicts...
- there is nothing to do
+- The cuda binaries are in /opt/cuda/bin/
+- You need to source /etc/profile or restart your session in order for the CUDA
+  binaries to appear in your $PATH
+- The default host compiler for nvcc is set by the $NVCC_CCBIN environment
+  variable in /etc/profile.d/cuda.sh
+- The default host compiler for nvcc is no longer configured using symlinks in
+  /opt/cuda/bin/ but by the $NVCC_CCBIN environment variable in
+  /etc/profile.d/cuda.sh.  You need to source /etc/profile or restart your
+  session for it to be available in your environment.  Additionally, you may
+  need to clear the build cache of your projects where the old path may have
+  been recorded.
+- When you uninstall an old, unrequired version of GCC that was previously
+  required by cuda for the default host compiler ($NVCC_CCBIN), you may need
+  to source /etc/profile or restart your session.  Additionally, you may need
+  to clear the build cache of your projects where the old path may be still
+  recorded.
+Optional dependencies for cuda
+    gdb: for cuda-gdb
+    glu: required for some profiling tools in CUPTI [installed]
+    nvidia-utils: for NVIDIA drivers (not needed in CDI containers) [installed]
+    nsight-compute: for profiling CUDA applications
+    nsight-systems: for system-wide profiling
+    rdma-core: for GPUDirect Storage (libcufile_rdma.so) [installed]
 ```
 
-- [ ] add new feature, export installed packages to a file to make it easy to save
-- [ ] seperate setup things to seperated modules in setup.py like ollama.py, etc.
+- [x] add ollama remove command to remove ollama:
 
-- [ ] remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
-- [x] `syncthingtray-qt6` from AUR package for flatpak syncthingtray
+Uninstall
+
+Remove the ollama service:
+
+```shell
+sudo systemctl stop ollama
+sudo systemctl disable ollama
+sudo rm /etc/systemd/system/ollama.service
+```
+
+Remove ollama libraries from your lib directory (either `/usr/local/lib`, `/usr/lib`, or `/lib`):
+
+```shell
+sudo rm -r $(which ollama | tr 'bin' 'lib')
+```
+
+Remove the ollama binary from your bin directory (either `/usr/local/bin`, `/usr/bin`, or `/bin`):
+
+```shell
+sudo rm $(which ollama)
+```
+
+Remove the downloaded models and Ollama service user and group:
+
+```shell
+sudo userdel ollama
+sudo groupdel ollama
+sudo rm -r /usr/share/ollama
+```
+
+- [ ] add remove command for other setups like vscode etc. later via `remove --setup` flag which now added via ollama and it supports ollama for now but we can add more setups to it later.
 - [ ] change fish -> bash `chsh -s /bin/bash` simple but can be made it somewhere on zsh setup?
-- [ ] P1: Ollama setup wrong location on core setup.py need to -> ollama.py
-- [ ] checkout: <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff>
+- [ ] fix pytest tmp folder structure, make it like pytest-of-<user>-aps-e2e, pytest-of-<user>-aps-unit etc. to make it more organized and easy to find the test results
+- [ ] remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
 - [ ] add gnome-kerying to packages.ini and make sure to disable kdewallet.
 - [ ] Refactor configs folder, better to write it via script instead of copy-pasting.
-- [ ] add `ttf-jetbrains-mono-nerd` for arch font, and find it for fedora?
-- [ ] It isn't show pacman output
-
-```bash
-aps setup ollama
-[sudo] password for gamer:
-Installing Ollama...
-Detected GPU vendor: nvidia
-Installing Ollama package: ollama-cuda
-```
+- [ ] add `ttf-jetbrains-mono-nerd` for arch font. There is non for fedora...
 
 - use default --noconfirm but we don't want that
 
@@ -80,9 +116,19 @@ Installing Ollama package: ollama-cuda
 
 - [ ] one line install command to install via setup.sh script like:
       `bash <(curl -fsSL https://raw.githubusercontent.com/Cyber-Syntax/auto-penguin-setup/main/setup.sh)`
+- [ ] checkout: <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff>
 
 ## todo
 
+- [ ] arch sometimes cause invalid signature for the packages and it is fixable by `sudo pacman -Syu` but that's not good to ask user because Arch updates can break the system, so user must be handle update themselves which it's need arch news check etc. Document it in the readme for own limitations of the tool or decision etc.
+
+```bash
+error: ollama: signature from "CachyOS <admin@cachyos.org>" is invalid
+:: File /var/cache/pacman/pkg/ollama-0.17.1-1.1-x86_64_v3.pkg.tar.zst is corrupted (invalid or corrupted package (PGP signature)).
+Do you want to delete it? [Y/n] 
+```
+
+- [ ] add new feature, export installed packages to a file to make it easy to save
 - [ ] Duplicated print
 
 ```bash
@@ -115,16 +161,13 @@ sudo cpupower frequency-info
 ```
 
 - [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances: fnctl.flock would handle this easily.
-
 - [ ] better code structure? <https://docs.python-guide.org/writing/structure/>
 - [ ] <https://github.com/bahamas10/bash-style-guide> for setup.sh
 - [ ] add ohmyzsh uninstall command? That command not work for custom ohmyzsh folder.
       If you want to uninstall oh-my-zsh, just run `uninstall_oh_my_zsh` from the command-line. It will remove itself and revert your previous bash or zsh configuration.
-
 - [ ] add acknowledgements to readme.md
 - [ ] add tracking feature to setup applications like ohmyzsh, auto-cpufreq etc. Maybe we can firslty use the package manager to install the tlp, ohmyzsh before setup it and track it that way would be easier. Ollama probably not possible because we use the directl offical install.sh script.
-- [ ] exclude configs/readme.md from uv builds
-
+- [ ] exclude configs/readme.md from uv builds on pyproject.toml
 - [ ] disable p2p for fwupd.service
       Disable local cache server (passim)
 
@@ -143,9 +186,9 @@ As a consequence, if you wish to disable passimd you should follow the advice gi
 - [ ] test new tlp feature
     - [ ] disable irqbalance and remove
 - [ ] add a warning when the pkgmap.ini didn't found the packages for the current distro
-- [ ] add zen.desktop to default apps
 - [ ] disable intel_pstate , enable acpi-cpufreq or enable intel_pstate
 - [ ] omarchy arch scripts good repo
+- [ ] add zen.desktop to default apps
 - [ ] browser profile save advanced
       <https://docs.zen-browser.app/guides/manage-profiles>
 - [ ] font setup
@@ -158,7 +201,7 @@ As a consequence, if you wish to disable passimd you should follow the advice gi
       Setup custom_configs directory for user-specific config files would be better because current configs folder is only my configs which may not suit others.
 - [ ] my-unicorn, autotarcompres add their setup like clone repo and install cli etc.
 - [ ] my-unicorn compatibility for mimeapp.list
-- [ ] tmux dotfiles need to git clone tpm to tmux/plugins folder than install the plugins prefix and press shift and I to install
+- [ ] switch toml from ini for better parsing and performance? or jsonl for tracking database?
 
 ## backlog
 
@@ -231,6 +274,11 @@ sudo dnf remove irqbalance
 
 ## done
 
+- Better ruff linting rules
+- auto-cpufreq installer outputs to terminal properly
+- [x] Ollama setup isn't show pacman output, we need to change the subprocess.run to capture_output=False for pacman install command to show the output in terminal
+- [x] add paru/yay --needed flag to skip app if it is already installed:
+- [x] `syncthingtray-qt6` from AUR package for flatpak syncthingtray
 - [x] sudoers give permission error, sudoers file not able to written but it's backup created successfully.
 - [x] signal on the extra repo in arch so we
       need to change this flatpak packages to normal package name

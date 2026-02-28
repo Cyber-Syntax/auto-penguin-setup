@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Implemented automated setup for virtualization components:
         - Configures `libvirtd.conf`, `qemu.conf`, and `network.conf` with necessary settings for user permissions and network configuration
         - Ensures necessary groups and permissions are established for the current user
+- Added `--needed` flag to aur helper installation functions to skip already installed packages
+- Added borgbackup setup
+    - Added borgbackup sh script to automate backup process
+    - Added service and timer files for automated backup scheduling
+- Added `--setup` flag to remove command to allow removing setups like ollama.
+    - Currently only ollama is supported for now but others are planned to be added later.
 - Added comprehensive e2e tests
     - for virtmanager.py
     - for sudoers.py
@@ -39,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Inconsistent package resolution behavior across distros
 - Fixed _update_sudoers_section to use run_privileged(["/usr/bin/cat", ...]) instead of Path.read_text(), fixed glob bug in `_restore_latest_backup` using find
+- Fixed ollama setup to show pacman output by setting capture_output=False in subprocess.run
 
 ### BREAKING CHANGE
 
