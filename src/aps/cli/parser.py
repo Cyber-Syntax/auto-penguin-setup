@@ -69,8 +69,33 @@ Examples:
     )
 
     # aps remove
-    remove_parser = subparsers.add_parser("remove", help="Remove packages")
-    remove_parser.add_argument("packages", nargs="+")
+    removable_components = SetupManager.get_removable_components()
+    removable_list = "\n".join(
+        [
+            f"  {name:<15} - {desc}"
+            for name, desc in sorted(removable_components.items())
+        ]
+    )
+    remove_parser = subparsers.add_parser(
+        "remove",
+        help="Remove packages or setup components",
+        epilog=f"""
+Removable components (use --setup):
+{removable_list}
+
+Examples:
+  aps remove firefox htop       Remove packages
+  aps remove --setup ollama     Remove a setup component
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    remove_parser.add_argument("packages", nargs="*", default=[])
+    remove_parser.add_argument(
+        "--setup",
+        choices=list(removable_components.keys()),
+        metavar="COMPONENT",
+        help="Remove a setup component (e.g., ollama)",
+    )
     remove_parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be removed"
     )

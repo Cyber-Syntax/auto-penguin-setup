@@ -2,6 +2,7 @@
 
 import shutil
 import subprocess
+from pathlib import Path
 
 from aps.core.logger import get_logger
 from aps.utils.privilege import run_privileged
@@ -136,3 +137,200 @@ def _detect_gpu_vendor() -> str:
             return "amd"
 
     return "unknown"
+
+
+def uninstall(distro: str | None = None) -> bool:
+    """Uninstall Ollama.
+
+    On Arch, attempts pacman removal then always runs cleanup.
+    On other distributions, runs manual cleanup directly.
+
+    Args:
+        distro: Distribution ID (e.g., 'arch', 'fedora'). If None, uses
+            manual cleanup only.
+
+    Returns:
+        bool: True if uninstallation was successful, False otherwise.
+
+    """
+    binary_path = shutil.which("ollama")
+    if not binary_path:
+        logger.warning("Ollama is not installed")
+        return True
+
+    logger.info("Uninstalling Ollama from %s", binary_path)
+
+    if distro == "arch":
+        _uninstall_via_pacman()
+        # Always cleanup regardless of pacman result
+        success = _cleanup_ollama_artifacts()
+    else:
+        success = _cleanup_ollama_artifacts()
+
+    if success:
+        logger.info("Ollama uninstallation completed successfully")
+    else:
+        logger.warning("Ollama uninstallation had some errors but completed")
+
+    return True
+
+
+def _uninstall_via_pacman() -> bool:
+    """Remove Ollama via pacman on Arch Linux.
+
+    Returns:
+        bool: True if pacman removal succeeded or wasn't applicable, False on
+            failure.
+
+    """
+    binary_path = shutil.which("ollama")
+    if not binary_path:
+        return True
+
+    # Check if pacman owns the binary
+    result = subprocess.run(  # noqa: S603
+        ["pacman", "-Qo", binary_path],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        logger.info(
+            "Pacman does not own Ollama binary, skipping pacman removal"
+        )
+        return True
+
+    # Extract package name from pacman output (format: "repo/package version")
+    output_parts = result.stdout.split()
+    min_parts = 2
+    if len(output_parts) < min_parts:
+        logger.warning("Could not parse pacman output")
+        return False
+
+    pkg_name = output_parts[1]
+    logger.info("Removing Ollama package via pacman: %s", pkg_name)
+
+    removal_result = run_privileged(
+        ["/usr/bin/pacman", "-R", "--noconfirm", pkg_name],
+        capture_output=False,
+        text=True,
+        check=False,
+    )
+
+    if removal_result.returncode == 0:
+        logger.info("Successfully removed Ollama via pacman")
+        return True
+
+    logger.warning("Pacman removal failed, will continue with manual cleanup")
+    return False
+
+
+def _cleanup_ollama_artifacts() -> bool:
+    """Remove Ollama artifacts (best effort cleanup).
+
+    Removes systemd service, library directories, binary, user/group, and
+    data directories.
+
+    Returns:
+        bool: True (always succeeds with best effort approach).
+
+    """
+    binary_path = shutil.which("ollama")
+    if not binary_path:
+        return True
+
+    # Stop and disable systemd service
+    logger.info("Stopping Ollama service...")
+    stop_result = run_privileged(
+        ["/usr/bin/systemctl", "stop", "ollama"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if stop_result.returncode != 0:
+        logger.warning("Failed to stop Ollama service (may not exist)")
+
+    logger.info("Disabling Ollama service...")
+    disable_result = run_privileged(
+        ["/usr/bin/systemctl", "disable", "ollama"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if disable_result.returncode != 0:
+        logger.warning("Failed to disable Ollama service (may not exist)")
+
+    # Remove service file
+    logger.info("Removing Ollama service file...")
+    service_file = "/etc/systemd/system/ollama.service"
+    rm_service_result = run_privileged(
+        ["/usr/bin/rm", "-f", service_file],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if rm_service_result.returncode != 0:
+        logger.warning("Failed to remove service file %s", service_file)
+
+    # Determine and remove lib directory
+    # Get the directory containing the binary and replace 'bin' with 'lib'
+    bin_dir = Path(binary_path).parent
+    lib_dir = bin_dir.parent / "lib" / "ollama"
+    logger.info("Removing Ollama library directory: %s", lib_dir)
+    rm_lib_result = run_privileged(
+        ["/usr/bin/rm", "-rf", str(lib_dir)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if rm_lib_result.returncode != 0:
+        logger.warning("Failed to remove library directory %s", lib_dir)
+
+    # Remove binary
+    logger.info("Removing Ollama binary: %s", binary_path)
+    rm_binary_result = run_privileged(
+        ["/usr/bin/rm", "-f", binary_path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if rm_binary_result.returncode != 0:
+        logger.warning("Failed to remove binary %s", binary_path)
+
+    # Remove user
+    logger.info("Removing Ollama user...")
+    userdel_result = run_privileged(
+        ["/usr/sbin/userdel", "ollama"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if userdel_result.returncode != 0:
+        logger.warning("Failed to remove user 'ollama' (may not exist)")
+
+    # Remove group
+    logger.info("Removing Ollama group...")
+    groupdel_result = run_privileged(
+        ["/usr/sbin/groupdel", "ollama"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if groupdel_result.returncode != 0:
+        logger.warning("Failed to remove group 'ollama' (may not exist)")
+
+    # Remove data directory
+    logger.info("Removing Ollama data directory...")
+    data_dir = "/usr/share/ollama"
+    rm_data_result = run_privileged(
+        ["/usr/bin/rm", "-rf", data_dir],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if rm_data_result.returncode != 0:
+        logger.warning("Failed to remove data directory %s", data_dir)
+
+    logger.info("Ollama cleanup completed")
+    return True

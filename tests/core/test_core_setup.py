@@ -1,6 +1,6 @@
 """Tests for setup manager module."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -196,6 +196,58 @@ class TestComponentRegistry:
             assert isinstance(components[component], str)
             assert len(components[component]) > 0  # Has description
 
+    def test_get_removable_components_only_with_uninstall(
+        self,
+    ) -> None:
+        """Test removable components only include those with uninstall.
+
+        Verifies that only components with uninstall functions are returned.
+
+        """
+        removable = SetupManager.get_removable_components()
+
+        # Currently, only ollama has uninstall function
+        assert "ollama" in removable
+        assert removable["ollama"] == "Install/update Ollama AI runtime"
+
+        # Config-only components should not be in removable
+        assert "firewall" not in removable
+        assert "amd" not in removable
+        assert "qtile" not in removable
+
+        # Other installer components without uninstall should not be
+        # in removable (aur-helper, ohmyzsh, brave, etc. don't have
+        # uninstall)
+        assert "aur-helper" not in removable
+        assert "ohmyzsh" not in removable
+        assert "brave" not in removable
+        assert "vscode" not in removable
+        assert "virtmanager" not in removable
+
+    def test_get_removable_components_empty_if_none(
+        self,
+    ) -> None:
+        """Test get_removable_components returns empty dict if none removable.
+
+        Verifies that an empty dict is returned when no components have
+        uninstall support.
+
+        """
+        # Mock all installer modules to not have uninstall
+        with patch.dict(
+            SetupManager.COMPONENT_REGISTRY,
+            {
+                "ollama": {
+                    "description": "Install/update Ollama AI runtime",
+                    "installer_module": MagicMock(spec=[]),  # No attributes
+                }
+            },
+            clear=False,
+        ):
+            removable = SetupManager.get_removable_components()
+            # Should be empty since even ollama doesn't have uninstall now
+            assert removable == {}
+
     def test_setup_component_aur_helper(
         self, setup_manager_arch: SetupManager
     ) -> None:
@@ -264,3 +316,54 @@ class TestComponentRegistry:
                 SetupError, match="Error during thinkfan setup"
             ):
                 setup_manager_arch.setup_component("thinkfan")
+
+
+class TestRemoveComponent:
+    """Tests for component removal via remove_component method."""
+
+    def test_remove_component_success(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test successful removal when installer has uninstall function."""
+        # Mock the ollama module's uninstall function
+        with patch("aps.installers.ollama.uninstall") as mock_uninstall:
+            mock_uninstall.return_value = True
+            # Should not raise an error
+            setup_manager_arch.remove_component("ollama")
+            # Verify uninstall was called with correct distro
+            mock_uninstall.assert_called_once_with(distro="arch")
+
+    def test_remove_component_no_uninstall(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal fails when installer has no uninstall function."""
+        # Use a mock object without uninstall to test the hasattr check
+        mock_module = MagicMock(spec=[])  # spec=[] means no attributes
+        with (
+            patch.dict(
+                setup_manager_arch.COMPONENT_REGISTRY,
+                {"aur-helper": {"installer_module": mock_module}},
+            ),
+            pytest.raises(
+                SetupError,
+                match="Removal not supported for aur-helper",
+            ),
+        ):
+            setup_manager_arch.remove_component("aur-helper")
+
+    def test_remove_component_unknown(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal fails for unknown component."""
+        with pytest.raises(SetupError, match="Unknown component"):
+            setup_manager_arch.remove_component("nonexistent-component")
+
+    def test_remove_component_config_module_rejected(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal is not supported for config-only components."""
+        with pytest.raises(
+            SetupError,
+            match="Removal not supported for configuration component:",
+        ):
+            setup_manager_arch.remove_component("firewall")

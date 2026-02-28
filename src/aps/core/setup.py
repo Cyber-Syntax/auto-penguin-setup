@@ -183,6 +183,24 @@ class SetupManager:
             for name, info in cls.COMPONENT_REGISTRY.items()
         }
 
+    @classmethod
+    def get_removable_components(cls) -> dict[str, str]:
+        """Get setup components that support removal.
+
+        Returns only installer components whose module has an uninstall
+        function.
+
+        Returns:
+            Dictionary mapping component names to descriptions.
+
+        """
+        return {
+            name: info["description"]
+            for name, info in cls.COMPONENT_REGISTRY.items()
+            if "installer_module" in info
+            and hasattr(info["installer_module"], "uninstall")
+        }
+
     def setup_component(self, component: str) -> None:
         """Setup a component by name.
 
@@ -275,3 +293,46 @@ class SetupManager:
         if not ollama.install(distro=self._platform_key()):
             msg = "Failed to install Ollama"
             raise SetupError(msg)
+
+    def remove_component(self, component: str) -> None:
+        """Remove a setup component by calling its uninstall function.
+
+        Args:
+            component: Name of the component to remove
+
+        Raises:
+            SetupError: If component is unknown, is config-only, or has no
+                uninstall support
+
+        """
+        if component not in self.COMPONENT_REGISTRY:
+            msg = f"Unknown component: {component}"
+            raise SetupError(msg)
+
+        component_info = self.COMPONENT_REGISTRY[component]
+        installer_module = component_info.get("installer_module")
+
+        if installer_module is None:
+            msg = (
+                f"Removal not supported for configuration component: "
+                f"{component}"
+            )
+            raise SetupError(msg)
+
+        if not hasattr(installer_module, "uninstall"):
+            msg = (
+                f"Removal not supported for {component} "
+                f"(no uninstall function)"
+            )
+            raise SetupError(msg)
+
+        logger.info("Removing %s...", component)
+        try:
+            success = installer_module.uninstall(distro=self._platform_key())
+            if not success:
+                msg = f"Failed to remove {component}"
+                raise SetupError(msg)  # noqa: TRY301
+            logger.info("%s removal completed successfully", component)
+        except Exception as e:
+            msg = f"Error during {component} removal: {e}"
+            raise SetupError(msg) from e

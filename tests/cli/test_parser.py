@@ -190,17 +190,49 @@ class TestRemoveCommand:
         assert args.verbose is True
         assert args.command == "remove"
 
-    def test_remove_requires_packages(self) -> None:
-        """Test that remove command requires at least one package."""
+    def test_remove_with_no_packages_or_setup(self) -> None:
+        """Test remove with no packages/setup parses correctly."""
         parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["remove"])
+        args = parser.parse_args(["remove"])
+        assert args.command == "remove"
+        assert args.packages == []
+        assert args.setup is None
 
     def test_remove_dry_run_default_false(self) -> None:
         """Test that dry_run defaults to False for remove."""
         parser = create_parser()
         args = parser.parse_args(["remove", "curl"])
         assert args.dry_run is False
+
+    def test_remove_parser_setup_flag(self) -> None:
+        """Test aps remove --setup ollama parses correctly."""
+        parser = create_parser()
+        args = parser.parse_args(["remove", "--setup", "ollama"])
+        assert args.command == "remove"
+        assert args.setup == "ollama"
+        assert args.packages == []
+
+    def test_remove_parser_packages_no_setup(self) -> None:
+        """Test aps remove pkg1 pkg2 still works as before without --setup."""
+        parser = create_parser()
+        args = parser.parse_args(["remove", "pkg1", "pkg2"])
+        assert args.command == "remove"
+        assert args.packages == ["pkg1", "pkg2"]
+        assert args.setup is None
+
+    def test_remove_parser_setup_with_packages(self) -> None:
+        """Test aps remove --setup ollama pkg1 parses correctly."""
+        parser = create_parser()
+        args = parser.parse_args(["remove", "--setup", "ollama", "pkg1"])
+        assert args.command == "remove"
+        assert args.setup == "ollama"
+        assert args.packages == ["pkg1"]
+
+    def test_remove_parser_setup_default_none(self) -> None:
+        """Test aps remove pkg1 results in args.setup being None."""
+        parser = create_parser()
+        args = parser.parse_args(["remove", "pkg1"])
+        assert args.setup is None
 
 
 class TestListCommand:

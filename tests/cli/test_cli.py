@@ -651,7 +651,7 @@ class TestCLICommands:
                 return_value=mock_tracker,
             ),
         ):
-            args = Namespace(packages=["neovim"], dry_run=True)
+            args = Namespace(packages=["neovim"], setup=None, dry_run=True)
             cmd_remove(args)
 
             # Check that logger output contains dry run message
