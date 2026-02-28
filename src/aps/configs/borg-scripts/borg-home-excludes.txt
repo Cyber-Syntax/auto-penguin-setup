@@ -1,0 +1,77 @@
+# Borg backup exclusion patterns for /home directory
+# Using fnmatch syntax (default for --exclude-from)
+# Patterns are matched from start of full path or after path separator
+# Archived paths start without leading / (e.g., home/developer/.cache)
+
+# Existing general caches and backup directories
+home/*/Documents/backup-for-cloud
+home/*/.cache
+home/*/Downloads
+home/*/.snapshots
+home/*/Trash
+home/*/.thumbnails
+home/*/.mozilla/firefox/*.default-release/storage/default
+home/*/.tox
+home/*/.venv
+home/*/.backups
+
+# Python development caches and build artifacts
+*/__pycache__
+home/*/.mypy_cache
+home/*/.ruff_cache
+home/*/.pytest_cache
+home/*/.hypothesis
+*.py[cod]
+*$py.class
+*/eggs
+*/.eggs
+*/*.egg-info
+*/*.egg
+*/develop-eggs
+*/dist
+*/build
+*/MANIFEST
+*.spec
+*.manifest
+
+# Node.js/JavaScript package managers
+home/*/node_modules
+home/*/bower_components
+home/*/.npm/_cacache
+
+# Rust/Java/Go build and cache directories
+*/target
+home/*/.gradle
+home/*/.cargo/registry
+home/*/.rustup
+home/*/.m2/repository
+home/*/go/pkg
+
+# Editor/IDE caches and extensions
+home/*/.config/Code/CachedData
+home/*/.config/Code/CachedExtensions
+home/*/.config/Code/User/workspaceStorage
+home/*/.vscode/extensions
+
+# Virtual environments
+home/*/venv
+home/*/.venv
+
+# System and application caches
+home/*/.local/share/Trash
+home/*/.local/share/Steam/steamapps
+home/*/.local/share/baloo
+home/*/.local/share/flatpak
+home/*/snap/*/common/cache
+home/*/.docker
+home/*/.minikube
+home/*/.vagrant.d/boxes
+home/*/.xsession-errors*
+
+# Compiled binary objects
+*.o
+*.so
+*.a
+
+# Custom application directories
+home/*/Applications

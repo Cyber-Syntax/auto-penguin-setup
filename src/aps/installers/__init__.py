@@ -2,6 +2,7 @@
 
 from . import (
     autocpufreq,
+    borgbackup,
     brave,
     ohmyzsh,
     syncthing,
@@ -15,6 +16,7 @@ from . import (
 
 __all__ = [
     "autocpufreq",
+    "borgbackup",
     "brave",
     "ohmyzsh",
     "syncthing",

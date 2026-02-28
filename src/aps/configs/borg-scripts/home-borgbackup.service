@@ -1,0 +1,10 @@
+[Unit]
+Description=Borgbackup home directory backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/borg/home-borgbackup.sh
+Nice=19
+IOSchedulingClass=idle

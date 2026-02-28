@@ -10,6 +10,7 @@ from aps.core.logger import get_logger
 from aps.hardware import amd, intel, nvidia, touchpad
 from aps.installers import (
     autocpufreq,
+    borgbackup,
     brave,
     ohmyzsh,
     syncthing,
@@ -58,6 +59,10 @@ class SetupManager:
         "brave": {
             "description": "Install Brave browser",
             "installer_module": brave,
+        },
+        "borgbackup": {
+            "description": "Install Borgbackup and enable backup timer",
+            "installer_module": borgbackup,
         },
         "tlp": {
             "description": "Install TLP power management",
