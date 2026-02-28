@@ -19,8 +19,6 @@ borg_home_repo='/mnt/backups/borgbackup/home-repo'
 
 echo "Starting backup for home"
 
-#TODO: write a bat test to make sure everything work as expected
-#TODO: write a e2e test to make sure everything work as expected
 # --show-rc: if return 0 code, then it's successful
 if ! sudo borg create --list --filter=AME --progress --stats --exclude-caches --show-rc \
   --exclude-from /opt/borg/borg-home-excludes.txt \

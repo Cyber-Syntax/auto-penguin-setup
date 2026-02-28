@@ -99,6 +99,11 @@ def borg_archive_paths(
         ".npm/_cacache/content-v2",
         "bower_components/jquery",
         ".config/Code/CachedData/abc123",
+        ".config/Code/Cache/Cache_Data/74164214beca1c9e_0",
+        ".config/Code/GPUCache",
+        ".config/Code/logs/2026-02-28T10:00:00",
+        ".config/Code/Crashpad",
+        ".var/app/com.visualstudio.code/cache",
         ".tox/py312",
         ".backups/old",
         "venv/lib",
@@ -209,6 +214,26 @@ def test_excludes_filter_cache(
     paths, _repo = borg_archive_paths
     cache_paths = [p for p in paths if "/.cache/" in p or "/.cache" in p]
     assert cache_paths == [], f".cache found in archive: {cache_paths}"
+
+
+def test_excludes_filter_vscode_caches_and_logs(
+    borg_archive_paths: tuple[set[str], Path],
+) -> None:
+    """VS Code cache and log directories must not appear in the archive."""
+    paths, _repo = borg_archive_paths
+    blocked_substrings = [
+        "/.config/Code/Cache/",
+        "/.config/Code/GPUCache/",
+        "/.config/Code/logs/",
+        "/.config/Code/Crashpad/",
+        "/.var/app/com.visualstudio.code/cache/",
+    ]
+    found = [
+        p for p in paths if any(blocked in p for blocked in blocked_substrings)
+    ]
+    assert found == [], "VS Code caches/logs found in archive:\n" + "\n".join(
+        sorted(found)
+    )
 
 
 def test_excludes_preserve_real_documents(
