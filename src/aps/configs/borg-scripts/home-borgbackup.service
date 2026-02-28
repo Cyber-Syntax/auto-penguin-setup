@@ -6,5 +6,13 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/opt/borg/home-borgbackup.sh
+User=root
 Nice=19
 IOSchedulingClass=idle
+IOSchedulingPriority=7
+
+# Timeout after 6 hours
+TimeoutSec=21600
+
+[Install]
+WantedBy=multi-user.target

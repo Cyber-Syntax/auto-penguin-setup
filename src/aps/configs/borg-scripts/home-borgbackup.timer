@@ -1,10 +1,13 @@
 [Unit]
-Description=Daily timer for borgbackup home directory backup
+Description=Timer for Home Backup using BorgBackup
 
 [Timer]
-OnCalendar=daily
-RandomizedDelaySec=30m
+# Schedules the backup at 07:00 every day.
+OnCalendar=*-*-* 07:00:00
+# Persistence will ensure the timer runs even if the system is down at the scheduled time.
 Persistent=true
+# Note: systemd timers work with local time.
+# ensure your system’s timezone is set accordingly.
 
 [Install]
 WantedBy=timers.target
