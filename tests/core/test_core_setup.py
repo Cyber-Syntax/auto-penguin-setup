@@ -240,12 +240,16 @@ class TestComponentRegistry:
                 "ollama": {
                     "description": "Install/update Ollama AI runtime",
                     "installer_module": MagicMock(spec=[]),  # No attributes
-                }
+                },
+                "borgbackup": {
+                    "description": "Install Borgbackup backup timer",
+                    "installer_module": MagicMock(spec=[]),  # No attributes
+                },
             },
             clear=False,
         ):
             removable = SetupManager.get_removable_components()
-            # Should be empty since even ollama doesn't have uninstall now
+            # Should be empty since ollama and borgbackup don't have uninstall
             assert removable == {}
 
     def test_setup_component_aur_helper(
@@ -286,7 +290,7 @@ class TestComponentRegistry:
         with patch("aps.installers.brave.install") as mock_install:
             mock_install.return_value = True
             setup_manager_arch.setup_component("brave")
-            mock_install.assert_called_once()
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_unknown(
         self, setup_manager_arch: SetupManager
@@ -304,6 +308,7 @@ class TestComponentRegistry:
             mock_install.return_value = False
             with pytest.raises(SetupError, match="Failed to setup tlp"):
                 setup_manager_arch.setup_component("tlp")
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_installer_exception(
         self, setup_manager_arch: SetupManager
@@ -316,6 +321,7 @@ class TestComponentRegistry:
                 SetupError, match="Error during thinkfan setup"
             ):
                 setup_manager_arch.setup_component("thinkfan")
+            mock_install.assert_called_once_with(distro="arch")
 
 
 class TestRemoveComponent:

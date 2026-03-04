@@ -147,7 +147,7 @@ def borg_archive_paths(
         / "aps"
         / "configs"
         / "borg-scripts"
-        / "borg-home-excludes.txt"
+        / "excludes.txt"
     )
     adapted_lines: list[str] = []
     for line in excludes_src.read_text().splitlines():
