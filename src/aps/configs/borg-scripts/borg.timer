@@ -6,8 +6,6 @@ Description=Timer for Home Backup using BorgBackup
 OnCalendar=*-*-* 07:00:00
 # Persistence will ensure the timer runs even if the system is down at the scheduled time.
 Persistent=true
-# Note: systemd timers work with local time.
-# ensure your system’s timezone is set accordingly.
 
 [Install]
 WantedBy=timers.target
