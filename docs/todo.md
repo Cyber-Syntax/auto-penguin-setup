@@ -1,6 +1,6 @@
 # TODOS
 
-## review
+## testing
 
 - [ ] Test installers:
       - [x] vscode aur install test with paru
@@ -8,7 +8,7 @@
       - [x] zenpower3 copr install test with dnf
       - [x] ohmyzsh installer
       - [x] virtmanager
-      - [ ] borgbackup
+
       - [ ] syncthing setup
       - [ ] thinkfan setup test on thinkpad
 
@@ -31,16 +31,19 @@
 ## in-progress
 
 - [ ] cleanup issues from here and move the github issues for hard ones, keep the dev issues here for now
+- [ ] borgbackup setup
+      - [ ] `/var/lib/borg/.config/borg/security` this used on setup, need to make sure this is correct and good location to keep those borg keys
 - [ ] P1-fix: configs are in wrong location, bundled cli tool....
-- [ ] fix type annotions: firewall.py, multimedia.py... more type annotations for better code quality and readability
-- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances: fnctl.flock would handle this easily.
-- [ ] P2: New architecture to detect packages on setups like ollama.py -> check package installed or not first and use pkgmap.ini for different package names and than continue setting up.
+
 - [ ] add new section to variables.ini like borg, ollama variables to specify specific variables like borg repo path, ollama model save path etc.
       - [ ] for ollama; need to add new function to file change `/usr/lib/systemd/system/ollama.service` and add this: `Environment="OLLAMA_MODELS=/mnt/backups/ollama/models"` but ofcourse mnt backups path is real data, we need to use variables.ini constant for specify the path.
 - [ ] fix pytest tmp folder structure, make it like pytest-of-<user>-aps-e2e, pytest-of-<user>-aps-unit etc. to make it more organized and easy to find the test results
 
 ## todo
 
+- [ ] P2: New architecture to detect packages on setups like ollama.py -> check package installed or not first and use pkgmap.ini for different package names and than continue setting up.
+- [ ] fix type annotions: firewall.py, multimedia.py... more type annotations for better code quality and readability
+- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances: fnctl.flock would handle this easily.
 - [ ] <https://github.com/charmbracelet/gum>
 - [ ] remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
 - [ ] change fish -> bash `chsh -s /bin/bash` simple but can be made it somewhere on zsh setup?
