@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-alpha] - 2026-02-25
+
+### Added
+
+- Flatpak provider support in `pkgmap.ini` for unified package resolution
+- Configuration validation with clear error messages for legacy `[flatpak]` sections
+- Migration guide for users transitioning from `[flatpak]` category
+- Added virt-manager setup integration to automate virtualization host configuration
+    - Introduced a dedicated `virtmanager` installer module for Fedora- and Arch-family distributions
+    - Implemented automated setup for virtualization components:
+        - Configures `libvirtd.conf`, `qemu.conf`, and `network.conf` with necessary settings for user permissions and network configuration
+        - Ensures necessary groups and permissions are established for the current user
+- Added `--needed` flag to aur helper installation functions to skip already installed packages
+- Added borgbackup setup
+    - Added borgbackup sh script to automate backup process
+    - Added service and timer files for automated backup scheduling
+- Added `--setup` flag to remove command to allow removing setups like ollama.
+    - Currently only ollama is supported for now but others are planned to be added later.
+- Added comprehensive e2e tests
+    - for virtmanager.py
+    - for sudoers.py
+
+### Changed
+
+- Package resolution now treats Flatpak as a provider (like AUR/COPR), not a special category
+- `pkgmap.ini` now supports `flatpak:<remote>:<app-id>` syntax (e.g., `flatpak:flathub:org.signal.Signal`)
+
+### Removed
+
+- Support for `[flatpak]` section in `packages.ini` (breaking change)
+- `@flatpak` category syntax is no longer supported
+
+### Deprecated
+
+- Legacy `[flatpak]` section configuration (see [migration guide](docs/migration/flatpak-to-pkgmap.md))
+
+### Fixed
+
+- Inconsistent package resolution behavior across distros
+- Fixed _update_sudoers_section to use run_privileged(["/usr/bin/cat", ...]) instead of Path.read_text(), fixed glob bug in `_restore_latest_backup` using find
+- Fixed ollama setup to show pacman output by setting capture_output=False in subprocess.run
+
+### BREAKING CHANGE
+
+The `[flatpak]` section in `packages.ini` and `@flatpak` category syntax are no longer supported. Users must migrate to the new model where Flatpak apps are listed in regular categories (e.g., `[apps]`) and mapped to Flatpak sources via `pkgmap.ini`. See [Migration Guide: Flatpak Configuration Changes](docs/migration/flatpak-to-pkgmap.md) for detailed instructions.
+
 ## [0.5.0-alpha] - 2025-01-26
 
 ### Added

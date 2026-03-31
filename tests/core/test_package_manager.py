@@ -311,8 +311,8 @@ class TestPacmanManager:
     @patch("shutil.which")
     def test_detect_aur_helper_paru(self, mock_which: Mock) -> None:
         """Test AUR helper detection (paru found)."""
-        mock_which.side_effect = (
-            lambda cmd: "/usr/bin/paru" if cmd == "paru" else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/paru" if cmd == "paru" else None
         )
         manager = PacmanManager(
             DistroInfo(
@@ -329,8 +329,8 @@ class TestPacmanManager:
     @patch("shutil.which")
     def test_detect_aur_helper_yay(self, mock_which: Mock) -> None:
         """Test AUR helper detection (yay found)."""
-        mock_which.side_effect = (
-            lambda cmd: "/usr/bin/yay" if cmd == "yay" else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/yay" if cmd == "yay" else None
         )
         manager = PacmanManager(
             DistroInfo(
@@ -403,6 +403,9 @@ class TestPacmanManager:
         result = pacman_manager.install_aur(["yay"])
 
         assert result is True
+        # Ensure we pass --needed so already-installed packages are skipped
+        call_args = mock_run.call_args[0][0]
+        assert "--needed" in call_args
 
     @patch("aps.core.package_manager.run_privileged")
     def test_remove_single_package(

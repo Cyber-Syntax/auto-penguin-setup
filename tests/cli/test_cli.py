@@ -579,8 +579,16 @@ class TestCLICommands:
         )
         mock_mapper.map_package.return_value = mock_mapping
 
+        # Mock APSConfigParser
+        mock_config = Mock()
+        mock_config.validate_no_flatpak_category = Mock()
+
         with (
             patch("aps.utils.privilege.ensure_sudo"),  # Mock at the source
+            patch(
+                "aps.cli.commands.install.APSConfigParser",
+                return_value=mock_config,
+            ),
             patch(
                 "aps.cli.commands.install.detect_distro",
                 return_value=mock_distro,
@@ -643,7 +651,7 @@ class TestCLICommands:
                 return_value=mock_tracker,
             ),
         ):
-            args = Namespace(packages=["neovim"], dry_run=True)
+            args = Namespace(packages=["neovim"], setup=None, dry_run=True)
             cmd_remove(args)
 
             # Check that logger output contains dry run message

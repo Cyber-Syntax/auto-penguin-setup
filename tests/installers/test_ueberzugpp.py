@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 from _pytest.logging import LogCaptureFixture
 
+from aps.core.distro import DistroFamily
 from aps.installers.ueberzugpp import install
 
 
@@ -16,7 +17,8 @@ class TestUeberzugppInstall:
         """Test install on Fedora."""
         mock_distro.return_value = MagicMock()
         mock_distro.return_value.id = "fedora"
-        mock_distro.return_value.name = "fedora"
+        mock_distro.return_value.name = "Fedora Linux"
+        mock_distro.return_value.family = DistroFamily.FEDORA
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
@@ -30,7 +32,8 @@ class TestUeberzugppInstall:
         """Test install on Arch."""
         mock_distro.return_value = MagicMock()
         mock_distro.return_value.id = "arch"
-        mock_distro.return_value.name = "arch"
+        mock_distro.return_value.name = "Arch Linux"
+        mock_distro.return_value.family = DistroFamily.ARCH
         mock_pm_instance = MagicMock()
         mock_pm_instance.install.return_value = (True, None)
         mock_pm.return_value = mock_pm_instance
@@ -48,6 +51,7 @@ class TestUeberzugppInstall:
         mock_distro.return_value = MagicMock()
         mock_distro.return_value.id = "unknown"
         mock_distro.return_value.name = "unknown"
+        mock_distro.return_value.family = DistroFamily.UNKNOWN
 
         result = install()
         assert result is False

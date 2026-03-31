@@ -2,8 +2,11 @@
 
 from . import (
     autocpufreq,
+    borgbackup,
     brave,
     ohmyzsh,
+    ollama,
+    paru,
     syncthing,
     thinkfan,
     tlp,
@@ -15,8 +18,11 @@ from . import (
 
 __all__ = [
     "autocpufreq",
+    "borgbackup",
     "brave",
     "ohmyzsh",
+    "ollama",
+    "paru",
     "syncthing",
     "thinkfan",
     "tlp",

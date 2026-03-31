@@ -1,8 +1,6 @@
 """Tests for setup manager module."""
 
-from pathlib import Path
-from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -37,6 +35,19 @@ def fedora_distro() -> DistroInfo:
 
 
 @pytest.fixture
+def cachyos_distro() -> DistroInfo:
+    """Create CachyOS distro info (Arch derivative)."""
+    return DistroInfo(
+        name="CachyOS",
+        version="rolling",
+        id="cachyos",
+        id_like=["arch"],
+        package_manager=PackageManagerType.PACMAN,
+        family=DistroFamily.ARCH,
+    )
+
+
+@pytest.fixture
 def setup_manager_arch(arch_distro: DistroInfo) -> SetupManager:
     """Create SetupManager for Arch Linux."""
     return SetupManager(arch_distro)
@@ -48,346 +59,106 @@ def setup_manager_fedora(fedora_distro: DistroInfo) -> SetupManager:
     return SetupManager(fedora_distro)
 
 
+class TestSetupManagerDistroNormalization:
+    """Tests for distro key normalization in SetupManager."""
+
+    def test_setup_component_passes_family_key_for_arch_derivative(
+        self, cachyos_distro: DistroInfo
+    ) -> None:
+        """Ensure Arch derivatives pass 'arch' to installer modules."""
+        manager = SetupManager(cachyos_distro)
+
+        with patch("aps.core.setup.virtmanager.install") as mock_install:
+            mock_install.return_value = True
+            manager.setup_component("virtmanager")
+
+            mock_install.assert_called_once()
+            _, kwargs = mock_install.call_args
+            assert kwargs["distro"] == "arch"
+
+
 class TestSetupManagerAURHelper:
     """Tests for AUR helper setup."""
-
-    def test_aur_helper_already_installed_paru(
-        self, setup_manager_arch: SetupManager
-    ) -> None:
-        """Test that setup skips if paru is already installed."""
-        with patch("shutil.which") as mock_which:
-            mock_which.return_value = "/usr/bin/paru"
-            setup_manager_arch.setup_aur_helper()
-            # Should not raise, just skip installation
-
-    def test_aur_helper_already_installed_yay(
-        self, setup_manager_arch: SetupManager
-    ) -> None:
-        """Test that setup skips if yay is already installed."""
-        with patch("shutil.which") as mock_which:
-            # First call for paru returns None, second for yay returns path
-            mock_which.side_effect = [None, "/usr/bin/yay"]
-            setup_manager_arch.setup_aur_helper()
-            # Should not raise, just skip installation
 
     def test_aur_helper_not_available_on_non_arch(
         self, setup_manager_fedora: SetupManager
     ) -> None:
         """Test that AUR helper setup raises error on non-Arch distros."""
-        with pytest.raises(SetupError, match="only available for Arch-based"):
-            setup_manager_fedora.setup_aur_helper()
+        with patch("aps.core.setup.paru.install") as mock_paru_install:
+            mock_paru_install.return_value = False
+            with pytest.raises(SetupError, match="Failed to install paru"):
+                setup_manager_fedora.setup_aur_helper()
+            # Verify paru.install was called with fedora distro
+            mock_paru_install.assert_called_once_with(distro="fedora")
+
+    def test_aur_helper_already_installed(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test that setup succeeds if paru/yay is already installed."""
+        with patch("aps.core.setup.paru.install") as mock_paru_install:
+            mock_paru_install.return_value = True
+            setup_manager_arch.setup_aur_helper()
+            # Verify paru.install was called with arch distro
+            mock_paru_install.assert_called_once_with(distro="arch")
 
     def test_aur_helper_installation_success(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
+        self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test successful paru installation."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-            patch("pathlib.Path.home") as mock_home,
-            patch("pathlib.Path.exists") as mock_exists,
-        ):
-            # Setup mocks
-            mock_home.return_value = Path("/home/testuser")
-            mock_exists.return_value = False  # GPG keyring does not exist
-
-            # Mock which() calls: not installed initially, then installed after build
-            mock_which.side_effect = [
-                None,  # paru not installed initially
-                None,  # yay not installed
-                "/usr/bin/paru",  # paru installed after build
-            ]
-
-            # Mock successful subprocess calls for non-privileged operations
-            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-
+        """Test successful paru installation delegates to paru.install."""
+        with patch("aps.core.setup.paru.install") as mock_paru_install:
+            mock_paru_install.return_value = True
             setup_manager_arch.setup_aur_helper()
+            # Verify paru.install was called
+            mock_paru_install.assert_called_once_with(distro="arch")
 
-            # Verify pacman was called for build deps via run_privileged
-            calls_str = str(mock_run_privileged.call_args_list)
-            assert "base-devel" in calls_str
-
-    def test_aur_helper_build_deps_failure(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
+    def test_aur_helper_installation_failure(
+        self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test that build dependency installation failure raises error."""
-        with (
-            patch("subprocess.run"),
-            patch("shutil.which") as mock_which,
-            patch("pathlib.Path.home") as mock_home,
-            patch("pathlib.Path.exists") as mock_exists,
-        ):
-            mock_home.return_value = Path("/home/testuser")
-            mock_exists.return_value = True
-            mock_which.side_effect = [None, None]  # Not installed
-
-            # Mock failed pacman call via run_privileged
-            mock_run_privileged.return_value = Mock(
-                returncode=1, stdout="", stderr="Permission denied"
-            )
-
-            with pytest.raises(
-                SetupError, match="Failed to install build dependencies"
-            ):
-                setup_manager_arch.setup_aur_helper()
-
-    def test_aur_helper_clone_failure(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
-    ) -> None:
-        """Test that git clone failure raises error."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-            patch("pathlib.Path.home") as mock_home,
-            patch("pathlib.Path.exists") as mock_exists,
-        ):
-            mock_home.return_value = Path("/home/testuser")
-            mock_exists.return_value = True
-            # Always return None for which() - no helper installed
-            mock_which.return_value = None
-
-            # Mock run_privileged to fail for git clone, succeed for others
-            def priv_side_effect(cmd: list[str], **kwargs: Any) -> Mock:
-                if "git" in cmd and "clone" in cmd:
-                    return Mock(returncode=1, stdout="", stderr="Clone failed")
-                return Mock(returncode=0, stdout="", stderr="")
-
-            mock_run_privileged.side_effect = priv_side_effect
-
-            # Mock subprocess.run for makepkg
-            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-
-            with pytest.raises(
-                SetupError, match="Failed to clone paru-bin repository"
-            ):
-                setup_manager_arch.setup_aur_helper()
-
-    def test_aur_helper_verification_failure(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
-    ) -> None:
-        """Test that verification failure after build raises error."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-            patch("pathlib.Path.home") as mock_home,
-            patch("pathlib.Path.exists") as mock_exists,
-        ):
-            mock_home.return_value = Path("/home/testuser")
-            mock_exists.return_value = True
-
-            # paru never becomes available
-            mock_which.return_value = None
-
-            # All subprocess commands succeed
-            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
-            # run_privileged also succeeds
-            mock_run_privileged.return_value = Mock(
-                returncode=0, stdout="", stderr=""
-            )
-
-            with pytest.raises(
-                SetupError, match="paru installation verification failed"
-            ):
+        """Test that installation failure raises error."""
+        with patch("aps.core.setup.paru.install") as mock_paru_install:
+            mock_paru_install.return_value = False
+            with pytest.raises(SetupError, match="Failed to install paru"):
                 setup_manager_arch.setup_aur_helper()
 
 
 class TestSetupManagerOllama:
     """Tests for Ollama setup."""
 
-    def test_ollama_arch_nvidia_success(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
-    ) -> None:
-        """Test Ollama installation on Arch with NVIDIA GPU."""
-        with patch("shutil.which") as mock_which:
-            # Mock nvidia-smi available (NVIDIA GPU)
-            def which_side_effect(cmd: str) -> str | None:
-                if cmd == "nvidia-smi":
-                    return "/usr/bin/nvidia-smi"
-                if cmd == "ollama":
-                    return "/usr/bin/ollama"  # Installed after pacman
-                return None
-
-            mock_which.side_effect = which_side_effect
-
-            setup_manager_arch.setup_ollama()
-
-            # Verify ollama-cuda was installed via run_privileged
-            calls_str = str(mock_run_privileged.call_args_list)
-            assert "ollama-cuda" in calls_str
-
-    def test_ollama_arch_amd_success(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
-    ) -> None:
-        """Test Ollama installation on Arch with AMD GPU."""
-        with (
-            patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_lspci,
-        ):
-
-            def which_side_effect(cmd: str) -> str | None:
-                if cmd == "nvidia-smi":
-                    return None
-                if cmd == "ollama":
-                    return "/usr/bin/ollama"
-                return None
-
-            mock_which.side_effect = which_side_effect
-
-            # Mock lspci output for AMD GPU
-            mock_lspci.return_value = Mock(
-                returncode=0,
-                stdout="VGA compatible: AMD/ATI Device",
-                stderr="",
-            )
-
-            setup_manager_arch.setup_ollama()
-
-            # Verify ollama-rocm was installed via run_privileged
-            calls_str = str(mock_run_privileged.call_args_list)
-            assert "ollama-rocm" in calls_str
-
-    def test_ollama_arch_no_gpu(
-        self, setup_manager_arch: SetupManager, mock_run_privileged: Any
-    ) -> None:
-        """Test Ollama installation on Arch without specific GPU."""
-        with (
-            patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_lspci,
-        ):
-
-            def which_side_effect(cmd: str) -> str | None:
-                if cmd == "ollama":
-                    return "/usr/bin/ollama"
-                return None
-
-            mock_which.side_effect = which_side_effect
-            # Mock lspci with no GPU info
-            mock_lspci.return_value = Mock(returncode=0, stdout="", stderr="")
-
-            setup_manager_arch.setup_ollama()
-
-            # Verify generic ollama package was installed via run_privileged
-            calls_str = str(mock_run_privileged.call_args_list)
-            # Should install plain 'ollama' package, not ollama-cuda or ollama-rocm
-            assert "pacman" in calls_str
-            assert ("ollama-cuda" not in calls_str) and (
-                "ollama-rocm" not in calls_str
-            )
-
-    def test_ollama_fedora_official_installer(
-        self, setup_manager_fedora: SetupManager
-    ) -> None:
-        """Test Ollama installation on Fedora using official installer."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-        ):
-            mock_which.side_effect = [
-                None,
-                "/usr/bin/ollama",
-            ]  # Not installed, then installed
-            mock_run.return_value = Mock(returncode=0)
-
-            setup_manager_fedora.setup_ollama()
-
-            # Verify the shell command was called
-            assert mock_run.called
-            call_args = mock_run.call_args
-            assert (
-                "shell=True" in str(call_args)
-                or call_args.kwargs.get("shell") is True
-            )
-
-    def test_ollama_installation_verification_failure(
-        self, setup_manager_fedora: SetupManager
-    ) -> None:
-        """Test that verification failure after install raises error."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-        ):
-            mock_which.return_value = None  # Never becomes available
-            mock_run.return_value = Mock(returncode=0)
-
-            with pytest.raises(
-                SetupError, match="Ollama binary not found after"
-            ):
-                setup_manager_fedora.setup_ollama()
-
-    def test_ollama_official_installer_execution_failure(
-        self, setup_manager_fedora: SetupManager
-    ) -> None:
-        """Test that installer execution failure raises error."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-        ):
-            mock_which.return_value = None
-            mock_run.return_value = Mock(returncode=1)
-
-            with pytest.raises(SetupError, match="Failed to install Ollama"):
-                setup_manager_fedora.setup_ollama()
-
-    def test_ollama_already_installed(
-        self, setup_manager_fedora: SetupManager
-    ) -> None:
-        """Test that Ollama update succeeds when already installed."""
-        with (
-            patch("shutil.which") as mock_which,
-            patch("subprocess.run") as mock_run,
-        ):
-            mock_which.return_value = "/usr/bin/ollama"  # Already installed
-            mock_run.return_value = Mock(returncode=0)
-            setup_manager_fedora.setup_ollama()
-            # Should complete without error
-
-
-class TestDetectGPUVendor:
-    """Tests for GPU vendor detection."""
-
-    def test_detect_nvidia_gpu(self, setup_manager_arch: SetupManager) -> None:
-        """Test NVIDIA GPU detection."""
-        with patch("shutil.which") as mock_which:
-            mock_which.return_value = "/usr/bin/nvidia-smi"
-            vendor = setup_manager_arch._detect_gpu_vendor()
-            assert vendor == "nvidia"
-
-    def test_detect_amd_gpu(self, setup_manager_arch: SetupManager) -> None:
-        """Test AMD GPU detection."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-        ):
-            mock_which.return_value = None  # No nvidia-smi
-            mock_run.return_value = Mock(
-                returncode=0,
-                stdout="01:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Display",
-                stderr="",
-            )
-
-            vendor = setup_manager_arch._detect_gpu_vendor()
-            assert vendor == "amd"
-
-    def test_detect_unknown_gpu(
+    def test_ollama_installation_success_arch(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test unknown GPU detection."""
-        with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.which") as mock_which,
-        ):
-            mock_which.return_value = None
-            mock_run.return_value = Mock(returncode=0, stdout="", stderr="")
+        """Test Ollama installation delegates to ollama.install with arch."""
+        with patch("aps.core.setup.ollama.install") as mock_ollama_install:
+            mock_ollama_install.return_value = True
+            setup_manager_arch.setup_ollama()
+            # Verify ollama.install was called with arch distro
+            mock_ollama_install.assert_called_once_with(distro="arch")
 
-            vendor = setup_manager_arch._detect_gpu_vendor()
-            assert vendor == "unknown"
+    def test_ollama_installation_success_fedora(
+        self, setup_manager_fedora: SetupManager
+    ) -> None:
+        """Test Ollama installation delegates to ollama.install with fedora."""
+        with patch("aps.core.setup.ollama.install") as mock_ollama_install:
+            mock_ollama_install.return_value = True
+            setup_manager_fedora.setup_ollama()
+            # Verify ollama.install was called with fedora distro
+            mock_ollama_install.assert_called_once_with(distro="fedora")
+
+    def test_ollama_installation_failure(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test that installation failure raises error."""
+        with patch("aps.core.setup.ollama.install") as mock_ollama_install:
+            mock_ollama_install.return_value = False
+            with pytest.raises(SetupError, match="Failed to install Ollama"):
+                setup_manager_arch.setup_ollama()
 
 
 class TestComponentRegistry:
     """Tests for component registry and setup_component method."""
 
     def test_get_available_components(self) -> None:
-        """Test that get_available_components returns all registered components."""
+        """Test that get_available_components returns all components."""
         components = SetupManager.get_available_components()
 
         # Verify all expected components are present
@@ -425,23 +196,79 @@ class TestComponentRegistry:
             assert isinstance(components[component], str)
             assert len(components[component]) > 0  # Has description
 
+    def test_get_removable_components_only_with_uninstall(
+        self,
+    ) -> None:
+        """Test removable components only include those with uninstall.
+
+        Verifies that only components with uninstall functions are returned.
+
+        """
+        removable = SetupManager.get_removable_components()
+
+        # Currently, only ollama has uninstall function
+        assert "ollama" in removable
+        assert removable["ollama"] == "Install/update Ollama AI runtime"
+
+        # Config-only components should not be in removable
+        assert "firewall" not in removable
+        assert "amd" not in removable
+        assert "qtile" not in removable
+
+        # Other installer components without uninstall should not be
+        # in removable (aur-helper, ohmyzsh, brave, etc. don't have
+        # uninstall)
+        assert "aur-helper" not in removable
+        assert "ohmyzsh" not in removable
+        assert "brave" not in removable
+        assert "vscode" not in removable
+        assert "virtmanager" not in removable
+
+    def test_get_removable_components_empty_if_none(
+        self,
+    ) -> None:
+        """Test get_removable_components returns empty dict if none removable.
+
+        Verifies that an empty dict is returned when no components have
+        uninstall support.
+
+        """
+        # Mock all installer modules to not have uninstall
+        with patch.dict(
+            SetupManager.COMPONENT_REGISTRY,
+            {
+                "ollama": {
+                    "description": "Install/update Ollama AI runtime",
+                    "installer_module": MagicMock(spec=[]),  # No attributes
+                },
+                "borgbackup": {
+                    "description": "Install Borgbackup backup timer",
+                    "installer_module": MagicMock(spec=[]),  # No attributes
+                },
+            },
+            clear=False,
+        ):
+            removable = SetupManager.get_removable_components()
+            # Should be empty since ollama and borgbackup don't have uninstall
+            assert removable == {}
+
     def test_setup_component_aur_helper(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component delegates to setup_aur_helper."""
-        with patch.object(
-            setup_manager_arch, "setup_aur_helper"
-        ) as mock_setup:
+        """Test setup_component delegates to paru installer module."""
+        with patch("aps.installers.paru.install") as mock_install:
+            mock_install.return_value = True
             setup_manager_arch.setup_component("aur-helper")
-            mock_setup.assert_called_once()
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_ollama(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component delegates to setup_ollama."""
-        with patch.object(setup_manager_arch, "setup_ollama") as mock_setup:
+        """Test setup_component calls ollama installer for ollama component."""
+        with patch("aps.installers.ollama.install") as mock_install:
+            mock_install.return_value = True
             setup_manager_arch.setup_component("ollama")
-            mock_setup.assert_called_once()
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_ohmyzsh(
         self, setup_manager_arch: SetupManager
@@ -463,7 +290,7 @@ class TestComponentRegistry:
         with patch("aps.installers.brave.install") as mock_install:
             mock_install.return_value = True
             setup_manager_arch.setup_component("brave")
-            mock_install.assert_called_once()
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_unknown(
         self, setup_manager_arch: SetupManager
@@ -475,17 +302,18 @@ class TestComponentRegistry:
     def test_setup_component_installer_failure(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component raises error when installer module returns False."""
+        """Test setup_component raises error when installer returns False."""
         # Mock the tlp module's install function to return False
         with patch("aps.installers.tlp.install") as mock_install:
             mock_install.return_value = False
             with pytest.raises(SetupError, match="Failed to setup tlp"):
                 setup_manager_arch.setup_component("tlp")
+            mock_install.assert_called_once_with(distro="arch")
 
     def test_setup_component_installer_exception(
         self, setup_manager_arch: SetupManager
     ) -> None:
-        """Test setup_component raises error when installer module raises exception."""
+        """Test setup_component raises error when installer raises error."""
         # Mock the thinkfan module's install function to raise exception
         with patch("aps.installers.thinkfan.install") as mock_install:
             mock_install.side_effect = Exception("Installation error")
@@ -493,3 +321,55 @@ class TestComponentRegistry:
                 SetupError, match="Error during thinkfan setup"
             ):
                 setup_manager_arch.setup_component("thinkfan")
+            mock_install.assert_called_once_with(distro="arch")
+
+
+class TestRemoveComponent:
+    """Tests for component removal via remove_component method."""
+
+    def test_remove_component_success(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test successful removal when installer has uninstall function."""
+        # Mock the ollama module's uninstall function
+        with patch("aps.installers.ollama.uninstall") as mock_uninstall:
+            mock_uninstall.return_value = True
+            # Should not raise an error
+            setup_manager_arch.remove_component("ollama")
+            # Verify uninstall was called with correct distro
+            mock_uninstall.assert_called_once_with(distro="arch")
+
+    def test_remove_component_no_uninstall(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal fails when installer has no uninstall function."""
+        # Use a mock object without uninstall to test the hasattr check
+        mock_module = MagicMock(spec=[])  # spec=[] means no attributes
+        with (
+            patch.dict(
+                setup_manager_arch.COMPONENT_REGISTRY,
+                {"aur-helper": {"installer_module": mock_module}},
+            ),
+            pytest.raises(
+                SetupError,
+                match="Removal not supported for aur-helper",
+            ),
+        ):
+            setup_manager_arch.remove_component("aur-helper")
+
+    def test_remove_component_unknown(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal fails for unknown component."""
+        with pytest.raises(SetupError, match="Unknown component"):
+            setup_manager_arch.remove_component("nonexistent-component")
+
+    def test_remove_component_config_module_rejected(
+        self, setup_manager_arch: SetupManager
+    ) -> None:
+        """Test removal is not supported for config-only components."""
+        with pytest.raises(
+            SetupError,
+            match="Removal not supported for configuration component:",
+        ):
+            setup_manager_arch.remove_component("firewall")

@@ -139,7 +139,7 @@ class PackageMapper:
         if copr_match:
             repo, package = copr_match.groups()
             # If no explicit package name, use original_name
-            package_name = package if package else original_name
+            package_name = package or original_name
             return PackageMapping(
                 original_name=original_name,
                 mapped_name=package_name,

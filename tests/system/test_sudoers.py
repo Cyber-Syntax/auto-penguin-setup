@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 from aps.system import sudoers
 
 EXPECTED_RUN_PRIVILEGED_CALLS = 2
+EXPECTED_VALIDATION_FAILURE_CALLS = 3
 
 
 class TestSudoersConfig:
@@ -73,22 +74,20 @@ class TestSudoersConfig:
 
     @patch("aps.system.sudoers.run_privileged")
     @patch("aps.system.sudoers._create_backup")
-    @patch("aps.system.sudoers.Path.read_text")
     @patch("aps.system.sudoers._restore_latest_backup")
     def test_configure_terminal_timeout_validation_failure(
         self,
         mock_restore: Mock,
-        mock_read_text: Mock,
         mock_create_backup: Mock,
         mock_run_privileged: Mock,
     ) -> None:
         """Test terminal timeout configuration when validation fails."""
         mock_create_backup.return_value = True
-        mock_read_text.return_value = "existing content"
         mock_restore.return_value = True
 
-        # Mock tee success, visudo failure
+        # Mock cat success, tee success, visudo failure
         mock_run_privileged.side_effect = [
+            Mock(returncode=0, stdout="existing content", stderr=""),  # cat
             Mock(returncode=0, stdout="", stderr=""),  # tee
             Mock(returncode=1, stdout="", stderr=""),  # visudo
         ]
@@ -97,22 +96,26 @@ class TestSudoersConfig:
 
         assert result is False
         mock_create_backup.assert_called_once()
-        assert mock_run_privileged.call_count == EXPECTED_RUN_PRIVILEGED_CALLS
+        expected_calls = EXPECTED_VALIDATION_FAILURE_CALLS
+        assert mock_run_privileged.call_count == expected_calls
 
     @patch("aps.system.sudoers.run_privileged")
-    @patch("aps.system.sudoers.Path.read_text")
     @patch("aps.system.sudoers._validate_sudoers")
     def test_update_sudoers_section_existing(
         self,
         mock_validate: Mock,
-        mock_read_text: Mock,
         mock_run_privileged: Mock,
     ) -> None:
         """Test updating sudoers section when existing section present."""
-        mock_read_text.return_value = (
-            "existing content\n# START\nold config\n# END\nmore content"
-        )
-        mock_run_privileged.return_value = Mock(returncode=0)
+        existing = "existing content\n# START\nold config\n# END\nmore content"
+        mock_run_privileged.side_effect = [
+            Mock(
+                returncode=0,
+                stdout=existing,
+                stderr="",
+            ),  # cat
+            Mock(returncode=0, stdout="", stderr=""),  # tee
+        ]
         mock_validate.return_value = True
 
         result = sudoers._update_sudoers_section(
@@ -120,15 +123,15 @@ class TestSudoersConfig:
         )
 
         assert result is True
-        mock_run_privileged.assert_called()
+        assert mock_run_privileged.call_count == EXPECTED_RUN_PRIVILEGED_CALLS
 
-    @patch("aps.system.sudoers.Path.read_text")
+    @patch("aps.system.sudoers.run_privileged")
     def test_update_sudoers_section_exception(
         self,
-        mock_read_text: Mock,
+        mock_run_privileged: Mock,
     ) -> None:
-        """Test updating sudoers section when read_text raises exception."""
-        mock_read_text.side_effect = OSError("Permission denied")
+        """Test updating sudoers when privileged read raises."""
+        mock_run_privileged.side_effect = OSError("Permission denied")
 
         result = sudoers._update_sudoers_section(
             "# START", "# END", "new config"
@@ -230,6 +233,29 @@ class TestSudoersConfig:
 
         assert result is False
         mock_run_privileged.assert_called_once()
+
+    @patch("aps.system.sudoers.run_privileged")
+    def test_update_sudoers_section_read_failure(
+        self,
+        mock_run_privileged: Mock,
+    ) -> None:
+        """Test updating sudoers section when read (cat) command fails."""
+        # Mock the cat command failing to read sudoers
+        mock_run_privileged.return_value = Mock(
+            returncode=1, stdout="", stderr="Permission denied"
+        )
+
+        result = sudoers._update_sudoers_section(
+            "# START", "# END", "new config"
+        )
+
+        assert result is False
+        mock_run_privileged.assert_called_once_with(
+            ["/usr/bin/cat", "/etc/sudoers"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     @patch("aps.system.sudoers.run_privileged")
     def test_restore_latest_backup_restore_failure(

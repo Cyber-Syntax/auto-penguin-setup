@@ -2,7 +2,7 @@
 
 import subprocess
 
-from aps.core.distro import DistroInfo, detect_distro
+from aps.core.distro import DistroFamily, DistroInfo, detect_distro
 from aps.core.logger import get_logger
 from aps.core.package_manager import get_package_manager
 from aps.utils.privilege import run_privileged
@@ -23,12 +23,12 @@ def install(distro: str | None = None) -> bool:  # noqa: ARG001
     logger.info("Installing ueberzugpp...")
 
     distro_info = detect_distro()
-    if distro_info.name == "fedora":
+    if distro_info.family == DistroFamily.FEDORA:
         return _install_fedora(distro_info)
-    if distro_info.name == "arch":
+    if distro_info.family == DistroFamily.ARCH:
         return _install_arch(distro_info)
 
-    logger.error("Unsupported distribution: %s", distro_info.name)
+    logger.error("Unsupported distribution: %s", distro_info.id)
     return False
 
 

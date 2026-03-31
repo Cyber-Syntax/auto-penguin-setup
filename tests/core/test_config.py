@@ -3,9 +3,13 @@
 from pathlib import Path
 
 import pytest
-from pytest import MonkeyPatch
 
-from aps.core.config import APSConfigParser, ensure_config_files
+from aps.core.config import (
+    APSConfigParser,
+    ConfigValidationError,
+    ensure_config_files,
+)
+from aps.utils.paths import get_default_configs_dir
 
 
 class TestAPSConfigParser:
@@ -294,12 +298,57 @@ items2=item4
         assert sec1 == ["item1", "item2"]
         assert sec2 == ["item3", "item4"]
 
+    def test_validation_detects_flatpak_section(self, tmp_path: Path) -> None:
+        """Verify validation fails if [flatpak] section exists."""
+        content = """
+[core]
+git
+vim
+
+[flatpak]
+spotify
+discord
+"""
+        config_file = tmp_path / "packages.ini"
+        config_file.write_text(content)
+
+        parser = APSConfigParser(config_file)
+
+        with pytest.raises(ConfigValidationError) as exc_info:
+            parser.validate_no_flatpak_category()
+
+        error_msg = str(exc_info.value)
+        assert "flatpak" in error_msg.lower()
+        assert "migration" in error_msg.lower()
+        assert "flatpak-to-pkgmap.md" in error_msg
+
+    def test_validation_passes_without_flatpak_section(
+        self, tmp_path: Path
+    ) -> None:
+        """Verify validation succeeds without [flatpak] section."""
+        content = """
+[core]
+git
+vim
+
+[apps]
+spotify
+discord
+"""
+        config_file = tmp_path / "packages.ini"
+        config_file.write_text(content)
+
+        parser = APSConfigParser(config_file)
+
+        # Should not raise any exception
+        parser.validate_no_flatpak_category()
+
 
 class TestEnsureConfigFiles:
     """Test ensure_config_files functionality."""
 
     def test_create_config_files(
-        self, tmp_path: Path, monkeypatch: MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test creating config files from examples."""
         config_dir = tmp_path / "config"
@@ -331,7 +380,7 @@ class TestEnsureConfigFiles:
         assert (config_dir / "variables.ini").exists()
 
     def test_skip_existing_files(
-        self, tmp_path: Path, monkeypatch: MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that existing files are not overwritten."""
         config_dir = tmp_path / "config"
@@ -367,7 +416,7 @@ class TestEnsureConfigFiles:
         assert (config_dir / "packages.ini").read_text() == existing_content
 
     def test_missing_examples_directory(
-        self, tmp_path: Path, monkeypatch: MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test error when examples directory is missing."""
         config_dir = tmp_path / "config"
@@ -382,3 +431,34 @@ class TestEnsureConfigFiles:
             FileNotFoundError, match="Config examples directory"
         ):
             ensure_config_files(config_dir)
+
+
+class TestDefaultPkgmapConfig:
+    """Test default pkgmap.ini configuration includes flatpak examples."""
+
+    def test_default_pkgmap_has_flatpak_examples(self) -> None:
+        """Test pkgmap.ini includes correct distro-specific mappings.
+        
+        Per ADR-0001:
+        - Fedora prefers Flatpak for GUI apps (signal, obsidian)
+        - Arch prefers official repo or AUR (signal-desktop, obsidian from repo)
+        """
+        default_pkgmap = get_default_configs_dir() / "pkgmap.ini"
+        parser = APSConfigParser(default_pkgmap)
+
+        # Check arch section uses official/AUR, not Flatpak
+        arch_mappings = parser.get_package_mappings("pkgmap.arch")
+        assert "signal" in arch_mappings
+        assert arch_mappings["signal"] == "signal-desktop"  # Official repo
+        # obsidian not in mappings (uses default: obsidian from official repo)
+        assert "obsidian" not in arch_mappings
+
+        # Check fedora section has Flatpak mappings
+        fedora_mappings = parser.get_package_mappings("pkgmap.fedora")
+        assert "signal" in fedora_mappings
+        assert "flatpak:flathub:org.signal.Signal" in fedora_mappings["signal"]
+        assert "obsidian" in fedora_mappings
+        assert (
+            "flatpak:flathub:md.obsidian.Obsidian"
+            in fedora_mappings["obsidian"]
+        )

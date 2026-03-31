@@ -1,0 +1,130 @@
+# Borg backup exclusion patterns for /home directory
+# Using fnmatch syntax (default for --exclude-from)
+# Patterns are matched from start of full path or after path separator
+# Archived paths start without leading / (e.g., home/developer/.cache)
+
+# Existing general caches and backup directories
+home/*/Documents/backup-for-cloud
+home/*/.cache
+home/*/Downloads
+home/*/.snapshots
+home/*/Trash
+home/*/.thumbnails
+home/*/.mozilla/firefox/*.default-release/storage/default
+home/*/.tox
+home/*/.venv
+home/*/.backups
+
+# Python development caches and build artifacts
+*/__pycache__
+home/*/.mypy_cache
+home/*/.ruff_cache
+home/*/.pytest_cache
+home/*/.hypothesis
+*.py[cod]
+*$py.class
+*/eggs
+*/.eggs
+*/*.egg-info
+*/*.egg
+*/develop-eggs
+*/dist
+*/build
+*/MANIFEST
+*.spec
+*.manifest
+
+# Node.js/JavaScript package managers
+home/*/node_modules
+home/*/bower_components
+home/*/.npm/_cacache
+home/*/.yarn/cache
+home/*/.angular/cache
+
+# Rust/Java/Go build and cache directories
+*/target
+home/*/.gradle
+home/*/.cargo/registry
+home/*/.rustup
+home/*/.m2/repository
+home/*/go/pkg
+
+# Generic Electron app caches (covers most apps)
+home/**/Cache
+home/**/Code\ Cache
+home/**/GPUCache
+home/**/ShaderCache
+home/**/DawnCache
+home/**/DawnWebGPUCache
+home/**/DawnGraphiteCache
+home/**/Crashes
+home/**/Session\ Storage
+home/**/Application\ Cache
+home/**/temporary_downloads
+home/**/Service\ Worker/CacheStorage
+home/**/Service\ Worker/ScriptCache
+
+# Editor/IDE caches and extensions
+home/*/.config/Code/Cache
+home/*/.config/Code/Code Cache
+home/*/.config/Code/GPUCache
+home/*/.config/Code/Service Worker
+home/*/.config/Code/Crashpad
+home/*/.config/Code/DawnCache
+home/*/.config/Code/logs
+home/*/.config/Code/CachedData
+home/*/.config/Code/CachedExtensions
+home/*/.config/Code/User/workspaceStorage
+home/*/.vscode/extensions
+
+# VS Code (Flatpak) caches and logs
+home/*/.var/app/com.visualstudio.code/cache
+home/*/.var/app/com.visualstudio.code/config/Code/Cache
+home/*/.var/app/com.visualstudio.code/config/Code/Code Cache
+home/*/.var/app/com.visualstudio.code/config/Code/GPUCache
+home/*/.var/app/com.visualstudio.code/config/Code/Service Worker
+home/*/.var/app/com.visualstudio.code/config/Code/Crashpad
+home/*/.var/app/com.visualstudio.code/config/Code/DawnCache
+home/*/.var/app/com.visualstudio.code/config/Code/logs
+
+# Browser caches
+
+# Chromium-based profile cache directories
+home/*/.config/BraveSoftware/Brave-Browser/**/Cache/**
+home/*/.config/BraveSoftware/Brave-Browser/**/GPUCache/**
+home/*/.config/BraveSoftware/Brave-Browser/**/DawnCache/** 
+home/*/.config/BraveSoftware/Brave-Browser/**/Service\ Worker/CacheStorage/**
+home/*/.config/BraveSoftware/Brave-Browser/**/Service\ Worker/ScriptCache/**
+home/*/.config/BraveSoftware/Brave-Browser/**/*Cache*/**
+
+# Firefox related cache directories
+home/*/.mozilla/firefox/*.default-release/cache2
+home/*/.mozilla/firefox/*.default-release/OfflineCache
+home/*/.mozilla/firefox/*.default-release/startupCache
+home/*/.mozilla/firefox/*.default-release/safebrowsing
+home/*/.mozilla/firefox/*.default-release/storage/temporary
+home/*/.mozilla/firefox/*.default-release/minidumps
+home/*/.mozilla/firefox/*.default-release/parent.lock
+
+# Virtual environments
+home/*/venv
+home/*/.venv
+
+# System and application caches
+home/*/.local/share/Trash
+home/*/.local/share/Steam/steamapps
+home/*/.local/share/baloo
+home/*/.local/share/flatpak
+home/*/snap/*/common/cache
+home/*/.docker
+home/*/.minikube
+home/*/.vagrant.d/boxes
+home/*/.xsession-errors*
+
+# Compiled binary objects
+*.o
+*.so
+*.a
+
+# Custom application directories
+home/*/Applications

@@ -1,0 +1,12 @@
+[Unit]
+Description=Borg Backup
+
+[Service]
+Type=oneshot
+User=borg
+ExecStart=/usr/local/sbin/borg.sh
+
+# NOTE: must required for non-root operations
+# The CAP_DAC_READ_SEARCH capability gives Borg read-only access 
+# to all files and directories on the system.
+AmbientCapabilities=CAP_DAC_READ_SEARCH
