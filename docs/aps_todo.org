@@ -44,6 +44,21 @@
 
 - State "TESTING"    from "TODO"       [2026-03-06 Cum 17:57]
 * 🔁 DOING
+** TODO vscode install need via packages.ini file
+- would be better to use `aps install @dev` to install vscode from paru or dnf or pacman...
+** BUG borgbackup setup permission error
+Nis 11 11:14:07 cachyos-x8664 borg.sh[169341]: Error: [Errno 13] Permission denied: '/var/lib/borg'
+*** TODO add setup to enable var lib borg location
+sudo mkdir -p /var/lib/borg
+sudo chown borg:borg /var/lib/borg
+sudo chmod 700 /var/lib/borg
+
+after that check with this:
+ls -ld /var/lib/borg
+drwx------ 1 borg borg 26 Nis 11 11:18 /var/lib/borg
+
+** TODO desktop ckb-next app daemon start needed
+sudo systemctl enable ckb-next-daemon
 ** BUG intel setup permission error
 ```bash
 aps setup intel
@@ -73,6 +88,8 @@ Setup failed: Error during intel configuration: Failed to configure intel
 
 * 🔲 TODO
 ** TODO add doom emacs setup
+- doom emacs installation
+- Client setup
 ** TODO setup rnote to flatpak for fedora distros
 ** TODO P2: New architecture to detect packages on setups like ollama.py -> check package installed or not first and use pkgmap.ini for different package names and than continue setting up.
 ** TODO fix type annotions: firewall.py, multimedia.py... more type annotations for better code quality and readability
@@ -80,6 +97,17 @@ Setup failed: Error during intel configuration: Failed to configure intel
 ** TODO <https://github.com/charmbracelet/gum>
 ** TODO remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
 ** TODO change fish -> bash `chsh -s /bin/bash` simple but can be made it somewhere on zsh setup?
+https://wiki.cachyos.org/configuration/post_install_setup/#changing-the-default-shell
+
+wiki say only this:
+
+chsh -s /usr/bin/bash
+
+also need to disable systemctl environment setup to this:
+
+systemctl --user unset-environment SHELL
+systemctl --user set-environment SHELL=/bin/bash
+
 ** TODO add fish autocomplete support
 ** TODO make sure to disable kdewallet if gnome-keyring is installed to avoid conflicts
 ** TODO one line install command to install via setup.sh script like:
