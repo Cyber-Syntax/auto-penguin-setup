@@ -14,6 +14,7 @@ home/*/.mozilla/firefox/*.default-release/storage/default
 home/*/.tox
 home/*/.venv
 home/*/.backups
+home/*/Games
 
 # Python development caches and build artifacts
 */__pycache__
@@ -92,7 +93,7 @@ home/*/.var/app/com.visualstudio.code/config/Code/logs
 # Chromium-based profile cache directories
 home/*/.config/BraveSoftware/Brave-Browser/**/Cache/**
 home/*/.config/BraveSoftware/Brave-Browser/**/GPUCache/**
-home/*/.config/BraveSoftware/Brave-Browser/**/DawnCache/** 
+home/*/.config/BraveSoftware/Brave-Browser/**/DawnCache/**
 home/*/.config/BraveSoftware/Brave-Browser/**/Service\ Worker/CacheStorage/**
 home/*/.config/BraveSoftware/Brave-Browser/**/Service\ Worker/ScriptCache/**
 home/*/.config/BraveSoftware/Brave-Browser/**/*Cache*/**
