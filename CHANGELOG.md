@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- New package supports in pkgmap.ini: vscode aur, zenpower3 aur, lua51, rnote, ghostty copr, and more.
+
+### Changed
+
+- tlp configuration updated to increase performance on battery.
+- Updated github actions workflow and [parsechangelog](https://github.com/Cyber-Syntax/parse-changelog/) to new maintained version.
+
 ## [0.6.0-alpha] - 2026-02-25
 
 ### Added
@@ -13,19 +24,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration validation with clear error messages for legacy `[flatpak]` sections
 - Migration guide for users transitioning from `[flatpak]` category
 - Added virt-manager setup integration to automate virtualization host configuration
-    - Introduced a dedicated `virtmanager` installer module for Fedora- and Arch-family distributions
-    - Implemented automated setup for virtualization components:
-        - Configures `libvirtd.conf`, `qemu.conf`, and `network.conf` with necessary settings for user permissions and network configuration
-        - Ensures necessary groups and permissions are established for the current user
+  - Introduced a dedicated `virtmanager` installer module for Fedora- and Arch-family distributions
+  - Implemented automated setup for virtualization components:
+    - Configures `libvirtd.conf`, `qemu.conf`, and `network.conf` with necessary settings for user permissions and network configuration
+    - Ensures necessary groups and permissions are established for the current user
 - Added `--needed` flag to aur helper installation functions to skip already installed packages
 - Added borgbackup setup
-    - Added borgbackup sh script to automate backup process
-    - Added service and timer files for automated backup scheduling
+  - Added borgbackup sh script to automate backup process
+  - Added service and timer files for automated backup scheduling
 - Added `--setup` flag to remove command to allow removing setups like ollama.
-    - Currently only ollama is supported for now but others are planned to be added later.
+  - Currently only ollama is supported for now but others are planned to be added later.
 - Added comprehensive e2e tests
-    - for virtmanager.py
-    - for sudoers.py
+  - for virtmanager.py
+  - for sudoers.py
 
 ### Changed
 
@@ -165,71 +176,72 @@ The `[flatpak]` section in `packages.ini` and `@flatpak` category syntax are no 
 ### Added
 
 - **Package Tracking System**: Automatic tracking of all installed packages with repository sources, timestamps, and categories
-    - New tracking database at `~/.local/share/auto-penguin-setup/package_tracking.ini` (INI format)
-    - Tracks packages from official repos, COPR, AUR, and PPA sources
-    - Automatic tracking during all package installations via `pm_install`
-    - **Integrated with existing config system**: Works seamlessly with `packages.ini` and `pkgmap.ini`
-    - New CLI commands:
-        - `--list-tracked`: List all tracked packages with sources and categories (shows both original and installed names)
-        - `--track-info <package>`: Show detailed information for a specific package
-        - `--check-repos`: Check for repository changes in `pkgmap.ini` without migrating
-        - `--sync-repos`: Automatically migrate packages when `pkgmap.ini` changes
-        - `--show-mappings`: Display current package mappings from `pkgmap.ini`
+  - New tracking database at `~/.local/share/auto-penguin-setup/package_tracking.ini` (INI format)
+  - Tracks packages from official repos, COPR, AUR, and PPA sources
+  - Automatic tracking during all package installations via `pm_install`
+  - **Integrated with existing config system**: Works seamlessly with `packages.ini` and `pkgmap.ini`
+  - New CLI commands:
+    - `--list-tracked`: List all tracked packages with sources and categories (shows both original and installed names)
+    - `--track-info <package>`: Show detailed information for a specific package
+    - `--check-repos`: Check for repository changes in `pkgmap.ini` without migrating
+    - `--sync-repos`: Automatically migrate packages when `pkgmap.ini` changes
+    - `--show-mappings`: Display current package mappings from `pkgmap.ini`
 - **Repository Migration**: Intelligent package migration when repositories change in `pkgmap.ini`
-    - Detects repository changes by comparing tracking database with current `pkgmap.ini`
-    - Interactive migration with user confirmation
-    - Automatic rollback on migration failure
-    - Cleans up unused repositories after migration
-    - Supports COPR, AUR, and PPA repository changes
-    - **No config format changes required**: Users edit `pkgmap.ini` as before
+  - Detects repository changes by comparing tracking database with current `pkgmap.ini`
+  - Interactive migration with user confirmation
+  - Automatic rollback on migration failure
+  - Cleans up unused repositories after migration
+  - Supports COPR, AUR, and PPA repository changes
+  - **No config format changes required**: Users edit `pkgmap.ini` as before
 - **Repository Management Extensions**:
-    - `repo_remove_copr()`: Remove COPR repositories (Fedora)
-    - `repo_remove_ppa()`: Remove PPA repositories (Debian/Ubuntu)
+  - `repo_remove_copr()`: Remove COPR repositories (Fedora)
+  - `repo_remove_ppa()`: Remove PPA repositories (Debian/Ubuntu)
 - **Package Mapping Metadata System**: Captures repository information during package mapping
-    - `PACKAGE_MAPPING_METADATA`: Global associative array for tracking metadata
-    - `_store_mapping_metadata()`: Stores package source, category, and final name during mapping
-    - `get_package_metadata()`: Retrieves stored metadata for tracking
-    - Enhanced `map_package_list()`: Now accepts category parameter for better tracking
+  - `PACKAGE_MAPPING_METADATA`: Global associative array for tracking metadata
+  - `_store_mapping_metadata()`: Stores package source, category, and final name during mapping
+  - `get_package_metadata()`: Retrieves stored metadata for tracking
+  - Enhanced `map_package_list()`: Now accepts category parameter for better tracking
 - **Package Manager Integration**: Seamless tracking integration with existing package installation
-    - `_track_installed_package_with_metadata()`: Tracks packages using stored mapping metadata
-    - `_track_package()`: Enhanced to accept original package name
-    - Integrated with all distribution-specific install functions
+  - `_track_installed_package_with_metadata()`: Tracks packages using stored mapping metadata
+  - `_track_package()`: Enhanced to accept original package name
+  - Integrated with all distribution-specific install functions
 - **Enhanced Tracking Database Schema**:
-    - Added `original_name` field to track package name from `packages.ini`
-    - Distinguishes between original generic name and distribution-specific installed name
+  - Added `original_name` field to track package name from `packages.ini`
+  - Distinguishes between original generic name and distribution-specific installed name
 - **Comprehensive Documentation**:
-    - User guide: `docs/PACKAGE_TRACKING.md`
-    - Architecture documentation: `docs/architecture/package_tracking.arch.md`
-    - Integration guide: `docs/TRACKING_INTEGRATION_SUMMARY.md`
-    - Implementation plan: `plan/tracking-integration-with-existing-config.md`
-    - Implementation summary: `docs/IMPLEMENTATION_SUMMARY.md`
+  - User guide: `docs/PACKAGE_TRACKING.md`
+  - Architecture documentation: `docs/architecture/package_tracking.arch.md`
+  - Integration guide: `docs/TRACKING_INTEGRATION_SUMMARY.md`
+  - Implementation plan: `plan/tracking-integration-with-existing-config.md`
+  - Implementation summary: `docs/IMPLEMENTATION_SUMMARY.md`
 - **Test Coverage**:
-    - BATS test suite for core tracking functionality (20+ tests)
-    - BATS test suite for metadata integration (8 tests passing)
+  - BATS test suite for core tracking functionality (20+ tests)
+  - BATS test suite for metadata integration (8 tests passing)
 
 ### Changed
 
 - `src/core/package_mapping.sh`:
-    - Added `PACKAGE_MAPPING_METADATA` global array for tracking integration
-    - Modified `map_package_list()` to accept category parameter and store metadata
-    - Added `_store_mapping_metadata()` and `get_package_metadata()` functions
+  - Added `PACKAGE_MAPPING_METADATA` global array for tracking integration
+  - Modified `map_package_list()` to accept category parameter and store metadata
+  - Added `_store_mapping_metadata()` and `get_package_metadata()` functions
 - `src/core/package_manager.sh`:
-    - Integrated automatic package tracking after installations using metadata
-    - Added `_track_installed_package_with_metadata()` for metadata-based tracking
-    - Modified `_pm_install_fedora()`, `_pm_install_arch()`, and `_pm_install_debian()` for tracking
+  - Integrated automatic package tracking after installations using metadata
+  - Added `_track_installed_package_with_metadata()` for metadata-based tracking
+  - Modified `_pm_install_fedora()`, `_pm_install_arch()`, and `_pm_install_debian()` for tracking
 - `src/core/package_tracking.sh`:
-    - Enhanced `track_package_install()` to accept `original_name` parameter
-    - Updated database schema to include `original_name` field
-    - Modified `list_tracked_packages()` to display both original and installed names
+  - Enhanced `track_package_install()` to accept `original_name` parameter
+  - Updated database schema to include `original_name` field
+  - Modified `list_tracked_packages()` to display both original and installed names
 - `src/core/install_packages.sh`:
-    - Updated all `install_*_packages()` functions to pass category to `map_package_list()`
+  - Updated all `install_*_packages()` functions to pass category to `map_package_list()`
 - `src/core/repo_migration.sh`:
-    - Rewrote `get_package_config_source()` to read from `pkgmap.ini` via `PACKAGE_MAPPINGS`
-    - Added automatic `pkgmap.ini` loading in migration functions
+  - Rewrote `get_package_config_source()` to read from `pkgmap.ini` via `PACKAGE_MAPPINGS`
+  - Added automatic `pkgmap.ini` loading in migration functions
 - `src/core/repository_manager.sh`:
-    - Added repository removal functions
-    - Improved code formatting
+  - Added repository removal functions
+  - Improved code formatting
 
+[0.6.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.5.0-alpha...v0.6.0-alpha
 [0.5.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.4.0-alpha...v0.5.0-alpha
 [0.4.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.3.0-alpha...v0.4.0-alpha
 [0.3.0-alpha]: https://github.com/Cyber-Syntax/auto-penguin-setup/compare/v0.2.0-alpha...v0.3.0-alpha
