@@ -7,5 +7,8 @@ OnCalendar=*-*-* 07:00:00
 # Persistence will ensure the timer runs even if the system is down at the scheduled time.
 Persistent=true
 
+# Random 10 min delay to avoid all timers running at the same time
+RandomizedDelaySec=10m
+
 [Install]
 WantedBy=timers.target

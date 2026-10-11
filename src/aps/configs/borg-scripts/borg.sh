@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 #
+# FILE: borg.sh
+# DESCRIPTION: This script is used to perform backups of the home directory
+#              using BorgBackup. It creates a backup, prunes old backups,
+#              checks the integrity of the repository, and compacts it.
+#
+# USAGE: Used as systemd service, or can be run manually.
+# LICENSE: GPLv3
+# AUTHOR: Cyber-Syntax
+# DATE: 2026-09-11
+# VERSION: 1.1
+#
 # Script PATH: /usr/local/sbin/borg.sh
 # Exclude file PATH: /usr/local/sbin/excludes.txt
-#
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -28,7 +39,7 @@ BORG_HOME_BACKUP_SOURCE='/home/developer'
 echo "Starting backup for home"
 
 # --show-rc: if return 0 code, then it's successful
-if ! borg create --list --filter=AME --progress --stats --exclude-caches --show-rc \
+if ! borg create --list --filter=AME --stats --exclude-caches --show-rc \
   --exclude-from "$BORG_HOME_EXCLUDE_FILE" \
   --compression "$BORG_HOME_COMPRESSION" "$BORG_HOME_REPO"::"$BORG_HOME_BACKUP_NAME" \
   "$BORG_HOME_BACKUP_SOURCE"; then
@@ -65,4 +76,3 @@ echo "Compaction complete"
 sync
 
 echo "Borg backup completed successfully"
-
