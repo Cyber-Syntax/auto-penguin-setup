@@ -1,75 +1,40 @@
 # TODOS
 
-## testing
+## Testing and quality
 
-- [ ] Test installers:
-      - [x] vscode aur install test with paru
-      - [x] vscode copr install test with dnf
-      - [x] zenpower3 copr install test with dnf
-      - [x] ohmyzsh installer
-      - [x] virtmanager
+- [ ] Improve automated coverage for every setup and install, including tests on both Arch and Fedora.
+  - [ ] Find a better easy way to automate tests for every setup/install.
+  - [ ] Test both Arch and Fedora for every setup/install.
+- [ ] Organize pytest temporary folders by test type, such as `pytest-of-<user>-aps-e2e` and `pytest-of-<user>-aps-unit`, so test results are easier to find.
+- [ ] Complete the development quality pass.
+  - [ ] Fix type annotations in `firewall.py`, `multimedia.py`, and other modules.
+  - [ ] Add a basic lock manager using `fcntl.flock` to prevent multiple APS instances from running at the same time.
+  - [ ] Add a utility function to back up any config file and keep the implementation DRY.
+  - [ ] Consider switching from INI to TOML for better parsing and performance.
 
-      - [ ] syncthing setup
-      - [ ] thinkfan setup test on thinkpad
+## In progress
 
-- [ ] Test setups:
-      - [x] sudoers setup test
-      - [ ] qtile setup test
-      - [ ] lightdm setup test
-      - [ ] sddm setup test
-      - [ ] firewall setup test
-      - [ ] ssh setup test
-      - [ ] multimedia setup test
-      - [ ] repositories setup test
-      - [ ] pm_optimizer setup test
-      - [ ] nvidia hardware test on fedora
-- [ ] Test Hardware detection modules:
-      - [ ] nvidia (<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#faq2>) - [ ] amd
-      - [ ] intel
-      - [ ] touchpad
+- [ ] Clean up this backlog and move hard issues to GitHub while keeping active development tasks here.
+- [ ] Fix bundled configuration distribution and XDG storage.
+  - [ ] Move configs out of the wrong bundled location and into the GitHub repository.
+  - [ ] Let `setup.sh` or APS download configs from the github repository and save them to the correct XDG location instead of bundled in aps cli, so user can customize them without editing the APS source code.
+- [ ] Fix Intel configuration installation permissions.
+  - [ ] BUG: Intel setup cannot copy `20-intel.conf` into `/etc/X11/xorg.conf.d/` without permission errors.
+- [ ] Make VS Code available through the package configuration.
+  - [ ] Install VS Code through `packages.ini` so `aps install @dev` can use the distro package manager.
 
-## in-progress
+## Package and setup workflows
 
-- [ ] cleanup issues from here and move the github issues for hard ones, keep the dev issues here for now
-- [ ] borgbackup setup
-      - [ ] `/var/lib/borg/.config/borg/security` this used on setup, need to make sure this is correct and good location to keep those borg keys
-- [ ] P1-fix: configs are in wrong location, bundled cli tool....
-
-- [ ] add new section to variables.ini like borg, ollama variables to specify specific variables like borg repo path, ollama model save path etc.
-      - [ ] for ollama; need to add new function to file change `/usr/lib/systemd/system/ollama.service` and add this: `Environment="OLLAMA_MODELS=/mnt/backups/ollama/models"` but ofcourse mnt backups path is real data, we need to use variables.ini constant for specify the path.
-- [ ] fix pytest tmp folder structure, make it like pytest-of-<user>-aps-e2e, pytest-of-<user>-aps-unit etc. to make it more organized and easy to find the test results
-
-## todo
-
-- [ ] P2: New architecture to detect packages on setups like ollama.py -> check package installed or not first and use pkgmap.ini for different package names and than continue setting up.
-- [ ] fix type annotions: firewall.py, multimedia.py... more type annotations for better code quality and readability
-- [ ] Make aps singleton or another solution, one instance only to avoid issues with multiple instances: fnctl.flock would handle this easily.
-- [ ] <https://github.com/charmbracelet/gum>
-- [ ] remove nvidia xorg.conf setup because it isn't good to have that for everyone, user need to handle it via nvidia-settings
-- [ ] change fish -> bash `chsh -s /bin/bash` simple but can be made it somewhere on zsh setup?
-- [ ] add fish autocomplete support
-- [ ] make sure to disable kdewallet if gnome-keyring is installed to avoid conflicts
-- [ ] one line install command to install via setup.sh script like:
-      `bash <(curl -fsSL https://raw.githubusercontent.com/Cyber-Syntax/auto-penguin-setup/main/setup.sh)`
-- [ ] install lact from ilya-zlobintsev instead of nfancurve
-- [ ] or this: <https://gitlab.com/coolercontrol/coolercontrol/-/releases>
-- [ ] add tuned setup: - testing `tuned-adm profile desktop` -> remember to activate it `sudo tuned-adm active` - after that enable `sudo cpupower frequency-set --governor performance` which
-      stay powersave after auto-cpufreq - check the status `sudo cpupower frequency-info` - Enable turbo `sudo cpupower set --turbo-boost 1`
-
-```bash
-# Last status of cpu info,
-sudo cpupower frequency-info
-  energy performance preference: balance_performance
-# This line was 3.79Ghz max before turbo-boost 1 command
-  hardware limits: 561 MHz - 4.65 GHz
-```
-
-- [ ] add remove command for other setups like vscode etc. later via `remove --setup` flag which now added via ollama and it supports ollama for now but we can add more setups to it later.
-- [ ] add a warning when the pkgmap.ini didn't found the packages for the current distro
-- [ ] checkout: <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff>
-- [ ] arch sometimes cause invalid signature for the packages and it is fixable by `sudo pacman -Syu` but that's not good to ask user because Arch updates can break the system, so user must be handle update themselves which it's need arch news check etc. Document it in the readme for own limitations of the tool or decision.
-      - [x] document it
-      - [ ] add a warning for user when they want to install a package and get signature error, we can add a warning like "Hey, it seems like you have an issue with your package manager, please run `sudo pacman -Syu` to fix it and try again" but we must still show pacman output to user to see the error and understand it which currently we show it. I also want to give the information about the error in the terminal output to make it more clear for user.
+- [ ] Improve package mapping, installation, and upgrade workflows.
+  - [ ] Make the upgrade command work with tag-based updates.
+  - [ ] Detect packages before running setup modules such as `ollama.py`, then use `pkgmap.ini` for distro-specific names.
+  - [ ] Warn when `pkgmap.ini` does not contain a package for the current distro.
+  - [ ] Add extra official repository checks for CachyOS and Nobara, then test VS Code installation.
+  - [ ] Make it easier to remove old or unmaintained packages through the CLI or a new `packages.ini` list.
+  - [ ] Detect unmaintained COPR and AUR packages.
+  - [ ] Handle Arch invalid package signatures with a clear warning while still showing the pacman output.
+    - [x] Document the Arch package signature limitation in the README.
+    - [ ] Explain that users may need to run `sudo pacman -Syu` and retry, without running the update automatically.
 
 ```bash
 error: ollama: signature from "CachyOS <admin@cachyos.org>" is invalid
@@ -77,15 +42,105 @@ error: ollama: signature from "CachyOS <admin@cachyos.org>" is invalid
 Do you want to delete it? [Y/n]
 ```
 
-- [ ] add new feature, export installed packages to a file to make it easy to save
-- [ ] Duplicated print
+- [ ] Add package export and persistence commands.
+  - [ ] Export installed packages to a file.
+  - [ ] Save tracked/installed packages to `packages.ini` or another location so a command such as `aps install task` can be made persistent without manual edits.
+- [ ] Support tracking and removal for setup-installed applications.
+  - [ ] Track applications such as Ollama, VS Code, and Oh My Zsh even when they are installed by a vendor script or package manager outside the normal package flow.
+  - [ ] Add `remove --setup` support for setups such as VS Code; Ollama is currently supported.
+- [ ] Install and maintain additional applications and repositories.
+  - [ ] Add installation support for personal applications such as Appman and ztarcompress when they reach MVP status.
+  - [ ] Install LACT from Ilya Zlobintsev instead of nfancurve, or evaluate <https://gitlab.com/coolercontrol/coolercontrol/-/releases>.
+  - [ ] Check <https://github.com/wz790/Fedora-Noble-Setup?tab=readme-ov-file#rpm-fusion---the-good-stuff> for useful Fedora setup ideas.
+
+## Setup features
+
+- [ ] Add new hardware, desktop, and system setup components.
+  - [ ] Add a ckb-next setup that enables `ckb-next-daemon` at boot with `systemctl enable ckb-next-daemon`.
+  - [ ] Add a tuned setup and document the required activation and CPU governor commands.
+    - [ ] Test `tuned-adm profile desktop` and activate it with `sudo tuned-adm active`.
+    - [ ] Test `sudo cpupower frequency-set --governor performance` and turbo boost with `sudo cpupower set --turbo-boost 1`.
+    - [ ] Check status with `sudo cpupower frequency-info`.
+  - [ ] Add an optional Thinkfan setup for users with NVIDIA ThinkPads.
+  - [ ] Add Nvibrant, SDDM, Gammastep, and Wlsunset setup support where appropriate.
+  - [ ] Call the SDDM setup from the Hyprland installation in `setup.sh`.
+  - [ ] Add Zen Browser to the default applications with `zen.desktop`.
+  - [ ] Improve browser profile saving with <https://docs.zen-browser.app/guides/manage-profiles>.
+  - [ ] Add font setup.
+  - [ ] Add Git setup.
+- [ ] Improve shell, desktop, and application integration.
+  - [ ] Change the default shell from fish to Bash with `chsh -s /bin/bash`, possibly as part of the Zsh setup.
+  - [ ] Add fish autocomplete support.
+  - [ ] Add a one-line installer through `setup.sh`:
+    - `bash <(curl -fsSL https://raw.githubusercontent.com/Cyber-Syntax/auto-penguin-setup/main/setup.sh)`
+  - [ ] Add an Oh My Zsh uninstall command that supports custom Oh My Zsh folders, using `uninstall_oh_my_zsh` where appropriate.
+- [ ] Improve device, power, and service configuration.
+  - [ ] Remove the NVIDIA Xorg configuration setup; users should manage it with `nvidia-settings`.
+  - [ ] Disable KDE Wallet when GNOME Keyring is installed to avoid conflicts.
+  - [ ] Enable `autocpufreq` at boot with `systemctl enable auto-cpufreq`, similar to TLP.
+  - [ ] Disable Bluetooth with a udev rule and test power consumption after reboot.
+  - [ ] Investigate disabling `irqbalance` for laptop power saving and performance.
+    - Resource: <https://github.com/konkor/cpufreq/issues/48>
+    - IRQBALANCE is intended for I/O priority, not user-space applications.
+    - It is designed for server configurations with many RAID/HDD/SSD controllers and may interfere with disabled CPU cores or devices.
+    - Test the following commands where appropriate:
 
 ```bash
+/etc/udev/rules.d/50-bluetooth.rules
+
+SUBSYSTEM=="rfkill", ATTR{type}=="bluetooth", ATTR{state}="0"
+
+sudo systemctl disable --now irqbalance
+sudo dnf remove irqbalance
+```
+
+- [ ] Improve firmware update service configuration.
+  - [ ] Disable peer-to-peer caching for `fwupd.service` by setting `P2pPolicy=nothing` in `/etc/fwupd/fwupd.conf` and/or masking `passim.service`.
+  - [ ] Ensure the optional `udisks2` dependency is installed and its systemd unit starts before the fwupd unit for UEFI firmware support.
+  - [ ] Keep the security context: `passimd` listens on `0.0.0.0:27500`; the change avoids exposing the local cache server unnecessarily.
+  - [ ] Preserve the investigation notes: fwupd 1.9.5 introduced passim as a local LVFS metadata cache; the Arch request to make it optional was rejected because it would require a split package.
+- [ ] Evaluate CachyOS and Arch system tuning ideas.
+  - [ ] Review <https://wiki.cachyos.org/configuration/general_system_tweaks/#enable-rcu-lazy>.
+  - [ ] Investigate whether `rcu_nocbs` should be used with `rcu_lazy`.
+  - [ ] Look for useful ideas in the Omarchy Arch scripts.
+
+```bash
+# Last status of CPU info
+sudo cpupower frequency-info
+  energy performance preference: balance_performance
+# This line was 3.79 GHz max before turbo-boost 1 command
+  hardware limits: 561 MHz - 4.65 GHz
+```
+
+## Configuration and data
+
+- [ ] Make variables and generated configuration easier to manage.
+  - [ ] Add sections to `variables.ini` for application-specific values such as Borg repository paths and Ollama model storage.
+  - [ ] For Ollama, update `/usr/lib/systemd/system/ollama.service` with `Environment="OLLAMA_MODELS=/mnt/backups/ollama/models"`, using the real path from `variables.ini`.
+  - [ ] Generate INI config examples with Python instead of copying `config_examples/packages.ini`.
+- [ ] Expand Ollama CUDA setup support.
+  - [ ] Document the CUDA binaries at `/opt/cuda/bin/` and the need to source `/etc/profile` or restart the session.
+  - [ ] Document `$NVCC_CCBIN` in `/etc/profile.d/cuda.sh` as the default host compiler configuration.
+  - [ ] Document clearing build caches after CUDA compiler path changes or GCC removal.
+  - [ ] Track optional dependencies: `gdb`, `glu`, `nvidia-utils`, `nsight-compute`, `nsight-systems`, and `rdma-core`.
+
+```text
+The CUDA binaries are in /opt/cuda/bin/.
+Source /etc/profile or restart the session for the CUDA binaries and
+$NVCC_CCBIN environment variable to appear.
+```
+
+## Developer experience and documentation
+
+- [ ] Remove duplicated command output.
+  - [ ] Examples include repeated VS Code setup messages, repeated `virtmanager setup completed successfully`, and duplicate firewall/network configuration messages.
+
+```text
 Successfully installed AUR packages
 Visual Studio Code installation completed.
 vscode setup completed successfully
 vscode setup completed successfully
-# another example:
+
 Added firewall_backend = iptables
 Successfully configured network.conf
 Virtualization setup completed successfully
@@ -94,210 +149,4 @@ virtmanager setup completed successfully
 virtmanager setup completed successfully
 ```
 
-- [ ] command to save all the tracked/installed packages to packages.ini or another location to make it easy to save and install the packages. So, basically we can use `aps install task` to install taskwarrior for example and than we must be refactor packages.ini manually to make it saved persistently but that's not good, better to make a comand to automate this process.
-- [ ] better to have util function to backup any config file to keep DRY principle
-- [ ] extra official repo check for cachyos/nobara, install vscode to test it
-- [ ] Creating config examples in ini format via python instead of copy-pasting config_examples/packages.ini...
-- [ ] more things for ollama-cuda but seems optional dependencies;
-
-```bash
-- The cuda binaries are in /opt/cuda/bin/
-- You need to source /etc/profile or restart your session in order for the CUDA
-  binaries to appear in your $PATH
-- The default host compiler for nvcc is set by the $NVCC_CCBIN environment
-  variable in /etc/profile.d/cuda.sh
-- The default host compiler for nvcc is no longer configured using symlinks in
-  /opt/cuda/bin/ but by the $NVCC_CCBIN environment variable in
-  /etc/profile.d/cuda.sh.  You need to source /etc/profile or restart your
-  session for it to be available in your environment.  Additionally, you may
-  need to clear the build cache of your projects where the old path may have
-  been recorded.
-- When you uninstall an old, unrequired version of GCC that was previously
-  required by cuda for the default host compiler ($NVCC_CCBIN), you may need
-  to source /etc/profile or restart your session.  Additionally, you may need
-  to clear the build cache of your projects where the old path may be still
-  recorded.
-Optional dependencies for cuda
-    gdb: for cuda-gdb
-    glu: required for some profiling tools in CUPTI [installed]
-    nvidia-utils: for NVIDIA drivers (not needed in CDI containers) [installed]
-    nsight-compute: for profiling CUDA applications
-    nsight-systems: for system-wide profiling
-    rdma-core: for GPUDirect Storage (libcufile_rdma.so) [installed]
-```
-
-- [ ] better code structure? <https://docs.python-guide.org/writing/structure/>
-- [ ] <https://github.com/bahamas10/bash-style-guide> for setup.sh
-- [ ] add ohmyzsh uninstall command? That command not work for custom ohmyzsh folder.
-      If you want to uninstall oh-my-zsh, just run `uninstall_oh_my_zsh` from the command-line. It will remove itself and revert your previous bash or zsh configuration.
-- [ ] add acknowledgements to readme.md
-- [ ] add tracking feature to setup applications like ohmyzsh, auto-cpufreq etc. Maybe we can firslty use the package manager to install the tlp, ohmyzsh before setup it and track it that way would be easier. Ollama probably not possible because we use the directl offical install.sh script.
-- [ ] disable p2p for fwupd.service
-      Disable local cache server (passim)
-
-fwupd v1.9.5 from September 2023 introduced a dependency on passim, a local cache server intended to help reduce LVFS bandwidth usage by making each machine able to serve the metadata file it downloads everyday to others[2][3].
-
-passimd is a daemon which listens for connections on port 27500 from any IP addresses (i.e. it listens on 0.0.0.0:27500). This has led to some criticism regarding the security implications[4][5], and indeed several vulnerabilities were reported just a few weeks later[6][7].
-
-On Arch the request from FS#79614 to make the dependency optional at compile-time was denied because it would require creating a split-package for a library.
-
-As a consequence, if you wish to disable passimd you should follow the advice given by the author[8]: add P2pPolicy=nothing to /etc/fwupd/fwupd.conf and/or mask passim.service.
-
-- Make sure the optional dependency udisks2 is installed and the associated systemd unit is started before fwupd unit; it will provide UEFI firmware upgrade support.
-
-- [ ] <https://wiki.cachyos.org/configuration/general_system_tweaks/#enable-rcu-lazy>
-- [ ] re: rcu_nocbs, I read that it's often recommended to be used together with rcu_lazy:
-- [ ] test new tlp feature
-    - [ ] disable irqbalance and remove
-- [ ] disable intel_pstate , enable acpi-cpufreq or enable intel_pstate
-- [ ] omarchy arch scripts good repo
-- [ ] add zen.desktop to default apps
-- [ ] browser profile save advanced
-      <https://docs.zen-browser.app/guides/manage-profiles>
-- [ ] font setup
-- [ ] git setup
-- [ ] maybe user have nvidia and thinkpad
-      so better to make thinkfan and similar to command not laptop package.
-- [ ] my-unicorn, autotarcompres add their setup like clone repo and install cli etc.
-- [ ] my-unicorn compatibility for mimeapp.list
-- [ ] switch toml from ini for better parsing and performance?
-
-## backlog
-
-- [ ] add nvibrant setup, sddm setup(like sddm-wayland package install for fedora and arch), gammastep alternative(hyprland not use), wlsunset alternative can't decrease brightness...
-- [ ] Option to delete old, unmaintaned packages more easily. (Maybe with cli, or packages.ini new list)
-- [ ] Find a way to detect unmaintaned copr packages, AUR packages.
-- [ ] we can call the sddm setup on the command hyprland installation in setup.sh
-
-- add bluetooth settings configs
-
-1. disable bluetooth via tlp and this:
-   reenabled because modprobe not work when udev in there
-
-- Note: when we disable bluetooth on bluetooth manager gui
-  btusb not consume any power, when enabled it consume 1W
-  so seems like, we could close when we not use it and enable it manually?
-- Lets test it is it going to consume any power on next boot if we don't do any changes?
-
-```bash
-/etc/udev/rules.d/50-bluetooth.rules
-
-# disable bluetooth
-SUBSYSTEM=="rfkill", ATTR{type}=="bluetooth", ATTR{state}="0"
-```
-
-1. reconfigured the tlp settings
-
-- [ ] display backlight show 3W usage even on 10% brightness
-- [x] powertop need to run 1h 30min to detect power consumption correctly
-- add enable to auto-cpufreq which we do same thing on tlp
-
-1. disable leds like power led, numlock led, mic led
-
-cpu status
-
-1. disable intel_pstate and enable acpid to get 4.6 Ghz turbo boost , intel_pstate only 1.3Ghz available
-   which it would be good for battery and tempature but things would take more time with lower ghz though?
-
-dependencies install:
-`sudo dnf install acpi acpid acpitool kernel-tools`
-
-enable turbo boost on other than intel_pstate
-
-```bash
-echo 1 > /sys/devices/system/cpu/cpufreq/boost
-
-# disable
-echo 0 > /sys/devices/system/cpu/cpufreq/boost
-```
-
-irqbalance disable
-
-> Resource: <https://github.com/konkor/cpufreq/issues/48>
-
-IRQBALANCE for the IO Priority and NOT FOR USER SPACE APPLICATIONS!
-GNU/Linux Debian (bug closing the issue) removed IRQBALANCE from dependencies. It means Ubuntu/PopOS/Mint and so on will do the same.
-irqbalance doesn't support fully all kernel features to an example a turning on/off core threads supported by the extension. If you have installed irqbalance package and turn off some cores you can get freezes or not working devices like wi-fi, bluetooth, video cards, sound cards...
-irqbalance is not a part of the Linux kernel.
-It designed for special server configurations with many RAID/HDD/SDD controllers.
-Only Debian Flowers have the irqbalance installed because Debian is very Server oriented. Red Hat doesn't have installed irqbalance by default but it doesn't make Red Hat less server OS.
-It keeps all Linux core threads working so its not good for power saving, especially for laptops.
-Any user-space application (like games, compilation...) can not get 100% of CPU resources on any thread because it's always sharing this resources with IO tasks.
-
-disabled irqbalance
-
-```bash
-sudo systemctl disable --now irqbalance
-sudo dnf remove irqbalance
-```
-
-## done
-
-- [x] add gnome-kerying to packages.ini
-- [x] add borgbackup setup
-- [x] P1: Ollama setup wrong location on core setup.py need to -> ollama.py
-- [x] add ollama remove command to remove ollama:
-- Better ruff linting rules
-- auto-cpufreq installer outputs to terminal properly
-- [x] Ollama setup isn't show pacman output, we need to change the subprocess.run to capture_output=False for pacman install command to show the output in terminal
-- [x] add paru/yay --needed flag to skip app if it is already installed:
-- [x] `syncthingtray-qt6` from AUR package for flatpak syncthingtray
-- [x] sudoers give permission error, sudoers file not able to written but it's backup created successfully.
-- [x] signal on the extra repo in arch so we
-      need to change this flatpak packages to normal package name
-      and than write it flatpak on the pkpmap.ini file
-      so when on arch, it would install the normal package and on fedora it would install the flatpak package
-- [x] distro support issue cachyos
-- [x] pure functions for better testability on setups and installers
-    - [x] Remove base.py and switch to function base programming for setups
-- [x] ohmyzsh, can be installed .config/oh-my-zsh config more easily with the new
-      curl install.sh offical command but zsh shell need to set env variable for ZSH_CUSTOM probably or similar to it..
-      #TODO: refactor to use below
-      Below best one to keep zshrc unchanged:
-      sh -c "$(curl -fsSL <https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh>)" "" --keep-zshrc
-- pacman output display during package removal to ensure user sees relevant messages and errors directly in terminal.
-- [x] remove hostname.py module, it just `hostnamectl set-hostname` command, no need for a module
-- [x] Make installed packages one line output for better readability:
-- [x] BUG: dry-run not work for copr enabling
-- [x] logs rotation setup for aps logs to avoid large log files
-- [x] Keep only the name, source and maybe time in the tracking database for simplicity
-- [x] add option to remove the packages, which it would remove from tracked database
-- [x] add upgrade command to self-update the cli tool via uv
-- [x] add folder structure to tests/ folder similar to src/aps/ for better organization of tests
-- [x] move test*system test to their own modules like tests/system/test*<distro>.py
-- [x] add setup commands like system folder, hardware folder to cli which we didn't have yet
-- `uv tool install .` tested on cachyos and work as expected.
-- Brave setup works.
-- [x] Switch to python for core modules, keep the bash for other simple scripts
-- [x] switch to json or jsonl for tracking database instead of ini for performance and easier parsing (orjson library)
-- [x] move tracking database to .config/auto-penguin-setup/metadata.jsonl
-- [x] move logs to .config/auto-penguin-setup/logs/
-- [x] keepchangelog
-      <https://keepachangelog.com/en/1.1.0/>
-- [x] make cli tool like `aps install`
-- [x] ohmyzsh fail when in bash shell(arch linux virtual machine test):
-- [x] refactor update_config.sh for new INI system
-- [x] add flatpak tracking
-- [x] test new tracking system for all of the packages.ini setups
-    - [x] arch
-    - [x] ubuntu qemu
-- [x] Sources not recognized correctly: COPR:atim/starship found but no lazygit - now it is fixed with new tracking system
-- [x] Errors on sync-repos, we can't change flatpak to official the flatpak repos.
-      If user want to get the official, than they can easily remove the package from flatpak
-      and move it to correct category like core, laptop, dev etc. to be able to install
-      from official or AUR/COPR.
-
-```bash
-Repository Changes Detected:
-============================
-lazygit                       : COPR:atim/lazygit -> COPR:dejan/lazygit
-io.github.martchus.syncthingtray: flatpak:flathub -> official
-```
-
-- [x] test wm-common package for x11 window manager package installs
-    - [x] test i3, qtile
-- [x] rename neovim.sh to uberzugpp.sh, handle setup.sh etc.
-- [x] Disable old copr when copr pkgmap.ini changed. Example test atim/lazygit -> dejan/lazygit
-- [x] Status all of the installed apps to take track of the apps more better way
-    - [x] tracking migration option necessary which we already installed most of the packages to our system, so we need to compare the packages.ini with our distro specific package manager status command to check if the packages are installed or not than write to a tracked ini database those installed packages.
-    - [x] packages_with_repos.ini seems used for tracking packages with their repositories, we already have pkgmap.ini to track the special naming of the packages that we specify on the packages.ini for different distros and we use pkgmap.ini to write the copr, aur, ppa repos there, and if we change that, it need to be use that instead of using a new config, or maybe we can make a new one file packages.ini to define everything in one file with more easy way which we can use maybe [arch] etc. specific [distro] specific things.
+- [ ] Add acknowledgements to `README.md`.
